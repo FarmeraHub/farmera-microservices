@@ -1,15 +1,22 @@
-use std::env;
+use std::{env, sync::Arc};
 
 use actix_files::NamedFile;
 use actix_web::{web, App, HttpServer, Responder};
-use controllers::ws_controller;
+use config::{pg_db::create_pg_pool, redis::create_redis_pool};
+use controllers::{conversation_controller::ConversationController, ws_controller};
 use dotenvy::dotenv;
 use env_logger::Env;
+use repositories::conversation_repo::ConversationRepo;
+use services::convesation_service::ConversationService;
+use sqlx::migrate;
 use tokio::spawn;
 use ws::chat_server::ChatServer;
 
+mod config;
 mod controllers;
+mod errors;
 mod models;
+mod repositories;
 mod services;
 mod ws;
 
@@ -26,18 +33,53 @@ async fn main() -> std::io::Result<()> {
     let server_addr = env::var("SERVER_ADDRESS").expect("SERVER_ADDRESS must be set");
     let server_port = env::var("SERVER_PORT").expect("SERVER_PORT must be set");
 
-    let (chat_server, chat_server_handler) = ChatServer::new();
+    // init redis pool
+    let redis_pool = Arc::new(create_redis_pool());
 
+    // init postgres pool
+    let pg_pool = Arc::new(create_pg_pool().await);
+    log::info!("Pg Pool created");
+
+    // run migration
+    let migrator = migrate::Migrator::new(std::path::Path::new("./migrations"))
+        .await
+        .expect("Migrator create failed");
+    migrator.run(&*pg_pool).await.expect("Migration failed");
+    log::info!("Migration success");
+
+    // init repositories
+    let conversation_repository = Arc::new(ConversationRepo::new(pg_pool.clone()));
+    // init services
+    let conversation_service = Arc::new(ConversationService::new(conversation_repository.clone()));
+    // init controller
+    let conversation_controller =
+        Arc::new(ConversationController::new(conversation_service.clone()));
+    // init redis client
+    let redis_client = Arc::new(
+        redis::Client::open(env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap(),
+    );
+    // init chat server
+    let (chat_server, chat_server_handler) = ChatServer::new(
+        redis_pool.clone(),
+        redis_client.clone(),
+        conversation_repository.clone(),
+    )
+    .await;
+    // start chat server
     spawn(chat_server.run());
 
     HttpServer::new(move || {
         App::new()
+            // server states
             .app_data(web::Data::new(chat_server_handler.clone()))
+            .app_data(web::Data::new(conversation_controller.clone()))
             .service(web::resource("/").to(index))
+            // route configurations
             .configure(ws_controller::WSController::routes)
+            .configure(controllers::conversation_controller::ConversationController::routes)
     })
     .bind(format!("{server_addr}:{server_port}"))?
-    .workers(1)
+    .workers(3)
     .run()
     .await
 }
