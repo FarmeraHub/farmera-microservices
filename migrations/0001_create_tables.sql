@@ -1,14 +1,22 @@
+DROP TABLE IF EXISTS attachments;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS users_conversations;
+DROP TABLE IF EXISTS conversations;
+
 CREATE TABLE users_conversations (
-    id SERIAL PRIMARY KEY,
-    conversation_id BIGINT,
-    customer_id UUID
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id INT,
+    user_id UUID,
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE TABLE conversations (
     conversation_id SERIAL PRIMARY KEY,
-    farm_id UUID,
+    title TEXT NOT NULL,
     lastest_message BIGINT,
-    created_at TIMESTAMP DEFAULT NOW()
+    lastest_active TIMESTAMPTZ,
+    created_at TIMESTAMP DEFAULT NOW(),
+    is_deleted BOOLEAN
 );
 
 CREATE TABLE messages (
