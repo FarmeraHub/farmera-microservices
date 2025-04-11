@@ -9,9 +9,11 @@ use tokio::{
     sync::mpsc,
     time::{interval, Instant},
 };
-use uuid::Uuid;
 
-use crate::ws::{chat_server_handler::ChatServerHandler, ConnId};
+use crate::{
+    models::ws::{Event, WSRequest, WSResponse},
+    ws::{chat_server_handler::ChatServerHandler, ConnId, UserId},
+};
 
 const HEARTBEAT: Duration = Duration::from_secs(5);
 
@@ -24,7 +26,7 @@ impl WSService {
         chat_server_handler: ChatServerHandler,
         mut session: actix_ws::Session,
         msg_stream: actix_ws::MessageStream,
-        user_id: Uuid,
+        user_id: UserId,
     ) {
         log::debug!("Connected");
 
@@ -34,7 +36,25 @@ impl WSService {
         // sender & receiver channel for connection
         let (conn_tx, mut conn_rx) = mpsc::unbounded_channel();
 
-        chat_server_handler.connect(user_id, conn_tx).await;
+        // attempt to connect
+        let conn_id = match chat_server_handler.connect(user_id, conn_tx).await {
+            Some(id) => {
+                // send a successful connection response
+                let _ = session
+                    .text(
+                        serde_json::json!(WSResponse {
+                            id: "".to_string(),
+                            event: Event::Connect,
+                            data: serde_json::json!({"connection_id": id}),
+                            status: "connected".to_string(),
+                        })
+                        .to_string(),
+                    )
+                    .await;
+                id
+            }
+            None => return,
+        };
 
         // set limits and customize how data is proccessed
         let msg_stream = msg_stream
@@ -55,12 +75,13 @@ impl WSService {
                 // commands & messages received from client
                 Either::Left((Either::Left((Some(Ok(msg)), _)), _)) => match msg {
                     AggregatedMessage::Text(text) => {
-                        log::info!("Text msg received: {text}");
+                        // log::info!("Text msg received: {text}");
                         Self::process_text_message(
                             &chat_server_handler,
                             &mut session,
                             &text,
                             user_id,
+                            conn_id,
                         )
                         .await;
                     }
@@ -76,11 +97,12 @@ impl WSService {
                     }
 
                     AggregatedMessage::Pong(_) => {
-                        log::info!("Pong received");
+                        // log::info!("Pong received");
                         last_heartbeat = Instant::now();
                     }
 
                     AggregatedMessage::Close(reason) => {
+                        log::info!("Close msg received");
                         break reason;
                     }
                 },
@@ -95,7 +117,7 @@ impl WSService {
                 Either::Left((Either::Left((None, _)), _)) => break None,
 
                 // chat messages received from other room participants
-                Either::Left((Either::Right((Some(msg), _)), _)) => {
+                Either::Left((Either::Right((Some(_msg), _)), _)) => {
                     log::info!("Msg recevied from other particitpants")
                     // session.text(msg).await.unwrap();
                 }
@@ -107,7 +129,7 @@ impl WSService {
 
                 // heartbeat interval tick
                 Either::Right((_, _)) => {
-                    log::info!("Heartbeat interval tick");
+                    // log::info!("Heartbeat interval tick");
                     // if no heartbeat, close connection
                     if Instant::now().duration_since(last_heartbeat) > CLIENT_TIMEOUT {
                         log::info!("Client {user_id} has not sent heartbeat over {CLIENT_TIMEOUT:?}, disconnecting");
@@ -118,7 +140,7 @@ impl WSService {
             }
         };
 
-        chat_server_handler.disconnect(user_id);
+        chat_server_handler.disconnect(user_id, conn_id);
 
         let _ = session.close(close_reason).await;
     }
@@ -127,7 +149,88 @@ impl WSService {
         chat_server_handler: &ChatServerHandler,
         session: &mut actix_ws::Session,
         text: &str,
+        user_id: UserId,
         conn_id: ConnId,
     ) {
+        let mut response = WSResponse {
+            id: "".to_string(),
+            event: Event::Error,
+            status: "error".to_string(),
+            data: serde_json::json!(""),
+        };
+
+        log::info!("{}", text);
+
+        match serde_json::from_str::<WSRequest>(text) {
+            //
+            Ok(request) => {
+                response.id = request.id;
+
+                match request.event {
+                    Event::Join => {
+                        response.event = Event::Join;
+
+                        if let Ok(data_value) =
+                            serde_json::from_value::<serde_json::Value>(request.data)
+                        {
+                            if let Some(conversation_id) = data_value["conversation_id"].as_i64() {
+                                match chat_server_handler
+                                    .join_conversation(user_id, conn_id, conversation_id as i32)
+                                    .await
+                                {
+                                    Ok(_) => {
+                                        response.status = "joined".to_string();
+                                    }
+                                    Err(e) => {
+                                        response.data =
+                                            serde_json::json!({"message": e.to_string()})
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Event::Message => {
+                        response.event = Event::Message;
+
+                        if let Ok(data_value) =
+                            serde_json::from_value::<serde_json::Value>(request.data)
+                        {
+                            if let (Some(conversation_id), Some(message)) = (
+                                data_value["conversation_id"].as_i64(),
+                                data_value["message"].as_str(),
+                            ) {
+                                match chat_server_handler
+                                    .send_message(
+                                        user_id,
+                                        conn_id,
+                                        conversation_id as i32,
+                                        message.to_owned(),
+                                    )
+                                    .await
+                                {
+                                    Ok(_) => {
+                                        response.status = "sent".to_string();
+                                    }
+                                    Err(e) => {
+                                        response.data =
+                                            serde_json::json!({"message": e.to_string()})
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    _ => {
+                        response.data = serde_json::json!({"{message": "Invalid event"});
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("Text error: {e}");
+                response.data = serde_json::json!({"message": "Invalid JSON format"});
+            }
+        }
+        let _ = session.text(serde_json::json!(response).to_string()).await;
     }
 }
