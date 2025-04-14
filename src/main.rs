@@ -6,10 +6,10 @@ use config::{pg_db::create_pg_pool, redis::create_redis_pool};
 use controllers::{conversation_controller::ConversationController, ws_controller};
 use dotenvy::dotenv;
 use env_logger::Env;
-use repositories::conversation_repo::ConversationRepo;
+use repositories::{conversation_repo::ConversationRepo, message_repo::MessageRepo};
 use services::convesation_service::ConversationService;
 use sqlx::migrate;
-use tokio::spawn;
+use tokio::{spawn, try_join};
 use ws::chat_server::ChatServer;
 
 mod config;
@@ -49,6 +49,7 @@ async fn main() -> std::io::Result<()> {
 
     // init repositories
     let conversation_repository = Arc::new(ConversationRepo::new(pg_pool.clone()));
+    let message_repository = Arc::new(MessageRepo::new(pg_pool.clone()));
     // init services
     let conversation_service = Arc::new(ConversationService::new(conversation_repository.clone()));
     // init controller
@@ -63,12 +64,13 @@ async fn main() -> std::io::Result<()> {
         redis_pool.clone(),
         redis_client.clone(),
         conversation_repository.clone(),
+        message_repository.clone(),
     )
     .await;
     // start chat server
-    spawn(chat_server.run());
+    let chat_server = spawn(chat_server.run());
 
-    HttpServer::new(move || {
+    let http_server = HttpServer::new(move || {
         App::new()
             // server states
             .app_data(web::Data::new(chat_server_handler.clone()))
@@ -80,6 +82,9 @@ async fn main() -> std::io::Result<()> {
     })
     .bind(format!("{server_addr}:{server_port}"))?
     .workers(3)
-    .run()
-    .await
+    .run();
+
+    try_join!(http_server, async move { chat_server.await.unwrap() })?;
+
+    Ok(())
 }

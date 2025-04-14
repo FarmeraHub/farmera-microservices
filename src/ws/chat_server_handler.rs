@@ -62,11 +62,28 @@ impl ChatServerHandler {
         res_rx.await.unwrap()
     }
 
+    pub async fn leave_converstaion(
+        &self,
+        user_id: UserId,
+        conn_id: ConnId,
+    ) -> Result<(), ChatError> {
+        let (res_tx, res_rx) = oneshot::channel();
+
+        self.cmd_tx
+            .send(Command::Leave {
+                user_id,
+                conn_id,
+                res_tx,
+            })
+            .unwrap();
+
+        res_rx.await.unwrap()
+    }
+
     pub async fn send_message(
         &self,
         user_id: UserId,
         conn_id: ConnId,
-        conversation_id: ConversationId,
         msg: SendMsg,
     ) -> Result<(), ChatError> {
         let (res_tx, res_rx) = oneshot::channel();
@@ -75,7 +92,6 @@ impl ChatServerHandler {
             .send(Command::Message {
                 user_id,
                 conn_id,
-                conversation_id,
                 msg,
                 res_tx,
             })

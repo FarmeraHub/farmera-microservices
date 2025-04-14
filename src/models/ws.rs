@@ -12,6 +12,9 @@ pub enum Event {
     #[display("message")]
     Message,
 
+    #[display("leave")]
+    Leave,
+
     #[display("error")]
     Error,
 }

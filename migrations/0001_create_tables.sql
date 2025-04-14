@@ -14,20 +14,18 @@ CREATE TABLE conversations (
     conversation_id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     lastest_message BIGINT,
-    lastest_active TIMESTAMPTZ,
     created_at TIMESTAMP DEFAULT NOW(),
     is_deleted BOOLEAN
 );
 
 CREATE TABLE messages (
-    message_id SERIAL PRIMARY KEY,
-    conversation_id BIGINT,
+    message_id BIGSERIAL PRIMARY KEY,
+    conversation_id INT,
     sender_id UUID,
-    content TEXT,
-    status text,
+    content TEXT NOT NULL,
     sent_at TIMESTAMP DEFAULT NOW(),
-    is_read BOOLEAN,
-    deleted BOOLEAN
+    is_read BOOLEAN DEFAULT FALSE,
+    deleted BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE attachments (

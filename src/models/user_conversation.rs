@@ -8,5 +8,5 @@ pub struct UserConversation {
     pub id: i64,
     pub conversation_id: i32,
     pub user_id: Uuid,
-    pub deleted_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
 }

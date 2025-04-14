@@ -67,7 +67,7 @@ impl ConversationRepo {
         Ok(result)
     }
 
-    pub async fn find_users_by_conversation_id(
+    pub async fn find_user_ids_by_conversation_id(
         &self,
         conversation_id: i32,
     ) -> Result<Vec<UserConversation>, DBError> {

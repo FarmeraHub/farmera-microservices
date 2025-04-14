@@ -5,6 +5,7 @@ use crate::errors::chat_error::ChatError;
 
 pub mod chat_server;
 pub mod chat_server_handler;
+pub mod ws_handler;
 
 pub type ConnId = Uuid;
 pub type UserId = Uuid;
@@ -33,8 +34,13 @@ pub enum Command {
     Message {
         user_id: UserId,
         conn_id: ConnId,
-        conversation_id: ConversationId,
         msg: SendMsg,
+        res_tx: oneshot::Sender<Result<(), ChatError>>,
+    },
+
+    Leave {
+        user_id: UserId,
+        conn_id: ConnId,
         res_tx: oneshot::Sender<Result<(), ChatError>>,
     },
 }

@@ -19,9 +19,9 @@ const HEARTBEAT: Duration = Duration::from_secs(5);
 
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-pub struct WSService;
+pub struct WSHandler;
 
-impl WSService {
+impl WSHandler {
     pub async fn handle_ws(
         chat_server_handler: ChatServerHandler,
         mut session: actix_ws::Session,
@@ -117,9 +117,9 @@ impl WSService {
                 Either::Left((Either::Left((None, _)), _)) => break None,
 
                 // chat messages received from other room participants
-                Either::Left((Either::Right((Some(_msg), _)), _)) => {
-                    log::info!("Msg recevied from other particitpants")
-                    // session.text(msg).await.unwrap();
+                Either::Left((Either::Right((Some(msg), _)), _)) => {
+                    log::info!("Msg recevied from other particitpants");
+                    session.text(msg).await.unwrap();
                 }
 
                 // all connection's message senders were dropped
@@ -159,10 +159,9 @@ impl WSService {
             data: serde_json::json!(""),
         };
 
-        log::info!("{}", text);
+        // log::info!("{}", text);
 
         match serde_json::from_str::<WSRequest>(text) {
-            //
             Ok(request) => {
                 response.id = request.id;
 
@@ -196,17 +195,9 @@ impl WSService {
                         if let Ok(data_value) =
                             serde_json::from_value::<serde_json::Value>(request.data)
                         {
-                            if let (Some(conversation_id), Some(message)) = (
-                                data_value["conversation_id"].as_i64(),
-                                data_value["message"].as_str(),
-                            ) {
+                            if let Some(message) = data_value["message"].as_str() {
                                 match chat_server_handler
-                                    .send_message(
-                                        user_id,
-                                        conn_id,
-                                        conversation_id as i32,
-                                        message.to_owned(),
-                                    )
+                                    .send_message(user_id, conn_id, message.to_owned())
                                     .await
                                 {
                                     Ok(_) => {
@@ -218,6 +209,19 @@ impl WSService {
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    Event::Leave => {
+                        response.event = Event::Leave;
+                        match chat_server_handler
+                            .leave_converstaion(user_id, conn_id)
+                            .await
+                        {
+                            Ok(_) => {
+                                response.status = "left".to_string();
+                            }
+                            Err(e) => response.data = serde_json::json!({"message": e.to_string()}),
                         }
                     }
 
