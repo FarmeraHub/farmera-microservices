@@ -3,11 +3,14 @@ use std::{env, sync::Arc};
 use actix_files::NamedFile;
 use actix_web::{web, App, HttpServer, Responder};
 use config::{pg_db::create_pg_pool, redis::create_redis_pool};
-use controllers::{conversation_controller::ConversationController, ws_controller};
+use controllers::{
+    conversation_controller::ConversationController, message_controller::MessageController,
+    ws_controller,
+};
 use dotenvy::dotenv;
 use env_logger::Env;
 use repositories::{conversation_repo::ConversationRepo, message_repo::MessageRepo};
-use services::convesation_service::ConversationService;
+use services::{convesation_service::ConversationService, message_service::MessageService};
 use sqlx::migrate;
 use tokio::{spawn, try_join};
 use ws::chat_server::ChatServer;
@@ -50,15 +53,21 @@ async fn main() -> std::io::Result<()> {
     // init repositories
     let conversation_repository = Arc::new(ConversationRepo::new(pg_pool.clone()));
     let message_repository = Arc::new(MessageRepo::new(pg_pool.clone()));
+
     // init services
     let conversation_service = Arc::new(ConversationService::new(conversation_repository.clone()));
+    let message_service = Arc::new(MessageService::new(message_repository.clone()));
+
     // init controller
     let conversation_controller =
         Arc::new(ConversationController::new(conversation_service.clone()));
+    let message_controller = Arc::new(MessageController::new(message_service.clone()));
+
     // init redis client
     let redis_client = Arc::new(
         redis::Client::open(env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap(),
     );
+
     // init chat server
     let (chat_server, chat_server_handler) = ChatServer::new(
         redis_pool.clone(),
@@ -75,10 +84,17 @@ async fn main() -> std::io::Result<()> {
             // server states
             .app_data(web::Data::new(chat_server_handler.clone()))
             .app_data(web::Data::new(conversation_controller.clone()))
+            .app_data(web::Data::new(message_controller.clone()))
             .service(web::resource("/").to(index))
             // route configurations
+            // websocket
             .configure(ws_controller::WSController::routes)
-            .configure(controllers::conversation_controller::ConversationController::routes)
+            // apis
+            .service(
+                web::scope("/api")
+                    .configure(controllers::conversation_controller::ConversationController::routes)
+                    .configure(controllers::message_controller::MessageController::routes),
+            )
     })
     .bind(format!("{server_addr}:{server_port}"))?
     .workers(3)

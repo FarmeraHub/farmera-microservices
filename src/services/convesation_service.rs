@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
+use chrono::{DateTime, Utc};
+
 use crate::{
-    errors::{api_error::APIError, Error},
-    models::conversation::Conversation,
+    errors::db_error::DBError,
+    models::{conversation::Conversation, message::Message, user_conversation::UserConversation},
     repositories::conversation_repo::ConversationRepo,
 };
 
@@ -15,16 +17,41 @@ impl ConversationService {
         Self { conversation_repo }
     }
 
-    pub async fn get_conversation_by_id(&self, id: i32) -> Result<Conversation, Error> {
-        // query database
-        let conversation = self.conversation_repo.find_conversation_by_id(id).await?;
+    pub async fn _get_conversation(&self) {
+        todo!()
+    }
 
-        // return result if exist, error if not found
-        match conversation {
-            Some(result) => Ok(result),
-            None => Err(Error::Api(APIError::NotFound(
-                "Conversation not found".to_string(),
-            ))),
-        }
+    pub async fn get_conversation_by_id(&self, id: i32) -> Result<Option<Conversation>, DBError> {
+        self.conversation_repo.find_conversation_by_id(id).await
+    }
+
+    pub async fn create_conversation(&self, title: &str) -> Result<i32, DBError> {
+        self.conversation_repo.insert_conversation(title).await
+    }
+
+    pub async fn delete_conversation(&self, conversation_id: i32) -> Result<u64, DBError> {
+        self.conversation_repo
+            .delete_conversation(conversation_id)
+            .await
+    }
+
+    pub async fn get_conversation_participants(
+        &self,
+        conversation_id: i32,
+    ) -> Result<Vec<UserConversation>, DBError> {
+        self.conversation_repo
+            .find_user_ids_by_conversation_id(conversation_id)
+            .await
+    }
+
+    pub async fn get_conversation_messages(
+        &self,
+        conversation_id: i32,
+        limit: Option<i32>,
+        before: Option<DateTime<Utc>>,
+    ) -> Result<Vec<Message>, DBError> {
+        self.conversation_repo
+            .get_messages_by_conversation_id(conversation_id, limit, before)
+            .await
     }
 }

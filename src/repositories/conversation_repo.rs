@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
     errors::db_error::DBError,
-    models::{conversation::Conversation, user_conversation::UserConversation},
+    models::{conversation::Conversation, message::Message, user_conversation::UserConversation},
 };
 
 pub struct ConversationRepo {
@@ -103,5 +104,47 @@ impl ConversationRepo {
             })?;
 
         Ok(result.map(|r| r.0))
+    }
+
+    pub async fn delete_conversation(&self, conversation_id: i32) -> Result<u64, DBError> {
+        let stm = include_str!("./queries/conversation/delete_conversation.sql");
+
+        let result = sqlx::query(stm)
+            .bind(conversation_id)
+            .execute(&*self.pg_db_pool)
+            .await
+            .map_err(|e| {
+                log::error!("Delete users_conversation error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        if result.rows_affected() == 0 {
+            log::error!("Delete user_conversation returns 0 rows affected");
+            Err(DBError::QueryFailed("0 rows affected".to_string()))
+        } else {
+            Ok(result.rows_affected())
+        }
+    }
+
+    pub async fn get_messages_by_conversation_id(
+        &self,
+        conversation_id: i32,
+        limit: Option<i32>,
+        before: Option<DateTime<Utc>>,
+    ) -> Result<Vec<Message>, DBError> {
+        let stm = include_str!("./queries/conversation/get_messages_by_conversation_id.sql");
+
+        let result: Vec<Message> = sqlx::query_as(stm)
+            .bind(conversation_id)
+            .bind(before)
+            .bind(limit)
+            .fetch_all(&*self.pg_db_pool)
+            .await
+            .map_err(|e| {
+                log::error!("Fetching messages in conversation error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        Ok(result)
     }
 }

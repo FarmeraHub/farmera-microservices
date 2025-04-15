@@ -3,7 +3,7 @@ use std::sync::Arc;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::errors::db_error::DBError;
+use crate::{errors::db_error::DBError, models::message::Message};
 
 pub struct MessageRepo {
     pg_db_pool: Arc<PgPool>,
@@ -50,6 +50,26 @@ impl MessageRepo {
                 DBError::QueryError(e)
             })?;
 
-        Ok(result.rows_affected())
+        if result.rows_affected() == 0 {
+            log::error!("Delete user_conversation returns 0 rows affected");
+            Err(DBError::QueryFailed("0 rows affected".to_string()))
+        } else {
+            Ok(result.rows_affected())
+        }
+    }
+
+    pub async fn find_message_by_id(&self, message_id: i64) -> Result<Option<Message>, DBError> {
+        let stm = include_str!("./queries/message/find_message_by_id.sql");
+
+        let result: Option<Message> = sqlx::query_as(stm)
+            .bind(message_id)
+            .fetch_optional(&*self.pg_db_pool)
+            .await
+            .map_err(|e| {
+                log::error!("Fetching message error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        Ok(result)
     }
 }
