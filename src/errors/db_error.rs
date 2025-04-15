@@ -4,4 +4,7 @@ use ::thiserror::Error;
 pub enum DBError {
     #[error("Query failed: {}", _0)]
     QueryError(sqlx::Error),
+
+    #[error("Query failed: {}", _0)]
+    QueryFailed(String),
 }
