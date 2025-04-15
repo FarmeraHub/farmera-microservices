@@ -5,8 +5,8 @@ DROP TABLE IF EXISTS conversations;
 
 CREATE TABLE users_conversations (
     id BIGSERIAL PRIMARY KEY,
-    conversation_id INT,
-    user_id UUID,
+    conversation_id INT NOT NULL,
+    user_id UUID NOT NULL,
     deleted_at TIMESTAMPTZ
 );
 
@@ -14,16 +14,16 @@ CREATE TABLE conversations (
     conversation_id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     lastest_message BIGINT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    is_deleted BOOLEAN
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    is_deleted BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE messages (
     message_id BIGSERIAL PRIMARY KEY,
-    conversation_id INT,
-    sender_id UUID,
+    conversation_id INT NOT NULL,
+    sender_id UUID NOT NULL,
     content TEXT NOT NULL,
-    sent_at TIMESTAMP DEFAULT NOW(),
+    sent_at TIMESTAMPTZ DEFAULT NOW(),
     is_read BOOLEAN DEFAULT FALSE,
     deleted BOOLEAN DEFAULT FALSE
 );
@@ -33,7 +33,7 @@ CREATE TABLE attachments (
     message_id BIGINT,
     file_url TEXT,
     file_type TEXT,
-    created TIMESTAMP DEFAULT NOW()
+    created TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE users_conversations ADD CONSTRAINT cvs_us FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id);
