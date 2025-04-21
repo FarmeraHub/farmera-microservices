@@ -21,3 +21,5 @@ derive_more = "2.0.1"
 thiserror = "2.0.12"
 chrono = { version = "0.4.40", features = ["serde"] }
 futures-util = "0.3.31"
+utoipa = { version = "5.3.1", features = ["actix_extras", "chrono"] }
+utoipa-swagger-ui = { version = "9.0.1", features = ["actix-web"] }
