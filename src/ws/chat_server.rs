@@ -599,7 +599,7 @@ impl ChatServer {
         let mut redis_conn = redis_pool.get().await?;
         // get all user ids from conversation
         let participants = conversation_repo
-            .find_user_ids_by_conversation_id(conversation_id)
+            .find_users_by_conversation_id(conversation_id)
             .await?;
         let user_ids: Vec<String> = participants.iter().map(|p| p.user_id.to_string()).collect();
 

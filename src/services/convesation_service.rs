@@ -40,7 +40,7 @@ impl ConversationService {
         conversation_id: i32,
     ) -> Result<Vec<UserConversation>, DBError> {
         self.conversation_repo
-            .find_user_ids_by_conversation_id(conversation_id)
+            .find_users_by_conversation_id(conversation_id)
             .await
     }
 

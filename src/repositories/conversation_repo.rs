@@ -68,10 +68,17 @@ impl ConversationRepo {
         Ok(result)
     }
 
-    pub async fn find_user_ids_by_conversation_id(
+    pub async fn find_users_by_conversation_id(
         &self,
         conversation_id: i32,
     ) -> Result<Vec<UserConversation>, DBError> {
+        if self
+            .find_conversation_by_id(conversation_id)
+            .await?
+            .is_none()
+        {
+            return Ok(Vec::new());
+        }
         let stm = include_str!("./queries/user_conversation/find_users_by_conversation_id.sql");
 
         let result: Vec<UserConversation> = sqlx::query_as(stm)
