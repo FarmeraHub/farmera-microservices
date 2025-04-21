@@ -4,7 +4,10 @@ use actix_web::{web, HttpResponse, Responder};
 
 use crate::{
     errors::Error,
-    models::conversation::{MessageParams, NewConversation},
+    models::{
+        conversation::{MessageParams, NewConversation},
+        response::Response,
+    },
     services::convesation_service::ConversationService,
 };
 
@@ -56,7 +59,10 @@ impl ConversationController {
         {
             Ok(result) => match result {
                 Some(result) => HttpResponse::Ok().json(result),
-                None => HttpResponse::NotFound().body("Conversation not found"),
+                None => HttpResponse::NotFound().json(Response {
+                    r#type: "error".to_string(),
+                    message: "Conversation not found".to_string(),
+                }),
             },
             Err(e) => HttpResponse::from_error(e),
         }
@@ -72,7 +78,10 @@ impl ConversationController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(_) => HttpResponse::Ok().body("Success"),
+            Ok(id) => HttpResponse::Created().json(Response {
+                r#type: "success".to_string(),
+                message: format!("Conversation created - id: {id}"),
+            }),
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -88,7 +97,10 @@ impl ConversationController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(_) => HttpResponse::Ok().body("Deleted"),
+            Ok(_) => HttpResponse::Ok().json(Response {
+                r#type: "success".to_string(),
+                message: "Deleted".to_string(),
+            }),
             Err(e) => HttpResponse::from_error(e),
         }
     }

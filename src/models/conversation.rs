@@ -1,17 +1,26 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
+use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, ToSchema)]
 pub struct Conversation {
+    #[schema(example = 1)]
     pub conversation_id: i32,
+
+    #[schema(example = "Title")]
     pub title: String,
+
+    #[schema(example = 1)]
     pub lastest_message: Option<i64>,
+
+    #[schema(example = "2025-04-15T08:14:17.923998Z")]
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct NewConversation {
+    #[schema(example = "New conversation")]
     pub title: String,
 }
 

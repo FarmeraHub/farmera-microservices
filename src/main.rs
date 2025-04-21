@@ -9,16 +9,21 @@ use controllers::{
 };
 use dotenvy::dotenv;
 use env_logger::Env;
+use openapi::ApiDoc;
 use repositories::{conversation_repo::ConversationRepo, message_repo::MessageRepo};
 use services::{convesation_service::ConversationService, message_service::MessageService};
 use sqlx::migrate;
 use tokio::{spawn, try_join};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 use ws::chat_server::ChatServer;
 
 mod config;
 mod controllers;
+mod docs;
 mod errors;
 mod models;
+mod openapi;
 mod repositories;
 mod services;
 mod ws;
@@ -94,6 +99,11 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api")
                     .configure(controllers::conversation_controller::ConversationController::routes)
                     .configure(controllers::message_controller::MessageController::routes),
+            )
+            // swagger
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-doc/openapi.json", ApiDoc::openapi()),
             )
     })
     .bind(format!("{server_addr}:{server_port}"))?

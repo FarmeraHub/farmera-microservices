@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use actix_web::{web, HttpResponse, Responder};
 
-use crate::{errors::Error, services::message_service::MessageService};
+use crate::{errors::Error, models::response::Response, services::message_service::MessageService};
 
 pub struct MessageController {
     messages_service: Arc<MessageService>,
@@ -35,7 +35,10 @@ impl MessageController {
         {
             Ok(result) => match result {
                 Some(result) => HttpResponse::Ok().json(result),
-                None => HttpResponse::NotFound().body("Message not found"),
+                None => HttpResponse::NotFound().json(Response {
+                    r#type: "error".to_string(),
+                    message: "Message not found".to_string(),
+                }),
             },
             Err(e) => HttpResponse::from_error(e),
         }
@@ -53,7 +56,10 @@ impl MessageController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(_) => HttpResponse::Ok().body("Deleted"),
+            Ok(_) => HttpResponse::Ok().json(Response {
+                r#type: "success".to_string(),
+                message: "Deleted".to_string(),
+            }),
             Err(e) => HttpResponse::from_error(e),
         }
     }
