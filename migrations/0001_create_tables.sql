@@ -39,3 +39,19 @@ CREATE TABLE attachments (
 ALTER TABLE users_conversations ADD CONSTRAINT cvs_us FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id);
 ALTER TABLE messages ADD CONSTRAINT msg_cvs FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id);
 ALTER TABLE attachments ADD CONSTRAINT atm_msg FOREIGN KEY (message_id) REFERENCES messages(message_id);
+
+
+
+INSERT INTO conversations (title) VALUES 
+('First conversation'),
+('Second conversation');
+
+INSERT INTO users_conversations (conversation_id, user_id) VALUES 
+(1, '11111111-1111-1111-1111-111111111111'),
+(1, '22222222-2222-2222-2222-222222222222'),
+(2, '33333333-3333-3333-3333-333333333333');
+
+INSERT INTO messages (conversation_id, sender_id, content) VALUES 
+(1, '11111111-1111-1111-1111-111111111111', 'This is the first message'),
+(1, '22222222-2222-2222-2222-222222222222', 'This is the second message'),
+(2, '33333333-3333-3333-3333-333333333333', 'This is the third message');
