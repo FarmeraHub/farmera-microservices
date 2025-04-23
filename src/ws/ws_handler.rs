@@ -153,7 +153,7 @@ impl WSHandler {
         conn_id: ConnId,
     ) {
         let mut response = WSResponse {
-            id: "".to_string(),
+            id: "-1".to_string(),
             event: Event::Error,
             status: "error".to_string(),
             data: serde_json::json!(""),
@@ -196,17 +196,22 @@ impl WSHandler {
                             serde_json::from_value::<serde_json::Value>(request.data)
                         {
                             if let Some(message) = data_value["message"].as_str() {
-                                match chat_server_handler
-                                    .send_message(user_id, conn_id, message.to_owned())
-                                    .await
-                                {
-                                    Ok(_) => {
-                                        response.status = "sent".to_string();
+                                if !message.is_empty() {
+                                    match chat_server_handler
+                                        .send_message(user_id, conn_id, message.to_owned())
+                                        .await
+                                    {
+                                        Ok(_) => {
+                                            response.status = "sent".to_string();
+                                        }
+                                        Err(e) => {
+                                            response.data =
+                                                serde_json::json!({"message": e.to_string()})
+                                        }
                                     }
-                                    Err(e) => {
-                                        response.data =
-                                            serde_json::json!({"message": e.to_string()})
-                                    }
+                                } else {
+                                    response.data =
+                                        serde_json::json!({"message": "Empty message".to_string()})
                                 }
                             }
                         }
