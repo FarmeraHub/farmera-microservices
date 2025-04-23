@@ -5,6 +5,7 @@ use std::{
     sync::Arc,
 };
 
+use chrono::{DateTime, Utc};
 use deadpool_redis::Pool;
 use futures_util::{
     future::{select, Either},
@@ -19,6 +20,7 @@ use uuid::Uuid;
 
 use crate::{
     errors::chat_error::ChatError,
+    models::message::SentMessage,
     repositories::{conversation_repo::ConversationRepo, message_repo::MessageRepo},
 };
 
@@ -351,14 +353,23 @@ impl ChatServer {
             return Err(ChatError::MessageError(format!("User is not in any room")).into());
         }
 
+        // generate message model
+        let timestamp = Utc::now();
+        let msg_json = serde_json::json!(SentMessage {
+            sender_id: user_id,
+            r#type: "message".to_string(),
+            message: msg.clone(),
+            timestamp: timestamp.clone(),
+        });
+
         // publish message to subcriber
         match redis_conn
-            .publish::<&str, &str, ()>(&format!("room:{active_room}"), &msg)
+            .publish::<&str, &str, ()>(&format!("room:{active_room}"), &msg_json.to_string())
             .await
         {
             Ok(_) => {
                 // for normal messages
-                self.handle_offline_message(active_room.parse::<i32>()?, user_id, &msg);
+                self.handle_offline_message(active_room.parse::<i32>()?, user_id, &msg, timestamp);
 
                 // !TODO: for live stream messages
             }
@@ -532,15 +543,7 @@ impl ChatServer {
                 for conn_id in &active_sessions {
                     if let Ok(conn_id) = Uuid::parse_str(&conn_id) {
                         if let Some(sender) = sessions.get(&conn_id) {
-                            let msg = serde_json::json!(
-                                {
-                                    "user_id": user_id,
-                                    "conversation_id": conversation_id,
-                                    "message": message
-                                }
-                            )
-                            .to_string();
-                            sender.send(msg).unwrap();
+                            sender.send(message.to_string()).unwrap();
                         }
                     }
                 }
@@ -620,7 +623,13 @@ impl ChatServer {
         Ok(offline_user_ids)
     }
 
-    fn handle_offline_message(&self, conversation_id: i32, sender_id: Uuid, content: &str) {
+    fn handle_offline_message(
+        &self,
+        conversation_id: i32,
+        sender_id: Uuid,
+        content: &str,
+        sent_at: DateTime<Utc>,
+    ) {
         let redis_pool = self.redis_pool.clone();
         let message_repo = self.message_repo.clone();
         let conversation_repo = self.conversation_repo.clone();
@@ -632,6 +641,8 @@ impl ChatServer {
                     .await
                     .unwrap_or_default();
 
+            log::info!("inactive: {:?}", inactive_users);
+
             let is_read = if inactive_users.is_empty() {
                 true
             } else {
@@ -641,7 +652,7 @@ impl ChatServer {
             // !TODO: send notificaiton to inactive users
 
             let _ = message_repo
-                .insert_message(conversation_id, sender_id, &content_clone, is_read)
+                .insert_message(conversation_id, sender_id, &content_clone, sent_at, is_read)
                 .await;
         });
     }

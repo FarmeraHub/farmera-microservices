@@ -22,9 +22,10 @@ CREATE TABLE messages (
     message_id BIGSERIAL PRIMARY KEY,
     conversation_id INT NOT NULL,
     sender_id UUID NOT NULL,
-    content TEXT NOT NULL,
+    content TEXT,
     sent_at TIMESTAMPTZ DEFAULT NOW(),
     is_read BOOLEAN DEFAULT FALSE,
+    type TEXT DEFAULT 'message' CHECK(type IN('message', 'image', 'video')),
     deleted BOOLEAN DEFAULT FALSE
 );
 

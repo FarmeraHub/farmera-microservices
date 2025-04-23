@@ -20,4 +20,15 @@ pub struct Message {
 
     #[schema(example = "2025-04-15T08:14:17.923998Z")]
     pub sent_at: DateTime<Utc>,
+
+    #[schema(example = "message")]
+    pub r#type: String,
+}
+
+#[derive(Serialize)]
+pub struct SentMessage {
+    pub sender_id: Uuid,
+    pub r#type: String,
+    pub message: String,
+    pub timestamp: DateTime<Utc>,
 }

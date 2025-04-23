@@ -119,7 +119,7 @@ impl WSHandler {
                 // chat messages received from other room participants
                 Either::Left((Either::Right((Some(msg), _)), _)) => {
                     log::info!("Msg recevied from other particitpants");
-                    session.text(msg).await.unwrap();
+                    Self::process_receive_message(&mut session, &msg).await;
                 }
 
                 // all connection's message senders were dropped
@@ -241,5 +241,9 @@ impl WSHandler {
             }
         }
         let _ = session.text(serde_json::json!(response).to_string()).await;
+    }
+
+    async fn process_receive_message(session: &mut actix_ws::Session, msg: &str) {
+        session.text(msg).await.unwrap();
     }
 }

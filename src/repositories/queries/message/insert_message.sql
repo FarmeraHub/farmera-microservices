@@ -1,1 +1,1 @@
-INSERT INTO messages (conversation_id, sender_id, content, is_read) VALUES ($1, $2, $3, $4) RETURNING message_id;
+INSERT INTO messages (conversation_id, sender_id, content, sent_at, is_read) VALUES ($1, $2, $3, $4, $5) RETURNING message_id;

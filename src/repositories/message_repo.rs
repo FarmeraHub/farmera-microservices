@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -19,6 +20,7 @@ impl MessageRepo {
         conversation_id: i32,
         sender_id: Uuid,
         content: &str,
+        sent_at: DateTime<Utc>,
         is_read: bool,
     ) -> Result<i64, DBError> {
         let stm = include_str!("./queries/message/insert_message.sql");
@@ -27,6 +29,7 @@ impl MessageRepo {
             .bind(conversation_id)
             .bind(sender_id)
             .bind(content)
+            .bind(sent_at)
             .bind(is_read)
             .fetch_one(&*self.pg_db_pool)
             .await
