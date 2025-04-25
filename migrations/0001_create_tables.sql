@@ -24,16 +24,17 @@ CREATE TABLE messages (
     sender_id UUID NOT NULL,
     content TEXT,
     sent_at TIMESTAMPTZ DEFAULT NOW(),
-    is_read BOOLEAN DEFAULT FALSE,
-    type TEXT DEFAULT 'message' CHECK(type IN('message', 'image', 'video')),
-    deleted BOOLEAN DEFAULT FALSE
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    type TEXT NOT NULL DEFAULT 'message' CHECK(type IN('message', 'media')),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE attachments (
     attachment_id SERIAL PRIMARY KEY,
     message_id BIGINT,
-    file_url TEXT,
-    file_type TEXT,
+    file_url TEXT NOT NULL,
+    file_size INT NOT NULL,
+    file_type TEXT NOT NULL,
     created TIMESTAMPTZ DEFAULT NOW()
 );
 
