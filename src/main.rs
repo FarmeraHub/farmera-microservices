@@ -28,6 +28,7 @@ mod config;
 mod controllers;
 mod docs;
 mod errors;
+mod middlewares;
 mod models;
 mod openapi;
 mod repositories;
@@ -72,7 +73,10 @@ async fn main() -> std::io::Result<()> {
 
     // init services
     let conversation_service = Arc::new(ConversationService::new(conversation_repository.clone()));
-    let message_service = Arc::new(MessageService::new(message_repository.clone()));
+    let message_service = Arc::new(MessageService::new(
+        message_repository.clone(),
+        attachment_repository.clone(),
+    ));
     let attachment_service = Arc::new(AttachmentService::new(
         attachment_repository.clone(),
         message_repository.clone(),

@@ -35,6 +35,16 @@ impl ResponseError for Error {
             },
 
             Error::File(e) => match e {
+                FileError::Forbidden => HttpResponse::Forbidden().json(Response {
+                    r#type: "error".to_string(),
+                    message: e.to_string(),
+                }),
+
+                FileError::FileNotFound => HttpResponse::NotFound().json(Response {
+                    r#type: "error".to_string(),
+                    message: e.to_string(),
+                }),
+
                 _ => HttpResponse::InternalServerError().json(Response {
                     r#type: "error".to_string(),
                     message: e.to_string(),

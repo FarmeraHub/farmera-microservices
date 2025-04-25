@@ -56,7 +56,7 @@ impl MessageRepo {
             })?;
 
         if result.rows_affected() == 0 {
-            log::error!("Delete user_conversation returns 0 rows affected");
+            log::error!("Delete message returns 0 rows affected");
             Err(DBError::QueryFailed("0 rows affected".to_string()))
         } else {
             Ok(result.rows_affected())

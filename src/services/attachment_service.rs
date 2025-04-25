@@ -1,15 +1,19 @@
 use std::sync::Arc;
 
+use actix_files::NamedFile;
 use chrono::Utc;
 use uuid::Uuid;
 
 use crate::{
-    errors::file_error::FileError,
-    models::{attachment::MediaContent, upload_form::UploadForm},
+    errors::{db_error::DBError, file_error::FileError, Error},
+    models::{
+        attachment::{Attachment, MediaContent},
+        upload_form::UploadForm,
+    },
     repositories::{attachment_repo::AttachmentRepo, message_repo::MessageRepo},
 };
 
-const MAXSIZE: usize = 20971520; // file max size - 20MB
+const MAXSIZE: usize = 20 * 1024 * 1024; // file max size - 20MB
 const MEDIA_TYPE: [&str; 4] = ["text", "video", "image", "audio"]; // valid file types
 
 pub struct AttachmentService {
@@ -30,12 +34,12 @@ impl AttachmentService {
         }
     }
 
-    pub async fn upload_attachment(
+    pub async fn upload_file(
         &self,
         form: UploadForm,
         conversation_id: i32,
         sender_id: Uuid,
-    ) -> Result<Vec<MediaContent>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<MediaContent>, Error> {
         let mut result: Vec<MediaContent> = vec![];
         let timestamp = Utc::now();
 
@@ -43,7 +47,7 @@ impl AttachmentService {
         for f in form.files {
             if let (Some(file_name), Some(content_type)) = (f.file_name, f.content_type) {
                 if f.size > MAXSIZE {
-                    return Err(Box::new(FileError::FileTooLarge(file_name)));
+                    return Err(FileError::FileTooLarge(file_name).into());
                 }
 
                 // !TODO: compress file if too large
@@ -60,7 +64,7 @@ impl AttachmentService {
                 // persist the temporary file at the target path
                 f.file
                     .persist(&path)
-                    .map_err(|e| Box::new(FileError::PersistError(e.to_string())))?;
+                    .map_err(|_| FileError::InvalidFile("Invalid file type".to_string()))?;
 
                 let relative_path = path.trim_start_matches("./");
 
@@ -70,7 +74,7 @@ impl AttachmentService {
                     r#type: file_type.to_string(),
                 });
             } else {
-                return Err(Box::new(FileError::InvalidContentType));
+                return Err(FileError::InvalidContentType.into());
             }
         }
 
@@ -89,10 +93,46 @@ impl AttachmentService {
                 .await?;
             let _ = self
                 .attachment_repo
-                .bulk_insert_attachments(Some(message_id), &result)
+                .bulk_insert_attachments(Some(message_id), Some(conversation_id), &result)
                 .await?;
+        } else {
+            return Err(FileError::InvalidFile("Empty body".to_string()).into());
         }
 
         Ok(result)
+    }
+
+    pub async fn get_file_by_url(&self, attachment_path: &str) -> Result<NamedFile, Error> {
+        let path = format!("./{}", attachment_path);
+        return Ok(NamedFile::open(path).map_err(|e| FileError::OpenError(e.to_string()))?);
+    }
+
+    pub async fn get_attachment_by_id(
+        &self,
+        attachment_id: i32,
+    ) -> Result<Option<Attachment>, DBError> {
+        self.attachment_repo
+            .get_attachment_by_id(attachment_id)
+            .await
+    }
+
+    pub async fn get_attachments_by_conversation_id(
+        &self,
+        conversation_id: i32,
+        before: Option<chrono::DateTime<Utc>>,
+        limit: Option<i32>,
+    ) -> Result<Vec<Attachment>, DBError> {
+        self.attachment_repo
+            .get_attachments_by_conversation_id(conversation_id, before, limit)
+            .await
+    }
+
+    pub async fn get_attachment_by_message_id(
+        &self,
+        message_id: i64,
+    ) -> Result<Vec<Attachment>, DBError> {
+        self.attachment_repo
+            .get_attachment_by_message_id(message_id)
+            .await
     }
 }

@@ -8,11 +8,15 @@ pub enum FileError {
     #[error("File too large: {}", _0)]
     FileTooLarge(String),
 
-    #[error("Persisting a temporary file fails")]
-    PersistError(String),
-    // #[error("Missing file field failed: {}", _0)]
-    // MissingFileField(String),
+    #[error("Forbidden")]
+    Forbidden,
 
-    // #[error("Mime detection failed")]
-    // MimeDetectionFailed,
+    #[error("File not found")]
+    FileNotFound,
+
+    #[error("File open failed: {}", _0)]
+    OpenError(String),
+
+    #[error("Invalid file: {}", _0)]
+    InvalidFile(String),
 }
