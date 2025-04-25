@@ -1,0 +1,1 @@
+INSERT INTO attachments (message_id, file_url, file_size, file_type) VALUES ($1, $2, $3, $4) RETURNING attachment_id;

@@ -195,10 +195,24 @@ impl WSHandler {
                         if let Ok(data_value) =
                             serde_json::from_value::<serde_json::Value>(request.data)
                         {
-                            if let Some(message) = data_value["message"].as_str() {
-                                if !message.is_empty() {
+                            if let (Some(r#type), Some(content)) =
+                                (data_value["type"].as_str(), data_value.get("content"))
+                            {
+                                let content = match serde_json::to_string(content) {
+                                    Ok(result) => result,
+                                    Err(e) => {
+                                        log::error!("{e}");
+                                        "".to_string()
+                                    }
+                                };
+                                if !content.is_empty() {
                                     match chat_server_handler
-                                        .send_message(user_id, conn_id, message.to_owned())
+                                        .send_message(
+                                            user_id,
+                                            conn_id,
+                                            content.to_owned(),
+                                            r#type.to_owned(),
+                                        )
                                         .await
                                     {
                                         Ok(_) => {
@@ -210,9 +224,10 @@ impl WSHandler {
                                         }
                                     }
                                 } else {
-                                    response.data =
-                                        serde_json::json!({"message": "Empty message".to_string()})
+                                    response.data = serde_json::json!({"message": "Wrong type or empty content".to_string()})
                                 }
+                            } else {
+                                response.data = serde_json::json!({"message": "Data must include type and content"});
                             }
                         }
                     }
@@ -231,7 +246,7 @@ impl WSHandler {
                     }
 
                     _ => {
-                        response.data = serde_json::json!({"{message": "Invalid event"});
+                        response.data = serde_json::json!({"message": "Invalid event"});
                     }
                 }
             }

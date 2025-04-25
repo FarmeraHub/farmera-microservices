@@ -32,10 +32,12 @@ CREATE TABLE messages (
 CREATE TABLE attachments (
     attachment_id SERIAL PRIMARY KEY,
     message_id BIGINT,
+    conversation_id INT,
     file_url TEXT NOT NULL,
     file_size INT NOT NULL,
     file_type TEXT NOT NULL,
-    created TIMESTAMPTZ DEFAULT NOW()
+    created TIMESTAMPTZ DEFAULT NOW(),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 ALTER TABLE users_conversations ADD CONSTRAINT cvs_us FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id);

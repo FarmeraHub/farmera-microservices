@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -16,7 +16,7 @@ pub struct Message {
     pub sender_id: Uuid,
 
     #[schema(example = "this is the first message")]
-    pub content: String,
+    pub content: Option<String>,
 
     #[schema(example = "2025-04-15T08:14:17.923998Z")]
     pub sent_at: DateTime<Utc>,
@@ -31,4 +31,9 @@ pub struct SentMessage {
     pub r#type: String,
     pub message: String,
     pub timestamp: DateTime<Utc>,
+}
+
+#[derive(Deserialize)]
+pub struct MessageContent {
+    pub message: String,
 }

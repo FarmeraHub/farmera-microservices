@@ -85,6 +85,7 @@ impl ChatServerHandler {
         user_id: UserId,
         conn_id: ConnId,
         msg: SendMsg,
+        r#type: String,
     ) -> Result<(), ChatError> {
         let (res_tx, res_rx) = oneshot::channel();
 
@@ -93,6 +94,7 @@ impl ChatServerHandler {
                 user_id,
                 conn_id,
                 msg,
+                r#type,
                 res_tx,
             })
             .unwrap();

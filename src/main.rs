@@ -1,17 +1,23 @@
 use std::{env, sync::Arc};
 
 use actix_files::NamedFile;
+use actix_multipart::form::tempfile::TempFileConfig;
 use actix_web::{web, App, HttpServer, Responder};
 use config::{pg_db::create_pg_pool, redis::create_redis_pool};
 use controllers::{
-    conversation_controller::ConversationController, message_controller::MessageController,
-    ws_controller,
+    attachment_controller::AttachmentController, conversation_controller::ConversationController,
+    message_controller::MessageController, ws_controller,
 };
 use dotenvy::dotenv;
 use env_logger::Env;
 use openapi::ApiDoc;
-use repositories::{conversation_repo::ConversationRepo, message_repo::MessageRepo};
-use services::{convesation_service::ConversationService, message_service::MessageService};
+use repositories::{
+    attachment_repo::AttachmentRepo, conversation_repo::ConversationRepo, message_repo::MessageRepo,
+};
+use services::{
+    attachment_service::AttachmentService, convesation_service::ConversationService,
+    message_service::MessageService,
+};
 use sqlx::migrate;
 use tokio::{spawn, try_join};
 use utoipa::OpenApi;
@@ -41,6 +47,10 @@ async fn main() -> std::io::Result<()> {
     let server_addr = env::var("SERVER_ADDRESS").expect("SERVER_ADDRESS must be set");
     let server_port = env::var("SERVER_PORT").expect("SERVER_PORT must be set");
 
+    // create upload directory
+    std::fs::create_dir_all("./uploads/tmp")?;
+    log::info!("Temporary upload directory created");
+
     // init redis pool
     let redis_pool = Arc::new(create_redis_pool());
 
@@ -58,15 +68,21 @@ async fn main() -> std::io::Result<()> {
     // init repositories
     let conversation_repository = Arc::new(ConversationRepo::new(pg_pool.clone()));
     let message_repository = Arc::new(MessageRepo::new(pg_pool.clone()));
+    let attachment_repository = Arc::new(AttachmentRepo::new(pg_pool.clone()));
 
     // init services
     let conversation_service = Arc::new(ConversationService::new(conversation_repository.clone()));
     let message_service = Arc::new(MessageService::new(message_repository.clone()));
+    let attachment_service = Arc::new(AttachmentService::new(
+        attachment_repository.clone(),
+        message_repository.clone(),
+    ));
 
     // init controller
     let conversation_controller =
         Arc::new(ConversationController::new(conversation_service.clone()));
     let message_controller = Arc::new(MessageController::new(message_service.clone()));
+    let attachment_controller = Arc::new(AttachmentController::new(attachment_service.clone()));
 
     // init redis client
     let redis_client = Arc::new(
@@ -90,6 +106,9 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(chat_server_handler.clone()))
             .app_data(web::Data::new(conversation_controller.clone()))
             .app_data(web::Data::new(message_controller.clone()))
+            .app_data(web::Data::new(attachment_controller.clone()))
+            //
+            .app_data(TempFileConfig::default().directory("./uploads/tmp"))
             .service(web::resource("/").to(index))
             // route configurations
             // websocket
@@ -98,7 +117,8 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .configure(controllers::conversation_controller::ConversationController::routes)
-                    .configure(controllers::message_controller::MessageController::routes),
+                    .configure(controllers::message_controller::MessageController::routes)
+                    .configure(controllers::attachment_controller::AttachmentController::routes),
             )
             // swagger
             .service(

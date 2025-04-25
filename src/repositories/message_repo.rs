@@ -19,7 +19,8 @@ impl MessageRepo {
         &self,
         conversation_id: i32,
         sender_id: Uuid,
-        content: &str,
+        content: Option<String>,
+        r#type: String,
         sent_at: DateTime<Utc>,
         is_read: bool,
     ) -> Result<i64, DBError> {
@@ -29,6 +30,7 @@ impl MessageRepo {
             .bind(conversation_id)
             .bind(sender_id)
             .bind(content)
+            .bind(r#type)
             .bind(sent_at)
             .bind(is_read)
             .fetch_one(&*self.pg_db_pool)

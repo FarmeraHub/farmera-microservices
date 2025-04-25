@@ -20,7 +20,10 @@ use uuid::Uuid;
 
 use crate::{
     errors::chat_error::ChatError,
-    models::message::SentMessage,
+    models::{
+        attachment::{MediaContent, SentMedia},
+        message::{MessageContent, SentMessage},
+    },
     repositories::{conversation_repo::ConversationRepo, message_repo::MessageRepo},
 };
 
@@ -129,12 +132,13 @@ impl ChatServer {
                     user_id,
                     conn_id,
                     msg,
+                    r#type,
                     res_tx,
                 } => {
-                    if let Err(e) = self.send_message(user_id, conn_id, msg).await {
+                    if let Err(e) = self.send_message(user_id, conn_id, msg, r#type).await {
                         log::error!("Failed to send message from user {user_id} to current room - error: {e}");
                         let _ = res_tx.send(Err(ChatError::MessageError(format!(
-                            "Failed to send message from user to room"
+                            "Failed to send message from user to room - {e}"
                         ))));
                     } else {
                         let _ = res_tx.send(Ok(()));
@@ -337,6 +341,7 @@ impl ChatServer {
         user_id: UserId,
         conn_id: ConnId,
         msg: SendMsg,
+        msg_type: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut redis_conn = self.redis_pool.get().await?;
 
@@ -346,21 +351,22 @@ impl ChatServer {
             .await
         {
             Some(room_id) => room_id,
-            None => return Err(ChatError::MessageError(format!("Room not found")).into()),
+            None => return Err(ChatError::MessageError(format!("User is not in any room")).into()),
         };
 
-        if active_room.is_empty() {
-            return Err(ChatError::MessageError(format!("User is not in any room")).into());
-        }
-
-        // generate message model
+        // generate message json
         let timestamp = Utc::now();
-        let msg_json = serde_json::json!(SentMessage {
-            sender_id: user_id,
-            r#type: "message".to_string(),
-            message: msg.clone(),
-            timestamp: timestamp.clone(),
-        });
+        let msg_json = match Self::generate_message_json(
+            user_id.clone(),
+            &msg,
+            &msg_type,
+            timestamp.clone(),
+        ) {
+            Ok(value) => value,
+            Err(e) => {
+                return Err(e.into());
+            }
+        };
 
         // publish message to subcriber
         match redis_conn
@@ -368,10 +374,19 @@ impl ChatServer {
             .await
         {
             Ok(_) => {
-                // for normal messages
-                self.handle_offline_message(active_room.parse::<i32>()?, user_id, &msg, timestamp);
+                if msg_type == "message" {
+                    // for normal messages
+                    if let Some(content) = msg_json["message"].as_str() {
+                        self.handle_offline_message(
+                            active_room.parse::<i32>()?,
+                            user_id,
+                            content,
+                            timestamp,
+                        );
+                    }
 
-                // !TODO: for live stream messages
+                    // !TODO: for live stream messages
+                }
             }
             Err(e) => {
                 return Err(e.into());
@@ -652,8 +667,61 @@ impl ChatServer {
             // !TODO: send notificaiton to inactive users
 
             let _ = message_repo
-                .insert_message(conversation_id, sender_id, &content_clone, sent_at, is_read)
+                .insert_message(
+                    conversation_id,
+                    sender_id,
+                    Some(content_clone),
+                    "message".to_string(),
+                    sent_at,
+                    is_read,
+                )
                 .await;
         });
+    }
+
+    fn generate_message_json(
+        user_id: UserId,
+        msg: &str,
+        msg_type: &str,
+        timestamp: DateTime<Utc>,
+    ) -> Result<serde_json::Value, ChatError> {
+        match msg_type {
+            "message" => {
+                if let Ok(value) = serde_json::from_str::<MessageContent>(msg) {
+                    if value.message.is_empty() {
+                        return Err(ChatError::MessageError("Empty message body".to_string()));
+                    }
+                    return Ok(serde_json::json!(SentMessage {
+                        sender_id: user_id,
+                        r#type: "message".to_string(),
+                        message: value.message,
+                        timestamp: timestamp.clone(),
+                    }));
+                }
+                Err(ChatError::MessageError(
+                    "Invalid message content".to_string(),
+                ))
+            }
+            "media" => {
+                log::info!("{}", msg);
+                if let Ok(values) = serde_json::from_str::<Vec<MediaContent>>(msg) {
+                    for value in &values {
+                        if value.url.is_empty() || value.size <= 0 || value.r#type.is_empty() {
+                            return Err(ChatError::MessageError("Empty media body".to_string()));
+                        }
+                    }
+                    return Ok(serde_json::json!(SentMedia {
+                        sender_id: user_id,
+                        r#type: "media".to_string(),
+                        timestamp: timestamp.clone(),
+                        media: values
+                    }));
+                }
+                Err(ChatError::MessageError("Invalid media content".to_string()))
+            }
+            _ => Err(ChatError::MessageError(
+                "Invalid message type content".to_string(),
+            )),
+        }
     }
 }

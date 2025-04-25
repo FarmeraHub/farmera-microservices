@@ -35,6 +35,7 @@ pub enum Command {
         user_id: UserId,
         conn_id: ConnId,
         msg: SendMsg,
+        r#type: String,
         res_tx: oneshot::Sender<Result<(), ChatError>>,
     },
 
