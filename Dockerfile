@@ -3,13 +3,18 @@ WORKDIR /app
 
 RUN apt-get update -qq && apt-get install -yqq musl-tools
 
-COPY src/ src/
-COPY migrations/ migrations/
 COPY Cargo.toml .
 COPY Cargo.lock .
 
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+
 RUN rustup target add x86_64-unknown-linux-musl && \
-    cargo build --target x86_64-unknown-linux-musl --release
+    cargo build --target x86_64-unknown-linux-musl --release || true
+
+COPY src/ src/
+COPY migrations/ migrations/
+
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
 FROM alpine:latest
 
