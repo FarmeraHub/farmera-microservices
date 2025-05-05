@@ -11,6 +11,7 @@ RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN cargo build --release || true
 
 COPY src/ src/
+COPY migrations/ migrations/
 
 RUN cargo build --release
 
@@ -19,5 +20,8 @@ FROM alpine
 RUN apk add --no-cache libgcc
 
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/notification-service /usr/local/bin
+COPY --from=builder /app/migrations /app/migrations
+
+WORKDIR /app
 
 ENTRYPOINT ["/usr/local/bin/notification-service"]

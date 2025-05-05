@@ -31,6 +31,10 @@ services:
       - SERVER_PORT=8080
       - BROKERS=kafka:9092
       - PG_DATABASE_URL=postgresql://postgres:123@postgres:5432/notification
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json
+      - FCM_PROJECT_ID=<project_id>
+    volumes:
+      -  #<path to GOOGLE APPLICATION CREDENTIALS json file>:/app/creds.json
     ports:
       - "8090:8080"
     networks:
