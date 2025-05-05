@@ -1,21 +1,26 @@
+use actix::Recipient;
 use rdkafka::{Message, consumer::StreamConsumer};
 
-use super::processor_trait::Processor;
+#[derive(actix::Message)]
+#[rtype(result = "()")]
+pub struct Msg(pub String);
 
-pub struct EmailProcessor {
-    email_consumer: StreamConsumer,
+pub struct ActorProcessor {
+    pub push_consumer: StreamConsumer,
+    pub dispatcher: Recipient<Msg>,
 }
 
-impl Processor for EmailProcessor {
-    fn new(consumer: StreamConsumer) -> Self {
+impl ActorProcessor {
+    pub fn new(consumer: StreamConsumer, dispatcher: Recipient<Msg>) -> Self {
         Self {
-            email_consumer: consumer,
+            push_consumer: consumer,
+            dispatcher,
         }
     }
 
-    async fn run(self) -> std::io::Result<()> {
+    pub async fn run(self) -> std::io::Result<()> {
         loop {
-            match self.email_consumer.recv().await {
+            match self.push_consumer.recv().await {
                 Ok(message) => {
                     let payload = match message.payload_view::<str>() {
                         None => "",
@@ -25,8 +30,9 @@ impl Processor for EmailProcessor {
                             ""
                         }
                     };
+
                     log::info!(
-                        "key: '{:?}', payload: '{}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
+                        "key: '{:?}', payload: '{:?}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
                         message.key(),
                         payload,
                         message.topic(),
@@ -34,6 +40,8 @@ impl Processor for EmailProcessor {
                         message.offset(),
                         message.timestamp()
                     );
+
+                    let _ = self.dispatcher.send(Msg(payload.to_string())).await;
                 }
                 Err(e) => {
                     log::error!("Kafka error: {e}");

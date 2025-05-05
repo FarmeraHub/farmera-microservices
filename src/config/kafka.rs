@@ -1,8 +1,11 @@
+use std::time::Duration;
+
 use rdkafka::{
     ClientConfig,
     admin::{AdminClient, AdminOptions, NewTopic},
     client::DefaultClientContext,
     consumer::{Consumer, StreamConsumer},
+    producer::FutureProducer,
 };
 
 pub fn create_consumer(brokers: &str, group_id: &str, topics: &[&str]) -> StreamConsumer {
@@ -22,6 +25,15 @@ pub fn create_consumer(brokers: &str, group_id: &str, topics: &[&str]) -> Stream
         .expect("Can't subscribe to specified topics");
 
     consumer
+}
+
+pub fn create_producer(brokers: &str) -> FutureProducer {
+    let producer: FutureProducer = ClientConfig::new()
+        .set("bootstrap.servers", brokers)
+        .create()
+        .expect("Producer creation failed");
+
+    producer
 }
 
 pub async fn create_topic(brokers: &str, topic_name: &str, num_partitions: i32, replication: i32) {
@@ -46,6 +58,31 @@ pub async fn create_topic(brokers: &str, topic_name: &str, num_partitions: i32, 
         Err(e) => {
             log::error!("Error creating topic: {e}");
             panic!("Error creating topic: {e}")
+        }
+    }
+}
+
+pub async fn _wait_for_kafka_ready(brokers: &str) {
+    let mut attempt = 0;
+
+    loop {
+        attempt += 1;
+        let admin: Result<AdminClient<_>, _> = ClientConfig::new()
+            .set("bootstrap.servers", brokers)
+            .create();
+
+        match admin {
+            Ok(_) => {
+                log::info!("Kafka is ready");
+                break;
+            }
+            Err(err) => {
+                log::warn!("Kafka not ready yet (attempt {attempt}): {err}");
+                tokio::time::sleep(Duration::from_secs(2)).await;
+                if attempt >= 10 {
+                    panic!("Kafka not ready after 10 attempts");
+                }
+            }
         }
     }
 }

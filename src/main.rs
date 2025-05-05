@@ -1,25 +1,32 @@
 use std::{env, sync::Arc};
 
+use actix::Actor;
 use actix_web::{App, HttpServer, web};
 use config::{
-    kafka::{create_consumer, create_topic},
+    kafka::{create_consumer, create_producer, create_topic},
     pg_db::create_pg_pool,
 };
+use controllers::{
+    notification_controller::NotificationController, template_controller::TemplateController,
+};
+use dispatchers::{dispatcher_actor::DispatcherActor, push_dispatcher::PushDispatcher};
 use dotenvy::dotenv;
 use env_logger::Env;
+use processor::actor_processor::ActorProcessor;
+use repositories::{notification_repo::NotificationRepo, template_repo::TemplateRepo};
+use services::{notification_service::NotificationService, template_service::TemplateService};
 use sqlx::migrate;
-use workers::{
-    email_processor::EmailProcessor, processor_trait::Processor, push_processor::PushProcessor,
-};
+use utils::fcm_token_manager::TokenManager;
 
 mod config;
+mod controllers;
 mod dispatchers;
 mod errors;
 mod models;
+mod processor;
 mod repositories;
 mod services;
 mod utils;
-mod workers;
 
 async fn index() -> &'static str {
     "Hello world"
@@ -46,25 +53,73 @@ async fn main() -> std::io::Result<()> {
     let server_addr = env::var("SERVER_ADDRESS").expect("SERVER_ADDRESS must be set");
     let server_port = env::var("SERVER_PORT").expect("SERVER_PORT must be set");
 
-    // init consumers
-    let brokers = env::var("BROKERS").expect("BROKER must be set");
-    create_topic(&brokers, "push", 1, 1).await;
-    create_topic(&brokers, "email", 1, 1).await;
-    let push_consumer = create_consumer(&brokers, "push-group", &["push"]);
-    let email_consumer = create_consumer(&brokers, "email-group", &["email"]);
+    // init repositories
+    let notification_repo = Arc::new(NotificationRepo::new(pg_pool.clone()));
+    let template_repo = Arc::new(TemplateRepo::new(pg_pool.clone()));
 
+    // init services
+    let notification_service = Arc::new(NotificationService::new(
+        notification_repo.clone(),
+        template_repo.clone(),
+    ));
+    let template_service = Arc::new(TemplateService::new(template_repo.clone()));
+
+    // init controllers
+    let notification_controller =
+        Arc::new(NotificationController::new(notification_service.clone()));
+    let template_controller = Arc::new(TemplateController::new(template_service.clone()));
+
+    // init topics
+    let brokers = env::var("BROKERS").expect("BROKER must be set");
+
+    // wait_for_kafka_ready(&brokers).await;
+
+    create_topic(&brokers, "push", 2, 1).await;
+    create_topic(&brokers, "email", 2, 1).await;
+
+    // producer to put message back to queue if sending fails
+    let push_producer = Arc::new(create_producer(&brokers));
+
+    // init consumsers
+    let push_consumer_1 = create_consumer(&brokers, "push-group", &["push"]);
+    // let email_consumer = create_consumer(&brokers, "email-group", &["email"]);
+
+    let token_manager = Arc::new(TokenManager::new().await);
     // init processors
-    let push_processor = PushProcessor::new(push_consumer);
-    let email_processor = EmailProcessor::new(email_consumer);
+    let push_dispatcher_1 = DispatcherActor::new(Arc::new(
+        PushDispatcher::new(
+            token_manager,
+            notification_repo.clone(),
+            template_repo.clone(),
+            push_producer.clone(),
+        )
+        .await,
+    ));
+    let push_processor_1 =
+        ActorProcessor::new(push_consumer_1, push_dispatcher_1.start().recipient());
+
+    // sleep(Duration::from_secs(10)).await;
 
     // start processors
-    tokio::spawn(push_processor.run());
-    tokio::spawn(email_processor.run());
+    tokio::spawn(push_processor_1.run());
+    // tokio::spawn(email_processor.run());
 
     // start server
-    HttpServer::new(|| App::new().route("/", web::get().to(index)))
-        .bind(format!("{server_addr}:{server_port}"))?
-        .workers(1)
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .route("/", web::get().to(index))
+            // app states
+            .app_data(web::Data::new(template_controller.clone()))
+            .app_data(web::Data::new(notification_controller.clone()))
+            // route configurations
+            .service(
+                web::scope("/api")
+                    .configure(TemplateController::routes)
+                    .configure(NotificationController::routes),
+            )
+    })
+    .bind(format!("{server_addr}:{server_port}"))?
+    .workers(3)
+    .run()
+    .await
 }

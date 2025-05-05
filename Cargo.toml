@@ -23,3 +23,6 @@ futures-util = "0.3.31"
 utoipa = { version = "5.3.1", features = ["actix_extras", "chrono"] }
 utoipa-swagger-ui = { version = "9.0.1", features = ["actix-web", "reqwest"] }
 rdkafka = { version = "0.37.0", features = ["cmake-build"] } #note: cmake is required
+reqwest = "0.12.15"
+async-trait = "0.1.88"
+gcp_auth = "0.12.3"

@@ -1,19 +1,23 @@
 use rdkafka::{Message, consumer::StreamConsumer};
 
-use super::processor_trait::Processor;
+use crate::dispatchers::dispatcher_wrapper::DispatcherWrapper;
 
-pub struct PushProcessor {
+#[allow(dead_code)]
+pub struct MultiThreadProcessor {
     pub push_consumer: StreamConsumer,
+    pub dispatcher: DispatcherWrapper,
 }
 
-impl Processor for PushProcessor {
-    fn new(consumer: StreamConsumer) -> Self {
+#[allow(dead_code)]
+impl MultiThreadProcessor {
+    pub fn new(consumer: StreamConsumer, dispatcher: DispatcherWrapper) -> Self {
         Self {
             push_consumer: consumer,
+            dispatcher,
         }
     }
 
-    async fn run(self) -> std::io::Result<()> {
+    pub async fn run(self) -> std::io::Result<()> {
         loop {
             match self.push_consumer.recv().await {
                 Ok(message) => {
@@ -25,8 +29,9 @@ impl Processor for PushProcessor {
                             ""
                         }
                     };
+
                     log::info!(
-                        "key: '{:?}', payload: '{}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
+                        "key: '{:?}', payload: '{:?}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
                         message.key(),
                         payload,
                         message.topic(),
@@ -34,6 +39,8 @@ impl Processor for PushProcessor {
                         message.offset(),
                         message.timestamp()
                     );
+
+                    self.dispatcher.handle(&payload.to_string()).await;
                 }
                 Err(e) => {
                     log::error!("Kafka error: {e}");

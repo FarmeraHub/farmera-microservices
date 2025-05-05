@@ -1,0 +1,80 @@
+use std::sync::Arc;
+
+use actix_web::{HttpResponse, Responder, web};
+
+use crate::{
+    errors::Error,
+    models::{
+        notification::{NewNotification, NewTemplateNotification},
+        reponse::Response,
+    },
+    services::notification_service::NotificationService,
+};
+
+pub struct NotificationController {
+    notification_service: Arc<NotificationService>,
+}
+
+impl NotificationController {
+    pub fn routes(cfg: &mut web::ServiceConfig) {
+        cfg.service(
+            web::scope("/notification")
+                .route("", web::post().to(Self::create_notification))
+                .route(
+                    "/template",
+                    web::post().to(Self::create_template_notification),
+                ),
+        );
+    }
+
+    pub fn new(notification_service: Arc<NotificationService>) -> Self {
+        Self {
+            notification_service,
+        }
+    }
+
+    pub async fn create_notification(
+        self_controller: web::Data<Arc<NotificationController>>,
+        notification: web::Json<NewNotification>,
+    ) -> impl Responder {
+        match self_controller
+            .notification_service
+            .create_notification(notification.0)
+            .await
+            .map_err(|e| Error::Db(e))
+        {
+            Ok(id) => HttpResponse::Created().json(Response {
+                r#type: "success".to_string(),
+                message: format!("Notification created - id: {id}"),
+            }),
+            Err(e) => HttpResponse::from_error(e),
+        }
+    }
+
+    pub async fn create_template_notification(
+        self_controller: web::Data<Arc<NotificationController>>,
+        notification: web::Json<NewTemplateNotification>,
+    ) -> impl Responder {
+        match self_controller
+            .notification_service
+            .create_template_notification(notification.0)
+            .await
+            .map_err(|e| Error::Db(e))
+        {
+            Ok(id) => {
+                if let Some(id) = id {
+                    HttpResponse::Created().json(Response {
+                        r#type: "success".to_string(),
+                        message: format!("Notification created - id: {id}"),
+                    })
+                } else {
+                    HttpResponse::NotFound().json(Response {
+                        r#type: "error".to_string(),
+                        message: format!("Template not found"),
+                    })
+                }
+            }
+            Err(e) => HttpResponse::from_error(e),
+        }
+    }
+}
