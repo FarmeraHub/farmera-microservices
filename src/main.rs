@@ -9,7 +9,10 @@ use config::{
 use controllers::{
     notification_controller::NotificationController, template_controller::TemplateController,
 };
-use dispatchers::{dispatcher_actor::DispatcherActor, push_dispatcher::PushDispatcher};
+use dispatchers::{
+    dispatcher_actor::DispatcherActor, email_dispatcher::EmailDispatcher,
+    push_dispatcher::PushDispatcher,
+};
 use dotenvy::dotenv;
 use env_logger::Env;
 use openapi::ApiDoc;
@@ -68,10 +71,11 @@ async fn main() -> std::io::Result<()> {
 
     // producer to put message back to queue if sending fails
     let push_producer = Arc::new(create_producer(&brokers));
+    let email_producer = Arc::new(create_producer(&brokers));
 
     // init consumsers
     let push_consumer_1 = create_consumer(&brokers, "push-group", &["push"]);
-    // let email_consumer = create_consumer(&brokers, "email-group", &["email"]);
+    let email_consumer = create_consumer(&brokers, "email-group", &["email"]);
 
     // init repositories
     let notification_repo = Arc::new(NotificationRepo::new(pg_pool.clone()));
@@ -104,11 +108,19 @@ async fn main() -> std::io::Result<()> {
     let push_processor_1 =
         ActorProcessor::new(push_consumer_1, push_dispatcher_1.start().recipient());
 
+    let email_dispatcher_1 = DispatcherActor::new(Arc::new(EmailDispatcher::new(
+        notification_repo.clone(),
+        template_repo.clone(),
+        email_producer.clone(),
+    )));
+    let email_processor_1 =
+        ActorProcessor::new(email_consumer, email_dispatcher_1.start().recipient());
+
     // sleep(Duration::from_secs(10)).await;
 
     // start processors
     tokio::spawn(push_processor_1.run());
-    // tokio::spawn(email_processor.run());
+    tokio::spawn(email_processor_1.run());
 
     // start server
     HttpServer::new(move || {

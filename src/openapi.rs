@@ -13,6 +13,7 @@ use crate::docs::{notification_doc, template_doc};
         notification_doc::create_template_notification,
         notification_doc::get_notifications,
         notification_doc::send_push,
+        notification_doc::send_email,
     ),
     tags(
         (name = "Notification", description = "Notification operations"),

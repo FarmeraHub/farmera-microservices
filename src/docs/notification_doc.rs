@@ -1,4 +1,4 @@
-use crate::models::{notification::{NewNotification, NewTemplateNotification, Notification}, push::PushMessage};
+use crate::models::{email::EmailMessage, notification::{NewNotification, NewTemplateNotification, Notification}, push::PushMessage};
 
 #[utoipa::path(
     post,
@@ -80,3 +80,22 @@ pub fn get_notifications() {}
 )]
 #[allow(dead_code)]
 pub fn send_push() {}
+
+#[utoipa::path(
+    post,
+    path = "/api/notification/email/send",
+    request_body = EmailMessage,
+    tag = "Notification",
+    responses(
+        (
+            status = 200, 
+            description = "Success",
+        ),
+        (
+            status = 500, 
+            description = "Create failed", 
+        )
+    )
+)]
+#[allow(dead_code)]
+pub fn send_email() {}

@@ -5,6 +5,7 @@ use rdkafka::producer::{FutureProducer, FutureRecord};
 use crate::{
     errors::{db_error::DBError, kafka_error::KafkaError},
     models::{
+        email,
         notification::{NewNotification, NewTemplateNotification, Notification},
         push,
     },
@@ -94,5 +95,22 @@ impl NotificationService {
         self.notification_repo
             .get_notifications(order, limit, is_asc)
             .await
+    }
+
+    pub async fn send_email(&self, message: email::EmailMessage) -> Result<(), KafkaError> {
+        let message = &serde_json::to_string(&message).unwrap();
+        let _status = self
+            .producer
+            .send(
+                FutureRecord::to("email").payload(message).key("key"),
+                Duration::from_secs(0),
+            )
+            .await
+            .map_err(|e| {
+                log::error!("{}", e.0);
+                KafkaError::Error(e.0)
+            })?;
+
+        Ok(())
     }
 }
