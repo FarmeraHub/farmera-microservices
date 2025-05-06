@@ -43,4 +43,32 @@ impl TemplateRepo {
 
         Ok(result)
     }
+
+    pub async fn get_templates(
+        &self,
+        order: &str,
+        limit: i32,
+        asc: bool,
+    ) -> Result<Vec<Template>, DBError> {
+        let stm = include_str!("./queries/template/get_templates.sql");
+        let valid_columns = ["template_id", "name", "created", "updated"].to_vec();
+        if !valid_columns.contains(&order) {
+            return Err(DBError::QueryFailed("Invalid column".to_string()));
+        }
+
+        let stm = stm
+            .replace("{{order}}", order)
+            .replace("{{asc}}", if asc { "ASC" } else { "DESC" });
+
+        let result = sqlx::query_as(&stm)
+            .bind(limit)
+            .fetch_all(&*self.pg_pool)
+            .await
+            .map_err(|e| {
+                log::error!("Fetching template error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        Ok(result)
+    }
 }

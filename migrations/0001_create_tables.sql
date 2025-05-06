@@ -25,7 +25,8 @@ CREATE TABLE templates (
     template_id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     content TEXT NOT NULL,
-    created TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 ALTER TABLE notifications ADD CONSTRAINT fk_nt_tmpl FOREIGN KEY (template_id) REFERENCES templates(template_id);

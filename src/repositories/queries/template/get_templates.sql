@@ -1,3 +1,4 @@
 SELECT template_id, name, content, created, updated
 FROM templates 
-WHERE template_id = $1;
+ORDER BY {{order}} {{asc}}
+LIMIT $1;

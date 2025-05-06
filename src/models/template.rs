@@ -16,6 +16,26 @@ pub struct Template {
 
     #[schema(example = "2025-04-15T08:14:17.923998Z")]
     pub created: DateTime<Utc>,
+
+    #[schema(example = "2025-04-15T08:14:17.923998Z")]
+    pub updated: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TemplateParams {
+    #[serde(default = "default_order")]
+    pub order: String,
+    #[serde(default = "default_limit")]
+    pub limit: i32,
+    #[serde(default)]
+    pub asc: bool,
+}
+
+fn default_order() -> String {
+    String::from("created")
+}
+fn default_limit() -> i32 {
+    20
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

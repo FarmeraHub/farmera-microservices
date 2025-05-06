@@ -4,7 +4,10 @@ use actix_web::{HttpResponse, Responder, web};
 
 use crate::{
     errors::Error,
-    models::{reponse::Response, template::NewTemplate},
+    models::{
+        reponse::Response,
+        template::{NewTemplate, TemplateParams},
+    },
     services::template_service::TemplateService,
 };
 
@@ -17,6 +20,7 @@ impl TemplateController {
         cfg.service(
             web::scope("/template")
                 .route("/{template_id}", web::get().to(Self::get_template_by_id))
+                .route("", web::get().to(Self::get_templates))
                 .route("", web::post().to(Self::create_template)),
         );
     }
@@ -63,6 +67,21 @@ impl TemplateController {
                 r#type: "success".to_string(),
                 message: format!("Template created - id: {id}"),
             }),
+            Err(e) => HttpResponse::from_error(e),
+        }
+    }
+
+    pub async fn get_templates(
+        self_controller: web::Data<Arc<TemplateController>>,
+        params: web::Query<TemplateParams>,
+    ) -> impl Responder {
+        match self_controller
+            .template_service
+            .get_templates(&params.order, params.limit, params.asc)
+            .await
+            .map_err(|e| Error::Db(e))
+        {
+            Ok(result) => HttpResponse::Ok().json(result),
             Err(e) => HttpResponse::from_error(e),
         }
     }

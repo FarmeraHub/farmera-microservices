@@ -24,4 +24,13 @@ impl TemplateService {
             .insert_template(&template.name, &template.content)
             .await
     }
+
+    pub async fn get_templates(
+        &self,
+        order: &str,
+        limit: i32,
+        is_asc: bool,
+    ) -> Result<Vec<Template>, DBError> {
+        self.template_repo.get_templates(order, limit, is_asc).await
+    }
 }

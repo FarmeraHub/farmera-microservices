@@ -44,3 +44,27 @@ pub fn get_template_by_id() {}
 )]
 #[allow(dead_code)]
 pub fn create_template() {}
+
+#[utoipa::path(
+    get,
+    path = "/api/template",
+    tag = "Template",
+    params(
+        ("order" = Option<String>, Query, description = "Order column of the template"),
+        ("limit" = Option<i32>, Query, description = "Limit the number of rows"),
+        ("asc" = Option<bool>, Query, description = "Ascending and descending order"),
+    ),
+    responses(
+        (
+            status = 200, 
+            description = "Success operation",
+            body = Vec<Template>,
+        ),
+        (
+            status = 500, 
+            description = "Database error", 
+        )
+    )
+)]
+#[allow(dead_code)]
+pub fn get_templates() {}
