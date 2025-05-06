@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use utoipa::ToSchema;
 
+use super::reject_empty_string;
+
 #[derive(Debug, Serialize, FromRow, ToSchema)]
 pub struct Notification {
     #[schema(example = 1)]
@@ -31,10 +33,13 @@ pub struct Notification {
 
 #[derive(Debug, Deserialize)]
 pub struct NotificationParams {
+    #[serde(deserialize_with = "reject_empty_string")]
     #[serde(default = "default_order")]
     pub order: String,
+
     #[serde(default = "default_limit")]
     pub limit: i32,
+
     #[serde(default)]
     pub asc: bool,
 }
@@ -52,12 +57,15 @@ pub struct NewNotification {
     #[serde(skip)]
     pub template_id: Option<i32>,
 
+    #[serde(deserialize_with = "reject_empty_string")]
     #[schema(example = "Title")]
     pub title: String,
 
+    #[serde(deserialize_with = "reject_empty_string")]
     #[schema(example = "Content")]
     pub content: String,
 
+    #[serde(deserialize_with = "reject_empty_string")]
     #[schema(example = "push")]
     pub channel: String,
 }
@@ -67,12 +75,14 @@ pub struct NewTemplateNotification {
     #[schema(example = 1)]
     pub template_id: i32,
 
+    #[serde(deserialize_with = "reject_empty_string")]
     #[schema(example = "Titile")]
     pub title: String,
 
     #[schema(example = r#"{"name": "john", "age": "30"}"#)]
     pub props: HashMap<String, String>,
 
+    #[serde(deserialize_with = "reject_empty_string")]
     #[schema(example = "push")]
     pub channel: String,
 }
