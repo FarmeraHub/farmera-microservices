@@ -12,17 +12,22 @@ use controllers::{
 use dispatchers::{dispatcher_actor::DispatcherActor, push_dispatcher::PushDispatcher};
 use dotenvy::dotenv;
 use env_logger::Env;
+use openapi::ApiDoc;
 use processor::actor_processor::ActorProcessor;
 use repositories::{notification_repo::NotificationRepo, template_repo::TemplateRepo};
 use services::{notification_service::NotificationService, template_service::TemplateService};
 use sqlx::migrate;
 use utils::fcm_token_manager::TokenManager;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 mod config;
 mod controllers;
 mod dispatchers;
+mod docs;
 mod errors;
 mod models;
+mod openapi;
 mod processor;
 mod repositories;
 mod services;
@@ -117,6 +122,11 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api")
                     .configure(TemplateController::routes)
                     .configure(NotificationController::routes),
+            )
+            // swagger-ui
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-doc/openapi.json", ApiDoc::openapi()),
             )
     })
     .bind(format!("{server_addr}:{server_port}"))?

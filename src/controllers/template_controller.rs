@@ -16,7 +16,7 @@ impl TemplateController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
         cfg.service(
             web::scope("/template")
-                .route("/{template_id}", web::get().to(Self::get_template))
+                .route("/{template_id}", web::get().to(Self::get_template_by_id))
                 .route("", web::post().to(Self::create_template)),
         );
     }
@@ -25,7 +25,7 @@ impl TemplateController {
         Self { template_service }
     }
 
-    async fn get_template(
+    async fn get_template_by_id(
         self_controller: web::Data<Arc<TemplateController>>,
         path: web::Path<i32>,
     ) -> impl Responder {
