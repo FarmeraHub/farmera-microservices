@@ -33,6 +33,7 @@ services:
       - PG_DATABASE_URL=postgresql://postgres:123@postgres:5432/notification
       - GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json
       - FCM_PROJECT_ID=<project_id>
+      - SENDGRID_API_KEY=<key>
     volumes:
       -  #<path to GOOGLE APPLICATION CREDENTIALS json file>:/app/creds.json
     ports:
