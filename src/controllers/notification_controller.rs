@@ -5,7 +5,8 @@ use actix_web::{HttpResponse, Responder, web};
 use crate::{
     errors::Error,
     models::{
-        notification::{NewNotification, NewTemplateNotification},
+        notification::{NewNotification, NewTemplateNotification, NotificationParams},
+        push,
         reponse::Response,
     },
     services::notification_service::NotificationService,
@@ -20,10 +21,12 @@ impl NotificationController {
         cfg.service(
             web::scope("/notification")
                 .route("", web::post().to(Self::create_notification))
+                .route("", web::get().to(Self::get_notifications))
                 .route(
                     "/template",
                     web::post().to(Self::create_template_notification),
-                ),
+                )
+                .route("/push/send", web::post().to(Self::send_push)),
         );
     }
 
@@ -74,6 +77,39 @@ impl NotificationController {
                     })
                 }
             }
+            Err(e) => HttpResponse::from_error(e),
+        }
+    }
+
+    pub async fn send_push(
+        self_controller: web::Data<Arc<NotificationController>>,
+        message: web::Json<push::PushMessage>,
+    ) -> impl Responder {
+        match self_controller
+            .notification_service
+            .send_push(message.0)
+            .await
+            .map_err(|e| Error::Kafka(e))
+        {
+            Ok(()) => HttpResponse::Ok().json(Response {
+                r#type: "success".to_string(),
+                message: "sent".to_string(),
+            }),
+            Err(e) => HttpResponse::from_error(e),
+        }
+    }
+
+    pub async fn get_notifications(
+        self_controller: web::Data<Arc<NotificationController>>,
+        params: web::Query<NotificationParams>,
+    ) -> impl Responder {
+        match self_controller
+            .notification_service
+            .get_notifications(&params.order, params.limit, params.asc)
+            .await
+            .map_err(|e| Error::Db(e))
+        {
+            Ok(result) => HttpResponse::Ok().json(result),
             Err(e) => HttpResponse::from_error(e),
         }
     }

@@ -201,7 +201,7 @@ impl Dispatcher for PushDispatcher {
                                     log::error!("Update error: {}", e);
                                     SendingError::DatabaseError(e.to_string())
                                 })?;
-                            log::info!("Update row affected: {}", result);
+                            log::debug!("Update row affected: {}", result);
                             return Ok(());
                         } else {
                             // Failed to send notification

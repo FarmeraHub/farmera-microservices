@@ -1,8 +1,13 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
+
+use rdkafka::producer::{FutureProducer, FutureRecord};
 
 use crate::{
-    errors::db_error::DBError,
-    models::notification::{NewNotification, NewTemplateNotification},
+    errors::{db_error::DBError, kafka_error::KafkaError},
+    models::{
+        notification::{NewNotification, NewTemplateNotification, Notification},
+        push,
+    },
     repositories::{notification_repo::NotificationRepo, template_repo::TemplateRepo},
     utils::template_utils::TemplateUtils,
 };
@@ -10,13 +15,19 @@ use crate::{
 pub struct NotificationService {
     notification_repo: Arc<NotificationRepo>,
     template_repo: Arc<TemplateRepo>,
+    producer: Arc<FutureProducer>,
 }
 
 impl NotificationService {
-    pub fn new(notification_repo: Arc<NotificationRepo>, template_repo: Arc<TemplateRepo>) -> Self {
+    pub fn new(
+        notification_repo: Arc<NotificationRepo>,
+        template_repo: Arc<TemplateRepo>,
+        producer: Arc<FutureProducer>,
+    ) -> Self {
         Self {
             notification_repo,
             template_repo,
+            producer,
         }
     }
 
@@ -55,5 +66,33 @@ impl NotificationService {
             return Ok(Some(result));
         }
         Ok(None)
+    }
+
+    pub async fn send_push(&self, message: push::PushMessage) -> Result<(), KafkaError> {
+        let message = &serde_json::to_string(&message).unwrap();
+        let _status = self
+            .producer
+            .send(
+                FutureRecord::to("push").payload(message).key("key"),
+                Duration::from_secs(0),
+            )
+            .await
+            .map_err(|e| {
+                log::error!("{}", e.0);
+                KafkaError::Error(e.0)
+            })?;
+
+        Ok(())
+    }
+
+    pub async fn get_notifications(
+        &self,
+        order: &str,
+        limit: i32,
+        is_asc: bool,
+    ) -> Result<Vec<Notification>, DBError> {
+        self.notification_repo
+            .get_notifications(order, limit, is_asc)
+            .await
     }
 }

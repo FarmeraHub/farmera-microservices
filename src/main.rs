@@ -53,22 +53,6 @@ async fn main() -> std::io::Result<()> {
     let server_addr = env::var("SERVER_ADDRESS").expect("SERVER_ADDRESS must be set");
     let server_port = env::var("SERVER_PORT").expect("SERVER_PORT must be set");
 
-    // init repositories
-    let notification_repo = Arc::new(NotificationRepo::new(pg_pool.clone()));
-    let template_repo = Arc::new(TemplateRepo::new(pg_pool.clone()));
-
-    // init services
-    let notification_service = Arc::new(NotificationService::new(
-        notification_repo.clone(),
-        template_repo.clone(),
-    ));
-    let template_service = Arc::new(TemplateService::new(template_repo.clone()));
-
-    // init controllers
-    let notification_controller =
-        Arc::new(NotificationController::new(notification_service.clone()));
-    let template_controller = Arc::new(TemplateController::new(template_service.clone()));
-
     // init topics
     let brokers = env::var("BROKERS").expect("BROKER must be set");
 
@@ -83,6 +67,23 @@ async fn main() -> std::io::Result<()> {
     // init consumsers
     let push_consumer_1 = create_consumer(&brokers, "push-group", &["push"]);
     // let email_consumer = create_consumer(&brokers, "email-group", &["email"]);
+
+    // init repositories
+    let notification_repo = Arc::new(NotificationRepo::new(pg_pool.clone()));
+    let template_repo = Arc::new(TemplateRepo::new(pg_pool.clone()));
+
+    // init services
+    let notification_service = Arc::new(NotificationService::new(
+        notification_repo.clone(),
+        template_repo.clone(),
+        push_producer.clone(),
+    ));
+    let template_service = Arc::new(TemplateService::new(template_repo.clone()));
+
+    // init controllers
+    let notification_controller =
+        Arc::new(NotificationController::new(notification_service.clone()));
+    let template_controller = Arc::new(TemplateController::new(template_service.clone()));
 
     let token_manager = Arc::new(TokenManager::new().await);
     // init processors

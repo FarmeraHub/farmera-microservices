@@ -1,9 +1,11 @@
 pub mod db_error;
+pub mod kafka_error;
 pub mod sending_error;
 
 use actix_web::{HttpResponse, ResponseError};
 
 use db_error::DBError;
+use kafka_error::KafkaError;
 use thiserror::Error;
 
 use crate::models::reponse::Response;
@@ -12,6 +14,9 @@ use crate::models::reponse::Response;
 pub enum Error {
     #[error(transparent)]
     Db(#[from] DBError),
+
+    #[error(transparent)]
+    Kafka(#[from] KafkaError),
 }
 
 impl ResponseError for Error {
@@ -25,6 +30,12 @@ impl ResponseError for Error {
                 DBError::QueryFailed(e) => HttpResponse::InternalServerError().json(Response {
                     r#type: "error".to_string(),
                     message: e.to_string(),
+                }),
+            },
+            Error::Kafka(e) => match e {
+                KafkaError::Error(_e) => HttpResponse::InternalServerError().json(Response {
+                    r#type: "error".to_string(),
+                    message: "Kafka error".to_string(),
                 }),
             },
         }
