@@ -84,7 +84,7 @@ impl PushDispatcher {
 impl Dispatcher for PushDispatcher {
     async fn send(&self, msg: &str) -> Result<(), SendingError> {
         // Parse the notification payload into model
-        let payload = serde_json::from_str::<push::PushMessage>(&msg).map_err(|e| {
+        let mut payload = serde_json::from_str::<push::PushMessage>(&msg).map_err(|e| {
             log::error!("Invalid data type: {}", e);
             SendingError::JsonParseError
         })?;
@@ -118,45 +118,56 @@ impl Dispatcher for PushDispatcher {
             channel: "push".to_string(),
         };
 
-        // begin transaction
-        let tx = self
-            .notification_repo
-            .pg_pool
-            .begin()
-            .await
-            .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
-
-        // insert notification
-        let notification_id = self
-            .notification_repo
-            .insert_notification(&new_notification)
-            .await
-            .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
-
-        let recipient_num = if payload.r#type == "token".to_string() {
-            payload.recipient.len()
-        } else {
-            0
-        };
-
         let mut inserted = HashMap::new();
 
-        // insert user_notification
-        for i in 0..recipient_num {
-            let result = self
+        if payload.retry_count == 0 {
+            // begin transaction
+            let tx = self
                 .notification_repo
-                .insert_user_notification(&payload.recipient[i], notification_id, "pending", None)
+                .pg_pool
+                .begin()
                 .await
                 .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
-            inserted.insert(result, payload.recipient[i].clone());
+
+            // insert notification
+            let notification_id = self
+                .notification_repo
+                .insert_notification(&new_notification)
+                .await
+                .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
+
+            let recipient_num = if payload.r#type == "token".to_string() {
+                payload.recipient.len()
+            } else {
+                0
+            };
+
+            // insert user_notification
+            for i in 0..recipient_num {
+                let result = self
+                    .notification_repo
+                    .insert_user_notification(
+                        &payload.recipient[i],
+                        notification_id,
+                        "pending",
+                        None,
+                    )
+                    .await
+                    .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
+                inserted.insert(payload.recipient[i].clone(), result);
+            }
+
+            // commit transaction
+            tx.commit()
+                .await
+                .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
+
+            payload.retry_ids = inserted.clone();
+        } else {
+            inserted = payload.retry_ids.clone();
         }
 
-        // commit transaction
-        tx.commit()
-            .await
-            .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
-
-        for (id, recipent) in &inserted {
+        for (recipent, id) in &inserted {
             // construct the FCM request message
             let message = serde_json::json!({
                 "message": {

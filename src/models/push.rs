@@ -30,4 +30,8 @@ pub struct PushMessage {
     #[schema(ignore)]
     #[serde(default)]
     pub retry_count: u8,
+
+    #[schema(ignore)]
+    #[serde(default)]
+    pub retry_ids: HashMap<String, i64>,
 }
