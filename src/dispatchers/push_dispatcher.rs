@@ -98,7 +98,7 @@ impl Dispatcher for PushDispatcher {
                     template_id = Some(id);
                     TemplateUtils::generate_template_body(
                         &template.content,
-                        &payload.template_props,
+                        &payload.template_props.clone().unwrap_or_default(),
                     )
                 }
                 _ => {

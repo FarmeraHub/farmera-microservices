@@ -18,7 +18,7 @@ pub struct PushMessage {
     pub template_id: Option<i32>,
 
     #[schema(example = r#"{"name": "john", "age": "30"}"#)]
-    pub template_props: HashMap<String, String>,
+    pub template_props: Option<HashMap<String, String>>,
 
     #[serde(deserialize_with = "reject_empty_string")]
     #[schema(example = "Title")]

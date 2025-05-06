@@ -21,7 +21,7 @@ pub struct EmailMessage {
     pub template_id: Option<i32>,
 
     #[schema(example = r#"{"name": "john", "age": "30"}"#)]
-    pub template_props: HashMap<String, String>,
+    pub template_props: Option<HashMap<String, String>>,
 
     #[schema(example = "Subject")]
     pub subject: String,
@@ -37,9 +37,7 @@ pub struct EmailMessage {
     pub attachments: Option<Vec<Attachments>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[schema(
-        example = r#"{ "email": "customer_service@example.com", "name": "Example Customer Service Team"}"#
-    )]
+    #[schema(value_type = Email)]
     pub reply_to: Option<Email>,
 
     #[schema(ignore)]
@@ -58,9 +56,11 @@ fn default_content_type() -> String {
 #[derive(Debug, Deserialize, Serialize, Clone, ToSchema)]
 pub struct Email {
     #[serde(deserialize_with = "reject_empty_string")]
+    #[schema(example = "email@example.com")]
     pub email: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(example = "example")]
     pub name: Option<String>,
 }
 
