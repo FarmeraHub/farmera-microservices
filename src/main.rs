@@ -116,7 +116,7 @@ async fn main() -> std::io::Result<()> {
     let email_processor_1 =
         ActorProcessor::new(email_consumer, email_dispatcher_1.start().recipient());
 
-    // sleep(Duration::from_secs(10)).await;
+    // tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
     // start processors
     tokio::spawn(push_processor_1.run());
