@@ -1,6 +1,6 @@
 use utoipa::OpenApi;
 
-use crate::docs::{notification_doc, template_doc};
+use crate::docs::{notification_doc, send_doc, template_doc};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -12,12 +12,14 @@ use crate::docs::{notification_doc, template_doc};
         notification_doc::create_notification,
         notification_doc::create_template_notification,
         notification_doc::get_notifications,
-        notification_doc::send_push,
-        notification_doc::send_email,
+
+        send_doc::send_push,
+        send_doc::send_email,
     ),
     tags(
         (name = "Notification", description = "Notification operations"),
         (name = "Template", description = "Template operations"),
+        (name = "Send Notification", description = "Send notification to message queue"),
     )
 )]
 pub struct ApiDoc;

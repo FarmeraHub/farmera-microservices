@@ -7,6 +7,7 @@ use crate::models::template::{NewTemplate, Template};
         ("template_id" = i32, Path, description = "ID of the template")
     ),
     tag = "Template",
+    description = "Retrieve a specific notification template by its unique ID",
     responses(
         (
             status = 200, 
@@ -31,6 +32,7 @@ pub fn get_template_by_id() {}
     path = "/api/template",
     request_body = NewTemplate,
     tag = "Template",
+    description = "Create a new notification template that can be reused with dynamic content",
     responses(
         (
             status = 201, 
@@ -49,6 +51,7 @@ pub fn create_template() {}
     get,
     path = "/api/template",
     tag = "Template",
+    description = "Retrieve a list of all notification templates, with optional sorting and pagination",
     params(
         ("order" = Option<String>, Query, description = "Order column of the template"),
         ("limit" = Option<i32>, Query, description = "Limit the number of rows"),

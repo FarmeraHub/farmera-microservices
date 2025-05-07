@@ -7,7 +7,8 @@ use config::{
     pg_db::create_pg_pool,
 };
 use controllers::{
-    notification_controller::NotificationController, template_controller::TemplateController,
+    notification_controller::NotificationController, send_controller::SendController,
+    template_controller::TemplateController,
 };
 use dispatchers::{
     dispatcher_actor::DispatcherActor, email_dispatcher::EmailDispatcher,
@@ -21,7 +22,10 @@ use repositories::{
     notification_repo::NotificationRepo, template_repo::TemplateRepo,
     user_notification_repo::UserNotificationsRepo,
 };
-use services::{notification_service::NotificationService, template_service::TemplateService};
+use services::{
+    email_service::EmailService, notification_service::NotificationService,
+    push_service::PushService, template_service::TemplateService,
+};
 use sqlx::migrate;
 use utils::fcm_token_manager::TokenManager;
 use utoipa::OpenApi;
@@ -89,14 +93,19 @@ async fn main() -> std::io::Result<()> {
     let notification_service = Arc::new(NotificationService::new(
         notification_repo.clone(),
         template_repo.clone(),
-        push_producer.clone(),
     ));
     let template_service = Arc::new(TemplateService::new(template_repo.clone()));
+    let email_service = Arc::new(EmailService::new(email_producer.clone()));
+    let push_service = Arc::new(PushService::new(push_producer.clone()));
 
     // init controllers
     let notification_controller =
         Arc::new(NotificationController::new(notification_service.clone()));
     let template_controller = Arc::new(TemplateController::new(template_service.clone()));
+    let send_controller = Arc::new(SendController::new(
+        email_service.clone(),
+        push_service.clone(),
+    ));
 
     let token_manager = Arc::new(TokenManager::new().await);
     // init processors
@@ -135,11 +144,13 @@ async fn main() -> std::io::Result<()> {
             // app states
             .app_data(web::Data::new(template_controller.clone()))
             .app_data(web::Data::new(notification_controller.clone()))
+            .app_data(web::Data::new(send_controller.clone()))
             // route configurations
             .service(
                 web::scope("/api")
                     .configure(TemplateController::routes)
-                    .configure(NotificationController::routes),
+                    .configure(NotificationController::routes)
+                    .configure(SendController::routes),
             )
             // swagger-ui
             .service(
