@@ -16,9 +16,9 @@ pub struct SendController {
 impl SendController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
         cfg.service(
-            web::scope("/notification")
-                .route("/push/send", web::post().to(Self::send_push))
-                .route("/email/send", web::post().to(Self::send_email)),
+            web::scope("/send")
+                .route("/push", web::post().to(Self::send_push))
+                .route("/email", web::post().to(Self::send_email)),
         );
     }
 

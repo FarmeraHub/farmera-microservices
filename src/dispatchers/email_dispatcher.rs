@@ -15,6 +15,8 @@ use crate::{
 
 use super::Dispatcher;
 
+const MAX_RETRY: u8 = 1;
+
 pub struct EmailDispatcher {
     client: reqwest::Client,
     url: String,
@@ -60,8 +62,12 @@ impl EmailDispatcher {
 
     async fn retry(&self, mut message: email::EmailMessage) -> Result<(), SendingError> {
         message.retry_count += 1;
-        log::warn!("Retrying job (attempt {}/3)...", message.retry_count);
-        if message.retry_count >= 3 {
+        log::warn!(
+            "Retrying job (attempt {}/{})...",
+            message.retry_count,
+            MAX_RETRY
+        );
+        if message.retry_count >= MAX_RETRY {
             return Err(SendingError::RetryError(
                 "Failed too many times, updating failed status...".to_string(),
             ));
@@ -125,6 +131,7 @@ impl Dispatcher for EmailDispatcher {
         };
 
         let mut inserted = HashMap::new();
+        let mut noti_id = payload.id;
 
         // only insert once
         if payload.retry_count == 0 {
@@ -159,6 +166,8 @@ impl Dispatcher for EmailDispatcher {
                 .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
 
             payload.retry_ids = inserted.clone();
+            payload.id = notification_id;
+            noti_id = notification_id;
         } else {
             inserted = payload.retry_ids.clone();
         }
@@ -166,7 +175,10 @@ impl Dispatcher for EmailDispatcher {
         // construct the email request message
         let mut message = serde_json::json!({
             "personalizations": [{
-                "to": payload.to
+                "to": payload.to,
+                "custom_args": {
+                    "notification_id": noti_id
+                }
             }],
             "from": payload.from,
             "subject": payload.subject,
@@ -186,7 +198,7 @@ impl Dispatcher for EmailDispatcher {
             message["reply_to"] = serde_json::json!(rep);
         }
 
-        log::info!("{}", message);
+        log::debug!("{}", message);
 
         // Attempt to send the notification
         match self.try_send(&message).await {

@@ -47,6 +47,10 @@ pub struct EmailMessage {
     #[schema(ignore)]
     #[serde(default)]
     pub retry_ids: HashMap<String, i64>,
+
+    #[schema(ignore)]
+    #[serde(default)]
+    pub id: i64,
 }
 
 fn default_content_type() -> String {
@@ -90,4 +94,35 @@ pub struct Attachments {
 
 fn default_disposition() -> String {
     "attachment".to_string()
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct SendGridEvent {
+    pub email: Option<String>,
+    pub timestamp: i64,
+    #[serde(rename = "smtp-id")]
+    pub smtp_id: Option<String>,
+    pub event: String,
+    pub category: Option<String>,
+    pub sg_event_id: String,
+    pub sg_message_id: Option<String>,
+
+    // Common optional fields
+    pub ip: Option<String>,
+    pub useragent: Option<String>,
+    pub url: Option<String>,
+    pub response: Option<String>,
+    pub attempt: Option<String>,
+    pub status: Option<String>,
+    pub reason: Option<String>,
+    pub bounce_classification: Option<String>,
+    pub asm_group_id: Option<i64>,
+    pub sg_machine_open: Option<bool>,
+
+    pub custom_args: Option<HashMap<String, String>>,
+
+    // For event: account_status_change
+    #[serde(default)]
+    pub r#type: Option<String>,
 }

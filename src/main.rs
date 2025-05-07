@@ -8,7 +8,7 @@ use config::{
 };
 use controllers::{
     notification_controller::NotificationController, send_controller::SendController,
-    template_controller::TemplateController,
+    template_controller::TemplateController, webhook::Webhook,
 };
 use dispatchers::{
     dispatcher_actor::DispatcherActor, email_dispatcher::EmailDispatcher,
@@ -95,7 +95,10 @@ async fn main() -> std::io::Result<()> {
         template_repo.clone(),
     ));
     let template_service = Arc::new(TemplateService::new(template_repo.clone()));
-    let email_service = Arc::new(EmailService::new(email_producer.clone()));
+    let email_service = Arc::new(EmailService::new(
+        email_producer.clone(),
+        user_notification_repo.clone(),
+    ));
     let push_service = Arc::new(PushService::new(push_producer.clone()));
 
     // init controllers
@@ -106,8 +109,10 @@ async fn main() -> std::io::Result<()> {
         email_service.clone(),
         push_service.clone(),
     ));
+    let webhook = Arc::new(Webhook::new(email_service.clone()));
 
     let token_manager = Arc::new(TokenManager::new().await);
+
     // init processors
     let push_dispatcher_1 = DispatcherActor::new(Arc::new(
         PushDispatcher::new(
@@ -145,12 +150,14 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(template_controller.clone()))
             .app_data(web::Data::new(notification_controller.clone()))
             .app_data(web::Data::new(send_controller.clone()))
+            .app_data(web::Data::new(webhook.clone()))
             // route configurations
             .service(
                 web::scope("/api")
                     .configure(TemplateController::routes)
                     .configure(NotificationController::routes)
-                    .configure(SendController::routes),
+                    .configure(SendController::routes)
+                    .configure(Webhook::routes),
             )
             // swagger-ui
             .service(

@@ -2,10 +2,10 @@ use crate::models::{email::EmailMessage, push::PushMessage};
 
 #[utoipa::path(
     post,
-    path = "/api/notification/push/send",
+    path = "/api/send/push",
     request_body = PushMessage,
     description = "Send a push notification push message queue",
-    tag = "Notification",
+    tag = "Send Notification",
     responses(
         (
             status = 200, 
@@ -22,10 +22,10 @@ pub fn send_push() {}
 
 #[utoipa::path(
     post,
-    path = "/api/notification/email/send",
+    path = "/api/send/email",
     request_body = EmailMessage,
     description = "Send an email notification email message queue",
-    tag = "Notification",
+    tag = "Send Notification",
     responses(
         (
             status = 200, 
