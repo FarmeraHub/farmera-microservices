@@ -6,7 +6,10 @@ use rdkafka::producer::{FutureProducer, FutureRecord};
 use crate::{
     errors::sending_error::SendingError,
     models::{email, notification::NewNotification},
-    repositories::{notification_repo::NotificationRepo, template_repo::TemplateRepo},
+    repositories::{
+        notification_repo::NotificationRepo, template_repo::TemplateRepo,
+        user_notification_repo::UserNotificationsRepo,
+    },
     utils::template_utils::TemplateUtils,
 };
 
@@ -17,6 +20,7 @@ pub struct EmailDispatcher {
     url: String,
     api_key: String,
     notification_repo: Arc<NotificationRepo>,
+    user_notification_repo: Arc<UserNotificationsRepo>,
     template_repo: Arc<TemplateRepo>,
     producer: Arc<FutureProducer>,
 }
@@ -24,6 +28,7 @@ pub struct EmailDispatcher {
 impl EmailDispatcher {
     pub fn new(
         notification_repo: Arc<NotificationRepo>,
+        user_notification_repo: Arc<UserNotificationsRepo>,
         template_repo: Arc<TemplateRepo>,
         producer: Arc<FutureProducer>,
     ) -> Self {
@@ -34,6 +39,7 @@ impl EmailDispatcher {
             url: format!("https://api.sendgrid.com/v3/mail/send"),
             api_key,
             notification_repo,
+            user_notification_repo,
             template_repo,
             producer,
         }
@@ -140,7 +146,7 @@ impl Dispatcher for EmailDispatcher {
             // insert user_notification
             for email in &payload.to {
                 let result = self
-                    .notification_repo
+                    .user_notification_repo
                     .insert_user_notification(&email.email, notification_id, "pending", None)
                     .await
                     .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
@@ -193,7 +199,7 @@ impl Dispatcher for EmailDispatcher {
                         log::error!("{}", sending_err);
                         for (_email, id) in &inserted {
                             if let Err(e) = self
-                                .notification_repo
+                                .user_notification_repo
                                 .update_user_notification_status(*id, "failed", None)
                                 .await
                             {

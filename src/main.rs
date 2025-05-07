@@ -17,7 +17,10 @@ use dotenvy::dotenv;
 use env_logger::Env;
 use openapi::ApiDoc;
 use processor::actor_processor::ActorProcessor;
-use repositories::{notification_repo::NotificationRepo, template_repo::TemplateRepo};
+use repositories::{
+    notification_repo::NotificationRepo, template_repo::TemplateRepo,
+    user_notification_repo::UserNotificationsRepo,
+};
 use services::{notification_service::NotificationService, template_service::TemplateService};
 use sqlx::migrate;
 use utils::fcm_token_manager::TokenManager;
@@ -80,6 +83,7 @@ async fn main() -> std::io::Result<()> {
     // init repositories
     let notification_repo = Arc::new(NotificationRepo::new(pg_pool.clone()));
     let template_repo = Arc::new(TemplateRepo::new(pg_pool.clone()));
+    let user_notification_repo = Arc::new(UserNotificationsRepo::new(pg_pool.clone()));
 
     // init services
     let notification_service = Arc::new(NotificationService::new(
@@ -100,6 +104,7 @@ async fn main() -> std::io::Result<()> {
         PushDispatcher::new(
             token_manager,
             notification_repo.clone(),
+            user_notification_repo.clone(),
             template_repo.clone(),
             push_producer.clone(),
         )
@@ -110,6 +115,7 @@ async fn main() -> std::io::Result<()> {
 
     let email_dispatcher_1 = DispatcherActor::new(Arc::new(EmailDispatcher::new(
         notification_repo.clone(),
+        user_notification_repo.clone(),
         template_repo.clone(),
         email_producer.clone(),
     )));

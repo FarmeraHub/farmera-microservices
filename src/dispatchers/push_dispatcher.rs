@@ -6,7 +6,10 @@ use rdkafka::producer::{FutureProducer, FutureRecord};
 use crate::{
     errors::sending_error::SendingError,
     models::{notification::NewNotification, push},
-    repositories::{notification_repo::NotificationRepo, template_repo::TemplateRepo},
+    repositories::{
+        notification_repo::NotificationRepo, template_repo::TemplateRepo,
+        user_notification_repo::UserNotificationsRepo,
+    },
     utils::{fcm_token_manager::TokenManager, template_utils::TemplateUtils},
 };
 
@@ -17,6 +20,7 @@ pub struct PushDispatcher {
     url: String,
     token_manager: Arc<TokenManager>,
     notification_repo: Arc<NotificationRepo>,
+    user_notification_repo: Arc<UserNotificationsRepo>,
     template_repo: Arc<TemplateRepo>,
     producer: Arc<FutureProducer>,
 }
@@ -25,6 +29,7 @@ impl PushDispatcher {
     pub async fn new(
         token_manager: Arc<TokenManager>,
         notification_repo: Arc<NotificationRepo>,
+        user_notification_repo: Arc<UserNotificationsRepo>,
         template_repo: Arc<TemplateRepo>,
         producer: Arc<FutureProducer>,
     ) -> Self {
@@ -37,6 +42,7 @@ impl PushDispatcher {
             ),
             token_manager,
             notification_repo,
+            user_notification_repo,
             template_repo,
             producer,
         }
@@ -145,7 +151,7 @@ impl Dispatcher for PushDispatcher {
             // insert user_notification
             for i in 0..recipient_num {
                 let result = self
-                    .notification_repo
+                    .user_notification_repo
                     .insert_user_notification(
                         &payload.recipient[i],
                         notification_id,
@@ -201,7 +207,7 @@ impl Dispatcher for PushDispatcher {
                         } else if response.status().is_success() {
                             // Successfully sent notification, update database status
                             let result = self
-                                .notification_repo
+                                .user_notification_repo
                                 .update_user_notification_status(
                                     *id,
                                     "sent",
@@ -219,7 +225,7 @@ impl Dispatcher for PushDispatcher {
                             if let Err(sending_err) = self.retry(payload.clone()).await {
                                 log::error!("{}", sending_err);
                                 if let Err(e) = self
-                                    .notification_repo
+                                    .user_notification_repo
                                     .update_user_notification_status(*id, "failed", None)
                                     .await
                                 {
