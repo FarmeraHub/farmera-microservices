@@ -1,4 +1,5 @@
 pub mod db_error;
+pub mod jwt_error;
 pub mod kafka_error;
 pub mod sending_error;
 

@@ -26,3 +26,4 @@ rdkafka = { version = "0.37.0", features = ["cmake-build"] } #note: cmake is req
 reqwest = "0.12.15"
 async-trait = "0.1.88"
 gcp_auth = "0.12.3"
+jsonwebtoken = "9.3.1"

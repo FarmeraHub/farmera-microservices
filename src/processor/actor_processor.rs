@@ -6,21 +6,21 @@ use rdkafka::{Message, consumer::StreamConsumer};
 pub struct Msg(pub String);
 
 pub struct ActorProcessor {
-    pub push_consumer: StreamConsumer,
+    pub consumer: StreamConsumer,
     pub dispatcher: Recipient<Msg>,
 }
 
 impl ActorProcessor {
     pub fn new(consumer: StreamConsumer, dispatcher: Recipient<Msg>) -> Self {
         Self {
-            push_consumer: consumer,
+            consumer: consumer,
             dispatcher,
         }
     }
 
     pub async fn run(self) -> std::io::Result<()> {
         loop {
-            match self.push_consumer.recv().await {
+            match self.consumer.recv().await {
                 Ok(message) => {
                     let payload = match message.payload_view::<str>() {
                         None => "",

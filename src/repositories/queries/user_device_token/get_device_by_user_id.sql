@@ -1,0 +1,1 @@
+SELECT device FROM user_device_token WHERE user_id = $1;

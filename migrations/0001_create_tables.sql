@@ -1,7 +1,8 @@
 DROP TABLE IF EXISTS user_notifications;
-DROP TABLE IF EXISTS notifications;
-DROP TABLE IF EXISTS templates;
 
+DROP TABLE IF EXISTS notifications;
+
+DROP TABLE IF EXISTS templates;
 
 CREATE TABLE user_notifications (
     id BIGSERIAL PRIMARY KEY,
@@ -29,5 +30,29 @@ CREATE TABLE templates (
     updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE notifications ADD CONSTRAINT fk_nt_tmpl FOREIGN KEY (template_id) REFERENCES templates(template_id);
-ALTER TABLE user_notifications ADD CONSTRAINT fk_un_nt FOREIGN KEY (notification_id) REFERENCES notifications(notification_id);
+CREATE TABLE user_preferences (
+    user_id UUID PRIMARY KEY,
+    user_email TEXT,
+    transactional_channels TEXT[],
+    system_alert_channels TEXT[],
+    chat_channels TEXT[],
+    do_not_disturb_start TIMESTAMPTZ,
+    do_not_disturb_end TIMESTAMPTZ,
+    daily_limits INT,
+    sent_today INT DEFAULT 0
+);
+
+CREATE TABLE user_device_token (
+    user_id UUID,
+    token TEXT,
+    PRIMARY KEY (user_id, token)
+);
+
+ALTER TABLE notifications
+ADD CONSTRAINT fk_nt_tmpl FOREIGN KEY (template_id) REFERENCES templates (template_id);
+
+ALTER TABLE user_notifications
+ADD CONSTRAINT fk_un_nt FOREIGN KEY (notification_id) REFERENCES notifications (notification_id);
+
+ALTER TABLE user_device_token
+ADD CONSTRAINT fk_us_up FOREIGN KEY (user_id) REFERENCES user_preferences (user_id);
