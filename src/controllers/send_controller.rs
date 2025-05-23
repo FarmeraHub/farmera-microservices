@@ -68,7 +68,13 @@ impl SendController {
             .send(&send_notification.0)
             .await
         {
-            Ok(()) => ResponseWrapper::<()>::build(StatusCode::OK, "Queued", None),
+            Ok(result) => {
+                let message = match result {
+                    Some(message) => message,
+                    None => "Queued".to_string(),
+                };
+                ResponseWrapper::<()>::build(StatusCode::OK, &message, None)
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }

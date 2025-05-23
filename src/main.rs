@@ -46,7 +46,6 @@ mod openapi;
 mod processor;
 mod repositories;
 mod services;
-mod types;
 mod utils;
 
 async fn index() -> &'static str {

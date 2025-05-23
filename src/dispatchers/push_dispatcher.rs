@@ -15,6 +15,8 @@ use crate::{
 
 use super::Dispatcher;
 
+const MAX_RETRY: u8 = 1;
+
 pub struct PushDispatcher {
     client: reqwest::Client,
     url: String,
@@ -63,8 +65,12 @@ impl PushDispatcher {
 
     async fn retry(&self, mut message: push::PushMessage) -> Result<(), SendingError> {
         message.retry_count += 1;
-        log::warn!("Retrying job (attempt {}/3)...", message.retry_count);
-        if message.retry_count >= 3 {
+        log::warn!(
+            "Retrying job (attempt {}/{})...",
+            message.retry_count,
+            MAX_RETRY
+        );
+        if message.retry_count >= MAX_RETRY {
             return Err(SendingError::RetryError(
                 "Failed too many times, updating failed status...".to_string(),
             ));

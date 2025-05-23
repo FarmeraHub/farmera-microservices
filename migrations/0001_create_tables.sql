@@ -40,8 +40,9 @@ CREATE TABLE user_preferences (
     transactional_channels TEXT[],
     system_alert_channels TEXT[],
     chat_channels TEXT[],
-    do_not_disturb_start TIME WITH TIME ZONE,
-    do_not_disturb_end TIME WITH TIME ZONE
+    do_not_disturb_start TIME,
+    do_not_disturb_end TIME,
+    time_zone TEXT NOT NULL
 );
 
 CREATE TABLE user_device_token (

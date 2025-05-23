@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::NaiveTime;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use utoipa::ToSchema;
@@ -25,11 +25,14 @@ pub struct UserPreferences {
     #[schema(value_type = Vec<Channel>, example = r#"["email", "push"]"#)]
     pub chat_channels: Vec<Channel>,
 
-    #[schema(example = "2025-04-15T08:14:17.923998Z")]
-    pub do_not_disturb_start: Option<DateTime<Utc>>,
+    #[schema(value_type = String, example = "08:14:17.923998")]
+    pub do_not_disturb_start: Option<NaiveTime>,
 
-    #[schema(example = "2025-04-15T08:14:17.923998Z")]
-    pub do_not_disturb_end: Option<DateTime<Utc>>,
+    #[schema(value_type = String, example = "08:14:17.923998")]
+    pub do_not_disturb_end: Option<NaiveTime>,
+
+    #[schema(value_type = String, example = "America/New_York")]
+    pub time_zone: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, FromRow, ToSchema)]
@@ -59,9 +62,12 @@ pub struct NewUserPreferences {
     #[schema(value_type = Vec<Channel>, example = r#"["email", "push"]"#)]
     pub chat_channels: Vec<Channel>,
 
-    #[schema(example = "2025-04-15T08:14:17.923998Z")]
-    pub do_not_disturb_start: Option<DateTime<Utc>>,
+    #[schema(example = "08:14:17.923998")]
+    pub do_not_disturb_start: Option<NaiveTime>,
 
-    #[schema(example = "2025-04-15T08:14:17.923998Z")]
-    pub do_not_disturb_end: Option<DateTime<Utc>>,
+    #[schema(example = "08:14:17.923998")]
+    pub do_not_disturb_end: Option<NaiveTime>,
+
+    #[schema(value_type = String, example = "America/New_York")]
+    pub time_zone: String,
 }

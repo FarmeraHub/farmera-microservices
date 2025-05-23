@@ -37,23 +37,23 @@ impl SendService {
         }
     }
 
-    pub async fn send(&self, send_notification: &SendNotification) -> Result<(), Error> {
+    pub async fn send(
+        &self,
+        send_notification: &SendNotification,
+    ) -> Result<Option<String>, Error> {
         if send_notification.recipent.is_some() {
             // Send to specific user
-            self.send_to_specific_user(send_notification).await?;
+            self.send_to_specific_user(send_notification).await
         } else {
             // Send to all users
+            Ok(None)
         }
-
-        Ok(())
     }
 
     async fn send_to_specific_user(
         &self,
         send_notification: &SendNotification,
-    ) -> Result<(), Error> {
-        let now = chrono::Utc::now();
-
+    ) -> Result<Option<String>, Error> {
         // Get user preferences
         let user_preferences = match self
             .user_preferences_service
@@ -71,15 +71,28 @@ impl SendService {
             }
         };
 
+        // Get user timezone
+        let tz = user_preferences
+            .time_zone
+            .parse::<chrono_tz::Tz>()
+            .map_err(|e| {
+                log::error!("Parse timezone error: {e}");
+                Error::InternalServerError
+            })?;
+        // Get current time
+        let now = chrono::Utc::now().with_timezone(&tz).time();
+
         // Check if user is in do not disturb mode
         if let (Some(start), Some(end)) = (
-            user_preferences.do_not_disturb_start,
-            user_preferences.do_not_disturb_end,
+            &user_preferences.do_not_disturb_start,
+            &user_preferences.do_not_disturb_end,
         ) {
-            // if now >= start && now <= end {
-            //     // !TODO: Resend notification after do not disturb period
-            //     return Ok(());
-            // }
+            if now >= *start && now <= *end {
+                // !TODO: Resend notification after do not disturb period
+                return Ok(Some(
+                    "User is in do not disturb mode, notificatio will be sent later".to_string(),
+                ));
+            }
         }
 
         // Get intersection of user channels and requested channels
@@ -116,7 +129,7 @@ impl SendService {
                 }
             }
         }
-        Ok(())
+        Ok(None)
     }
 
     async fn send_email(

@@ -31,6 +31,7 @@ impl UserPreferencesRepo {
             .bind(&preferences.chat_channels)
             .bind(&preferences.do_not_disturb_start)
             .bind(&preferences.do_not_disturb_end)
+            .bind(&preferences.time_zone)
             .fetch_one(&*self.pg_pool)
             .await
             .map_err(|e| {
@@ -73,6 +74,7 @@ impl UserPreferencesRepo {
             .bind(&preferences.chat_channels)
             .bind(&preferences.do_not_disturb_start)
             .bind(&preferences.do_not_disturb_end)
+            .bind(&preferences.time_zone)
             .fetch_one(&*self.pg_pool)
             .await
             .map_err(|e| {

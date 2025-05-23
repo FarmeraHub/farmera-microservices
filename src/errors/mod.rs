@@ -18,6 +18,9 @@ pub enum Error {
 
     #[error(transparent)]
     Kafka(#[from] KafkaError),
+
+    #[error("Internal server error")]
+    InternalServerError,
 }
 
 impl ResponseError for Error {
@@ -35,6 +38,7 @@ impl ResponseError for Error {
             Error::Kafka(KafkaError::Error(_)) => {
                 json_error(StatusCode::INTERNAL_SERVER_ERROR, "Kafka error")
             }
+            _ => json_error(StatusCode::INTERNAL_SERVER_ERROR, "Server error"),
         }
     }
 }

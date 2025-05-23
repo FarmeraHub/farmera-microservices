@@ -6,6 +6,16 @@ INSERT INTO
         system_alert_channels,
         chat_channels,
         do_not_disturb_start,
-        do_not_disturb_end
+        do_not_disturb_end,
+        time_zone
     )
-VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;
+VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+    ) RETURNING *;
