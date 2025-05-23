@@ -19,7 +19,7 @@ impl TemplateService {
         self.template_repo.get_template_by_id(template_id).await
     }
 
-    pub async fn create_template(&self, template: &NewTemplate) -> Result<i32, DBError> {
+    pub async fn create_template(&self, template: &NewTemplate) -> Result<Template, DBError> {
         self.template_repo
             .insert_template(&template.name, &template.content)
             .await

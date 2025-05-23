@@ -140,7 +140,8 @@ impl Dispatcher for PushDispatcher {
                 .notification_repo
                 .insert_notification(&new_notification)
                 .await
-                .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
+                .map_err(|e| SendingError::DatabaseError(e.to_string()))?
+                .notification_id;
 
             let recipient_num = if payload.r#type == push::PushMessageType::Token {
                 payload.recipient.len()

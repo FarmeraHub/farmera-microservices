@@ -28,10 +28,10 @@ impl TemplateRepo {
         Ok(result)
     }
 
-    pub async fn insert_template(&self, name: &str, content: &str) -> Result<i32, DBError> {
+    pub async fn insert_template(&self, name: &str, content: &str) -> Result<Template, DBError> {
         let stm = include_str!("./queries/template/insert_template.sql");
 
-        let result = sqlx::query_scalar(stm)
+        let result = sqlx::query_as(stm)
             .bind(name)
             .bind(content)
             .fetch_one(&*self.pg_pool)

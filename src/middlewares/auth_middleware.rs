@@ -1,13 +1,13 @@
 use actix::fut::{Ready, ready};
 use actix_web::{
-    Error, HttpMessage, HttpResponse,
+    Error, HttpMessage,
     body::EitherBody,
     dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
-    http::header::AUTHORIZATION,
+    http::{StatusCode, header::AUTHORIZATION},
 };
 use futures_util::{FutureExt, future::LocalBoxFuture};
 
-use crate::{models::reponse::Response, utils::jwt_utils::JwtUtils};
+use crate::{models::reponse_wrapper::ResponseWrapper, utils::jwt_utils::JwtUtils};
 
 pub struct AuthMiddleware;
 
@@ -83,10 +83,7 @@ where
         }
 
         // return unauthorized
-        let http_res = HttpResponse::Unauthorized().json(Response {
-            r#type: "error".to_string(),
-            message: "Unauthorized".to_string(),
-        });
+        let http_res = ResponseWrapper::<()>::build(StatusCode::UNAUTHORIZED, "Unauthorized", None);
 
         let (http_req, _) = req.into_parts();
         let res = ServiceResponse::new(http_req, http_res);

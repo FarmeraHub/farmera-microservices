@@ -1,4 +1,4 @@
-use crate::models::template::{NewTemplate, Template};
+use crate::models::{reponse_wrapper::ResponseWrapper, template::{NewTemplate, Template}};
 
 #[utoipa::path(
     get,
@@ -12,7 +12,7 @@ use crate::models::template::{NewTemplate, Template};
         (
             status = 200, 
             description = "Template found",
-            body = Template,
+            body = ResponseWrapper<Template>,
         ),
         (
             status = 404, 
@@ -37,6 +37,7 @@ pub fn get_template_by_id() {}
         (
             status = 201, 
             description = "Created",
+            body = ResponseWrapper<Template>,
         ),
         (
             status = 500, 
@@ -61,7 +62,7 @@ pub fn create_template() {}
         (
             status = 200, 
             description = "Success operation",
-            body = Vec<Template>,
+            body = ResponseWrapper<Vec<Template>>,
         ),
         (
             status = 500, 

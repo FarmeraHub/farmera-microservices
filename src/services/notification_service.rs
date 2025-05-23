@@ -23,7 +23,7 @@ impl NotificationService {
     pub async fn create_notification(
         &self,
         mut notification: NewNotification,
-    ) -> Result<i64, DBError> {
+    ) -> Result<Notification, DBError> {
         if notification.template_id.is_some() {
             notification.template_id = None;
         }
@@ -35,7 +35,7 @@ impl NotificationService {
     pub async fn create_template_notification(
         &self,
         notification: NewTemplateNotification,
-    ) -> Result<Option<i64>, DBError> {
+    ) -> Result<Option<Notification>, DBError> {
         if let Some(template) = self
             .template_repo
             .get_template_by_id(notification.template_id)

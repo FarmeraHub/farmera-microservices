@@ -1,4 +1,4 @@
-use crate::models::user_preferences::UserDeviceToken;
+use crate::models::{reponse_wrapper::{ResponseWrapper, UnitStruct}, user_preferences::UserDeviceToken};
 
 #[utoipa::path(
     get,
@@ -12,11 +12,15 @@ use crate::models::user_preferences::UserDeviceToken;
         (
             status = 200, 
             description = "User device tokens found",
-            body = Vec<String>,
-            example = json!([
-                "token1",
-                "token2",
-            ]),
+            body = ResponseWrapper<Vec<String>>,
+            example = json!({
+                "status": 200,
+                "message": "User device tokens retrieved",
+                "data": [
+                    "token1",
+                    "token2"
+                ]
+            })
         ),
         (
             status = 500, 
@@ -37,7 +41,7 @@ pub fn get_user_device_token() {}
         (
             status = 201, 
             description = "Created",
-            body = UserDeviceToken,
+            body = ResponseWrapper<UserDeviceToken>,
         ),
         (
             status = 500, 
@@ -60,6 +64,7 @@ pub fn create_user_device_token() {}
         (
             status = 200, 
             description = "Deleted",
+            body = ResponseWrapper<UnitStruct>
         ),
         (
             status = 500, 

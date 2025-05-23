@@ -5,7 +5,7 @@ use uuid::Uuid;
 pub mod email;
 pub mod notification;
 pub mod push;
-pub mod reponse;
+pub mod reponse_wrapper;
 pub mod template;
 pub mod user_preferences;
 

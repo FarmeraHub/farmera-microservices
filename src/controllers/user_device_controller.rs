@@ -2,12 +2,13 @@ use std::sync::Arc;
 
 use actix_web::{
     HttpResponse, Responder,
+    http::StatusCode,
     web::{self, ServiceConfig},
 };
 
 use crate::{
     errors::Error,
-    models::{UserIdQuery, reponse::Response, user_preferences::UserDeviceToken},
+    models::{UserIdQuery, reponse_wrapper::ResponseWrapper, user_preferences::UserDeviceToken},
     services::user_devices_service::UserDeviceService,
 };
 
@@ -25,7 +26,7 @@ impl UserDeviceController {
     pub fn routes(cfg: &mut ServiceConfig) {
         cfg.service(
             web::resource("/devices")
-                .get(Self::get_user_device_token)
+                .get(Self::get_user_device_tokens)
                 .post(Self::create_user_device_token)
                 .delete(Self::delete_user_device_token),
         );
@@ -41,12 +42,14 @@ impl UserDeviceController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Created().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::CREATED, "Device token created", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }
 
-    async fn get_user_device_token(
+    async fn get_user_device_tokens(
         self_controller: web::Data<Arc<UserDeviceController>>,
         query: web::Query<UserIdQuery>,
     ) -> impl Responder {
@@ -57,7 +60,9 @@ impl UserDeviceController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "User device tokens retrieved", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -73,10 +78,9 @@ impl UserDeviceController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(_) => HttpResponse::Ok().json(Response {
-                r#type: "success".to_string(),
-                message: "success".to_string(),
-            }),
+            Ok(_) => {
+                ResponseWrapper::<()>::build(StatusCode::OK, "User device token deleted", None)
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }

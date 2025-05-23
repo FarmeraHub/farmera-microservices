@@ -3,13 +3,13 @@ pub mod jwt_error;
 pub mod kafka_error;
 pub mod sending_error;
 
-use actix_web::{HttpResponse, ResponseError};
+use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 
 use db_error::DBError;
 use kafka_error::KafkaError;
 use thiserror::Error;
 
-use crate::models::reponse::Response;
+use crate::models::reponse_wrapper::ResponseWrapper;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -21,28 +21,20 @@ pub enum Error {
 }
 
 impl ResponseError for Error {
-    fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
+    fn error_response(&self) -> HttpResponse {
+        fn json_error(status: StatusCode, message: &str) -> HttpResponse {
+            ResponseWrapper::<()>::build(status, message, None)
+        }
+
         match self {
-            Error::Db(e) => match e {
-                DBError::QueryError(_) => HttpResponse::InternalServerError().json(Response {
-                    r#type: "error".to_string(),
-                    message: "Database query error".to_string(),
-                }),
-                DBError::QueryFailed(e) => HttpResponse::InternalServerError().json(Response {
-                    r#type: "error".to_string(),
-                    message: e.to_string(),
-                }),
-                DBError::NotFound(e) => HttpResponse::NotFound().json(Response {
-                    r#type: "error".to_string(),
-                    message: e.to_string(),
-                }),
-            },
-            Error::Kafka(e) => match e {
-                KafkaError::Error(_e) => HttpResponse::InternalServerError().json(Response {
-                    r#type: "error".to_string(),
-                    message: "Kafka error".to_string(),
-                }),
-            },
+            Error::Db(DBError::QueryError(_)) => {
+                json_error(StatusCode::INTERNAL_SERVER_ERROR, "Database query error")
+            }
+            Error::Db(DBError::QueryFailed(e)) => json_error(StatusCode::INTERNAL_SERVER_ERROR, e),
+            Error::Db(DBError::NotFound(e)) => json_error(StatusCode::NOT_FOUND, e),
+            Error::Kafka(KafkaError::Error(_)) => {
+                json_error(StatusCode::INTERNAL_SERVER_ERROR, "Kafka error")
+            }
         }
     }
 }

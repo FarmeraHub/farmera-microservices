@@ -1,4 +1,4 @@
-use crate::models::notification::{NewNotification, NewTemplateNotification, Notification};
+use crate::models::{notification::{NewNotification, NewTemplateNotification, Notification}, reponse_wrapper::ResponseWrapper};
 
 #[utoipa::path(
     post,
@@ -10,6 +10,7 @@ use crate::models::notification::{NewNotification, NewTemplateNotification, Noti
         (
             status = 201, 
             description = "Created",
+            body = ResponseWrapper<Notification>,
         ),
         (
             status = 500, 
@@ -30,6 +31,7 @@ pub fn create_notification() {}
         (
             status = 201, 
             description = "Created",
+            body = ResponseWrapper<Notification>,
         ),
         (
             status = 500, 
@@ -54,7 +56,7 @@ pub fn create_template_notification() {}
         (
             status = 200, 
             description = "Success operation",
-            body = Vec<Notification>,
+            body = ResponseWrapper<Vec<Notification>>,
         ),
         (
             status = 500, 

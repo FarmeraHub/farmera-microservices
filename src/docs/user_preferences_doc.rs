@@ -1,4 +1,4 @@
-use crate::models::{user_preferences::{NewUserPreferences, UserPreferences}};
+use crate::models::{reponse_wrapper::ResponseWrapper, user_preferences::{NewUserPreferences, UserPreferences}};
 
 #[utoipa::path(
     get,
@@ -12,7 +12,7 @@ use crate::models::{user_preferences::{NewUserPreferences, UserPreferences}};
         (
             status = 200, 
             description = "User preferences found",
-            body = UserPreferences,
+            body = ResponseWrapper<UserPreferences>,
         ),
         (
             status = 404, 
@@ -37,7 +37,7 @@ pub fn get_user_preferences() {}
         (
             status = 201, 
             description = "Created",
-            body = UserPreferences,
+            body = ResponseWrapper<UserPreferences>,
         ),
         (
             status = 500, 
@@ -58,7 +58,7 @@ pub fn create_user_preferences() {}
         (
             status = 200, 
             description = "Updated",
-            body = UserPreferences,
+            body = ResponseWrapper<UserPreferences>,
         ),
         (
             status = 500, 

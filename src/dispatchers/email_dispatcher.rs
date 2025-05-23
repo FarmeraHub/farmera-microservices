@@ -148,7 +148,8 @@ impl Dispatcher for EmailDispatcher {
                 .notification_repo
                 .insert_notification(&new_notification)
                 .await
-                .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
+                .map_err(|e| SendingError::DatabaseError(e.to_string()))?
+                .notification_id;
 
             // insert user_notification
             for email in &payload.to {

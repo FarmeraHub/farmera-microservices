@@ -1,1 +1,1 @@
-INSERT INTO templates (name, content) VALUES ($1, $2) RETURNING template_id;
+INSERT INTO templates (name, content) VALUES ($1, $2) RETURNING *;

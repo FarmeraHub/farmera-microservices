@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{HttpResponse, Responder, http::StatusCode, web};
 
 use crate::{
     errors::Error,
     models::{
-        reponse::Response,
+        reponse_wrapper::ResponseWrapper,
         template::{NewTemplate, TemplateParams},
     },
     services::template_service::TemplateService,
@@ -42,11 +42,12 @@ impl TemplateController {
             .map_err(|e| Error::Db(e))
         {
             Ok(result) => match result {
-                Some(result) => HttpResponse::Ok().json(result),
-                None => HttpResponse::NotFound().json(Response {
-                    r#type: "error".to_string(),
-                    message: "Template not found".to_string(),
-                }),
+                Some(template) => {
+                    ResponseWrapper::build(StatusCode::OK, "Template found", Some(template))
+                }
+                None => {
+                    ResponseWrapper::<()>::build(StatusCode::NOT_FOUND, "Template not found", None)
+                }
             },
             Err(e) => HttpResponse::from_error(e),
         }
@@ -63,10 +64,9 @@ impl TemplateController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(id) => HttpResponse::Created().json(Response {
-                r#type: "success".to_string(),
-                message: format!("Template created - id: {id}"),
-            }),
+            Ok(template) => {
+                ResponseWrapper::build(StatusCode::CREATED, "Template created", Some(template))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -81,7 +81,9 @@ impl TemplateController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Templates retrieved", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }

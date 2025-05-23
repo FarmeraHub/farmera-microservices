@@ -1,4 +1,4 @@
-use crate::models::{email::EmailMessage, notification::SendNotification, push::PushMessage};
+use crate::models::{email::EmailMessage, notification::SendNotification, push::PushMessage, reponse_wrapper::{ResponseWrapper, UnitStruct}};
 
 #[utoipa::path(
     post,
@@ -10,6 +10,7 @@ use crate::models::{email::EmailMessage, notification::SendNotification, push::P
         (
             status = 200, 
             description = "Success",
+            body = ResponseWrapper<UnitStruct>
         ),
         (
             status = 500, 
@@ -30,6 +31,7 @@ pub fn send_push() {}
         (
             status = 200, 
             description = "Success",
+            body = ResponseWrapper<UnitStruct>
         ),
         (
             status = 500, 
@@ -50,6 +52,7 @@ pub fn send_email() {}
         (
             status = 200, 
             description = "Success",
+            body = ResponseWrapper<UnitStruct>
         ),
         (
             status = 500, 

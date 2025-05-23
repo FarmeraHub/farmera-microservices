@@ -19,10 +19,10 @@ impl NotificationRepo {
     pub async fn insert_notification(
         &self,
         notification: &NewNotification,
-    ) -> Result<i64, DBError> {
+    ) -> Result<Notification, DBError> {
         let stm = include_str!("./queries/notification/insert_notification.sql");
 
-        let result = sqlx::query_scalar(stm)
+        let result = sqlx::query_as(stm)
             .bind(&notification.template_id)
             .bind(&notification.title)
             .bind(&notification.content)

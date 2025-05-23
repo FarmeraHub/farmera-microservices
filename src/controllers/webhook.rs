@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{Responder, http::StatusCode, web};
 
 use crate::{
-    models::{email, reponse::Response},
+    models::{email, reponse_wrapper::ResponseWrapper},
     services::email_service::EmailService,
 };
 
@@ -32,9 +32,6 @@ impl Webhook {
             .handle_sendgrid_hook_event(sendgrid_events.0)
             .await;
 
-        HttpResponse::Ok().json(Response {
-            r#type: "success".to_string(),
-            message: format!("Events received"),
-        })
+        ResponseWrapper::<()>::build(StatusCode::OK, "Events received", None)
     }
 }

@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{HttpResponse, Responder, http::StatusCode, web};
 
 use crate::{
     errors::Error,
     models::{
         notification::{NewNotification, NewTemplateNotification, NotificationParams},
-        reponse::Response,
+        reponse_wrapper::ResponseWrapper,
     },
     services::notification_service::NotificationService,
 };
@@ -44,10 +44,11 @@ impl NotificationController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(id) => HttpResponse::Created().json(Response {
-                r#type: "success".to_string(),
-                message: format!("Notification created - id: {id}"),
-            }),
+            Ok(notification) => ResponseWrapper::build(
+                StatusCode::CREATED,
+                "Notification created",
+                Some(notification),
+            ),
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -62,17 +63,15 @@ impl NotificationController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(id) => {
-                if let Some(id) = id {
-                    HttpResponse::Created().json(Response {
-                        r#type: "success".to_string(),
-                        message: format!("Notification created - id: {id}"),
-                    })
+            Ok(result) => {
+                if let Some(notification) = result {
+                    ResponseWrapper::build(
+                        StatusCode::CREATED,
+                        "Template notification created",
+                        Some(notification),
+                    )
                 } else {
-                    HttpResponse::NotFound().json(Response {
-                        r#type: "error".to_string(),
-                        message: format!("Template not found"),
-                    })
+                    ResponseWrapper::<()>::build(StatusCode::NOT_FOUND, "Template not found", None)
                 }
             }
             Err(e) => HttpResponse::from_error(e),
@@ -89,7 +88,9 @@ impl NotificationController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Notifications retrieved", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }

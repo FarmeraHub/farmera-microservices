@@ -6,7 +6,7 @@ use actix_web::{
 };
 use futures_util::{FutureExt, future::LocalBoxFuture};
 
-use crate::{models::reponse::Response, utils::jwt_utils::Claims};
+use crate::{models::reponse_wrapper::ResponseWrapper, utils::jwt_utils::Claims};
 
 pub struct RBACMiddleware;
 
@@ -76,10 +76,11 @@ where
         };
 
         // return unauthorized
-        let http_res = HttpResponse::Unauthorized().json(Response {
-            r#type: "error".to_string(),
-            message: "Unauthorized".to_string(),
-        });
+        let http_res = ResponseWrapper::<()>::build(
+            actix_web::http::StatusCode::UNAUTHORIZED,
+            "Unauthorized",
+            None,
+        );
         let (http_req, _) = req.into_parts();
         let res = ServiceResponse::new(http_req, http_res);
 

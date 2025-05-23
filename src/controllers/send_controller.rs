@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{HttpResponse, Responder, http::StatusCode, web};
 
 use crate::{
     errors::Error,
-    models::{email, notification::SendNotification, push, reponse::Response},
+    models::{email, notification::SendNotification, push, reponse_wrapper::ResponseWrapper},
     services::send_service::SendService,
 };
 
@@ -37,10 +37,8 @@ impl SendController {
             .await
             .map_err(|e| Error::Kafka(e))
         {
-            Ok(()) => HttpResponse::Ok().json(Response {
-                r#type: "success".to_string(),
-                message: "queued".to_string(),
-            }),
+            Ok(()) => ResponseWrapper::<()>::build(StatusCode::OK, "Queued", None),
+
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -56,10 +54,7 @@ impl SendController {
             .await
             .map_err(|e| Error::Kafka(e))
         {
-            Ok(()) => HttpResponse::Ok().json(Response {
-                r#type: "success".to_string(),
-                message: "queued".to_string(),
-            }),
+            Ok(()) => ResponseWrapper::<()>::build(StatusCode::OK, "Queued", None),
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -73,10 +68,7 @@ impl SendController {
             .send(&send_notification.0)
             .await
         {
-            Ok(()) => HttpResponse::Ok().json(Response {
-                r#type: "success".to_string(),
-                message: "queued".to_string(),
-            }),
+            Ok(()) => ResponseWrapper::<()>::build(StatusCode::OK, "Queued", None),
             Err(e) => HttpResponse::from_error(e),
         }
     }
