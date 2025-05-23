@@ -4,6 +4,10 @@ DROP TABLE IF EXISTS notifications;
 
 DROP TABLE IF EXISTS templates;
 
+DROP TABLE IF EXISTS user_preferences;
+
+DROP TABLE IF EXISTS user_device_token;
+
 CREATE TABLE user_notifications (
     id BIGSERIAL PRIMARY KEY,
     recipient TEXT NOT NULL,
@@ -36,10 +40,8 @@ CREATE TABLE user_preferences (
     transactional_channels TEXT[],
     system_alert_channels TEXT[],
     chat_channels TEXT[],
-    do_not_disturb_start TIMESTAMPTZ,
-    do_not_disturb_end TIMESTAMPTZ,
-    daily_limits INT,
-    sent_today INT DEFAULT 0
+    do_not_disturb_start TIME WITH TIME ZONE,
+    do_not_disturb_end TIME WITH TIME ZONE
 );
 
 CREATE TABLE user_device_token (

@@ -27,7 +27,7 @@ use repositories::{
 };
 use services::{
     email_service::EmailService, notification_service::NotificationService,
-    push_service::PushService, template_service::TemplateService,
+    push_service::PushService, send_service::SendService, template_service::TemplateService,
     user_devices_service::UserDeviceService, user_preferences_service::UserPreferencesService,
 };
 use sqlx::migrate;
@@ -46,6 +46,7 @@ mod openapi;
 mod processor;
 mod repositories;
 mod services;
+mod types;
 mod utils;
 
 async fn index() -> &'static str {
@@ -111,14 +112,18 @@ async fn main() -> std::io::Result<()> {
         Arc::new(UserPreferencesService::new(user_preferences_repo.clone()));
     let user_devices_service = Arc::new(UserDeviceService::new(user_device_token_repo.clone()));
 
+    let send_service = Arc::new(SendService::new(
+        user_preferences_service.clone(),
+        user_devices_service.clone(),
+        email_service.clone(),
+        push_service.clone(),
+    ));
+
     // init controllers
     let notification_controller =
         Arc::new(NotificationController::new(notification_service.clone()));
     let template_controller = Arc::new(TemplateController::new(template_service.clone()));
-    let send_controller = Arc::new(SendController::new(
-        email_service.clone(),
-        push_service.clone(),
-    ));
+    let send_controller = Arc::new(SendController::new(send_service.clone()));
     let user_preferences_controller = Arc::new(UserPreferencesController::new(
         user_preferences_service.clone(),
     ));

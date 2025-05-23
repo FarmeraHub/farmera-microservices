@@ -5,7 +5,7 @@ use rdkafka::producer::{FutureProducer, FutureRecord};
 
 use crate::{
     errors::sending_error::SendingError,
-    models::{email, notification::NewNotification},
+    models::{Channel, email, notification::NewNotification},
     repositories::{
         notification_repo::NotificationRepo, template_repo::TemplateRepo,
         user_notification_repo::UserNotificationsRepo,
@@ -127,7 +127,7 @@ impl Dispatcher for EmailDispatcher {
             template_id,
             title: payload.subject.clone(),
             content: content.clone(),
-            channel: "email".to_string(),
+            channel: Channel::Email,
         };
 
         let mut inserted = HashMap::new();

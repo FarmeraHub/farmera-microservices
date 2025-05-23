@@ -6,6 +6,5 @@ SET
     chat_channels = $5,
     do_not_disturb_start = $6,
     do_not_disturb_end = $7,
-    daily_limits = $8
 WHERE
     user_id = $1 RETURNING *;

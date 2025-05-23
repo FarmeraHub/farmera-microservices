@@ -5,9 +5,7 @@ SELECT
     system_alert_channels,
     chat_channels,
     do_not_disturb_start,
-    do_not_disturb_end,
-    daily_limits,
-    sent_today
+    do_not_disturb_end
 FROM user_preferences
 WHERE
     user_id = $1;

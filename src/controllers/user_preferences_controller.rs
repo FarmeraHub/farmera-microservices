@@ -35,9 +35,10 @@ impl UserPreferencesController {
         self_controller: web::Data<Arc<UserPreferencesController>>,
         user_preferences: web::Json<NewUserPreferences>,
     ) -> impl Responder {
+        let mut user_preferences = user_preferences.into_inner();
         match self_controller
             .user_preferences_service
-            .create_user_preferences(&user_preferences)
+            .create_user_preferences(&mut user_preferences)
             .await
             .map_err(|e| Error::Db(e))
         {
@@ -56,7 +57,10 @@ impl UserPreferencesController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => match result {
+                Some(user_preferences) => HttpResponse::Ok().json(user_preferences),
+                None => HttpResponse::NotFound().finish(),
+            },
             Err(e) => HttpResponse::from_error(e),
         }
     }

@@ -34,7 +34,7 @@ impl NotificationController {
         }
     }
 
-    pub async fn create_notification(
+    async fn create_notification(
         self_controller: web::Data<Arc<NotificationController>>,
         notification: web::Json<NewNotification>,
     ) -> impl Responder {
@@ -52,7 +52,7 @@ impl NotificationController {
         }
     }
 
-    pub async fn create_template_notification(
+    async fn create_template_notification(
         self_controller: web::Data<Arc<NotificationController>>,
         notification: web::Json<NewTemplateNotification>,
     ) -> impl Responder {
@@ -79,7 +79,7 @@ impl NotificationController {
         }
     }
 
-    pub async fn get_notifications(
+    async fn get_notifications(
         self_controller: web::Data<Arc<NotificationController>>,
         params: web::Query<NotificationParams>,
     ) -> impl Responder {

@@ -31,7 +31,6 @@ impl UserPreferencesRepo {
             .bind(&preferences.chat_channels)
             .bind(&preferences.do_not_disturb_start)
             .bind(&preferences.do_not_disturb_end)
-            .bind(&preferences.daily_limits)
             .fetch_one(&*self.pg_pool)
             .await
             .map_err(|e| {
@@ -45,12 +44,12 @@ impl UserPreferencesRepo {
     pub async fn get_user_preferences_by_user_id(
         &self,
         user_id: Uuid,
-    ) -> Result<UserPreferences, DBError> {
+    ) -> Result<Option<UserPreferences>, DBError> {
         let stm = include_str!("./queries/user_preferences/get_user_preferences_by_user_id.sql");
 
         let result = sqlx::query_as(stm)
             .bind(user_id)
-            .fetch_one(&*self.pg_pool)
+            .fetch_optional(&*self.pg_pool)
             .await
             .map_err(|e| {
                 log::error!("Get user preferences error: {e}");
@@ -74,7 +73,6 @@ impl UserPreferencesRepo {
             .bind(&preferences.chat_channels)
             .bind(&preferences.do_not_disturb_start)
             .bind(&preferences.do_not_disturb_end)
-            .bind(&preferences.daily_limits)
             .fetch_one(&*self.pg_pool)
             .await
             .map_err(|e| {

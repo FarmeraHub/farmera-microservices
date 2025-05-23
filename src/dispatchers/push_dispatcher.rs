@@ -5,7 +5,7 @@ use rdkafka::producer::{FutureProducer, FutureRecord};
 
 use crate::{
     errors::sending_error::SendingError,
-    models::{notification::NewNotification, push},
+    models::{Channel, notification::NewNotification, push},
     repositories::{
         notification_repo::NotificationRepo, template_repo::TemplateRepo,
         user_notification_repo::UserNotificationsRepo,
@@ -121,7 +121,7 @@ impl Dispatcher for PushDispatcher {
             template_id,
             title: payload.title.clone(),
             content: content.clone(),
-            channel: "push".to_string(),
+            channel: Channel::Push,
         };
 
         let mut inserted = HashMap::new();
@@ -142,7 +142,7 @@ impl Dispatcher for PushDispatcher {
                 .await
                 .map_err(|e| SendingError::DatabaseError(e.to_string()))?;
 
-            let recipient_num = if payload.r#type == "token".to_string() {
+            let recipient_num = if payload.r#type == push::PushMessageType::Token {
                 payload.recipient.len()
             } else {
                 0
@@ -177,7 +177,7 @@ impl Dispatcher for PushDispatcher {
             // construct the FCM request message
             let message = serde_json::json!({
                 "message": {
-                    payload.r#type.clone(): recipent,
+                    payload.r#type.to_string(): recipent,
                     "notification": {
                         "title": payload.title.clone(),
                         "body": content

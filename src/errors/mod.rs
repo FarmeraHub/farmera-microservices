@@ -32,6 +32,10 @@ impl ResponseError for Error {
                     r#type: "error".to_string(),
                     message: e.to_string(),
                 }),
+                DBError::NotFound(e) => HttpResponse::NotFound().json(Response {
+                    r#type: "error".to_string(),
+                    message: e.to_string(),
+                }),
             },
             Error::Kafka(e) => match e {
                 KafkaError::Error(_e) => HttpResponse::InternalServerError().json(Response {
