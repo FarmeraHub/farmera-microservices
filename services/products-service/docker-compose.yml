@@ -1,0 +1,72 @@
+version: '3.8' # Sử dụng phiên bản phù hợp
+
+services:
+  # Service Database PostgreSQL
+  db:
+    image: postgres:15 # Chọn phiên bản PostgreSQL cụ thể (vd: 15, 16) - tránh 'latest' trong production
+    container_name: postgres_db_container
+    restart: unless-stopped
+    environment:
+      # Các biến này cấu hình PostgreSQL khi chạy lần đầu
+      POSTGRES_USER: ${PG_USER:-postgres} # Sử dụng giá trị từ .env hoặc mặc định 'postgres'
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-123456} # Sử dụng giá trị từ .env hoặc mặc định '123456' - **CẢNH BÁO: Dùng .env cho mật khẩu thật!**
+      POSTGRES_DB: ${PG_DB:-product} # Sử dụng giá trị từ .env hoặc mặc định 'product'
+    volumes:
+      # Mount một volume có tên để lưu trữ dữ liệu database lâu dài
+      - db_data:/var/lib/postgresql/data
+    ports:
+      # Map cổng PostgreSQL ra host *chỉ khi* bạn cần truy cập trực tiếp từ host (vd: pgAdmin)
+      # Định dạng: HOST_PORT:CONTAINER_PORT
+      - "5431:5432" # Host port 5431 map vào container port 5432
+    # networks: # Tuỳ chọn: định nghĩa nếu sử dụng network tùy chỉnh
+    #   - app_network
+
+  # Service Ứng dụng của bạn (product-service)
+  app:
+    build: . # Chỉ định Docker Compose build image từ Dockerfile trong thư mục hiện tại
+    image: product-service:latest # Đặt tên cho image được build ra (tuỳ chọn nhưng nên có)
+    container_name: product_app_container
+    restart: unless-stopped
+    depends_on:
+      - db # Đảm bảo service 'db' khởi động trước service 'app'
+    ports:
+      # Map cổng host 3333 vào cổng container 3333 (từ .env PORT)
+      # Định dạng: HOST_PORT:CONTAINER_PORT
+      - "${PORT:-3333}:${PORT:-3333}" # Sử dụng biến PORT từ .env hoặc mặc định 3333
+    environment:
+      # Truyền cấu hình kết nối database và các cấu hình khác cho ứng dụng
+      PORT: ${PORT:-3333}
+      DB_TYPE: ${DB_TYPE:-postgres}
+      # --- QUAN TRỌNG ---
+      # Sử dụng tên service 'db' làm host. DNS nội bộ của Docker Compose sẽ phân giải tên này.
+      PG_HOST: db
+      # Kết nối tới port NỘI BỘ của container 'db' (là 5432)
+      PG_PORT: 5432
+      PG_USER: ${PG_USER:-postgres}
+      PG_PASSWORD: ${PG_PASSWORD:-123456} # **CẢNH BÁO: Dùng .env cho mật khẩu thật!**
+      PG_DB: ${PG_DB:-product}
+      # Đường dẫn UPLOAD_DIR bên trong container (WORKDIR + đường dẫn tương đối từ .env)
+      UPLOAD_DIR: ${UPLOAD_DIR:-/usr/src/app/uploads}
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-5242880}
+      ALLOWED_MIME_TYPES: ${ALLOWED_MIME_TYPES:-'image/jpeg,image/png,image/jpg,image/gif'}
+      JWT_SECRET: ${JWT_SECRET:-'1Qg1a67SPiwgf4uOW8S1UbIiUAgE0QRmxMg1UZSIvkU'} # **CẢNH BÁO: Dùng .env cho secret thật!**
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-3600s}
+      # Thêm các biến môi trường khác mà ứng dụng của bạn cần
+      NODE_ENV: ${NODE_ENV:-development} # Ví dụ: đặt môi trường
+    volumes:
+      # Mount thư mục uploads để dữ liệu không bị mất khi container bị xóa/tạo lại
+      # Map thư mục ./my-uploads trên máy host vào /usr/src/app/uploads trong container
+      # Đảm bảo thư mục `./my-uploads` tồn tại trên host của bạn trước khi chạy compose up
+      - ./my-uploads:/usr/src/app/uploads
+    # networks: # Tuỳ chọn: định nghĩa nếu sử dụng network tùy chỉnh
+    #   - app_network
+
+# Định nghĩa volume có tên để lưu trữ dữ liệu database lâu dài
+volumes:
+  db_data:
+    driver: local # Sử dụng driver mặc định là local
+
+# Tuỳ chọn: Định nghĩa network tùy chỉnh nếu cần
+# networks:
+#   app_network:
+#     driver: bridge

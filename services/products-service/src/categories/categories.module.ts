@@ -1,0 +1,25 @@
+import { Module } from '@nestjs/common';
+import { CategoriesController } from './categories.controller';
+import { CategoriesService } from './categories.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Category } from './entities/category.entity';
+import { Subcategory } from './entities/subcategory.entity';
+import { MulterModule } from '@nestjs/platform-express';
+import { multerAsyncConfig } from 'src/config/multer.config';
+import { FileStorageModule } from 'src/file-storage/file-storage.module';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([Category,Subcategory]),
+    MulterModule.registerAsync(multerAsyncConfig),
+    FileStorageModule,
+    
+  ],
+  controllers: [CategoriesController],
+  providers: [CategoriesService],
+  exports: [
+    CategoriesService,
+    TypeOrmModule,
+  ],
+})
+export class CategoriesModule {}
