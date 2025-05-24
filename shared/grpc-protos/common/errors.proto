@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package farmera.common;
+
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/farmera/grpc-protos/common";
+
+// Standard error response structure
+message ErrorResponse {
+  ErrorCode code = 1;           // Standardized error code
+  string message = 2;           // Human-readable error message
+  string details = 3;           // Additional error details
+  string trace_id = 4;          // Request trace ID for debugging
+  repeated ErrorDetail errors = 5; // Field-specific errors
+  google.protobuf.Any metadata = 6; // Additional error metadata
+}
+
+// Specific error details for field validation
+message ErrorDetail {
+  string field = 1;       // Field name that caused the error
+  string code = 2;        // Field-specific error code
+  string message = 3;     // Field-specific error message
+  google.protobuf.Any value = 4; // Invalid value that caused error
+}
+
+// Standardized error codes across all services
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  
+  // Client errors (4xx equivalent)
+  ERROR_CODE_INVALID_REQUEST = 1000;
+  ERROR_CODE_AUTHENTICATION_REQUIRED = 1001;
+  ERROR_CODE_PERMISSION_DENIED = 1002;
+  ERROR_CODE_NOT_FOUND = 1003;
+  ERROR_CODE_ALREADY_EXISTS = 1004;
+  ERROR_CODE_VALIDATION_FAILED = 1005;
+  ERROR_CODE_RATE_LIMITED = 1006;
+  ERROR_CODE_CONFLICT = 1007;
+  ERROR_CODE_GONE = 1008;
+  ERROR_CODE_PRECONDITION_FAILED = 1009;
+  ERROR_CODE_PAYLOAD_TOO_LARGE = 1010;
+  
+  // Server errors (5xx equivalent)
+  ERROR_CODE_INTERNAL_ERROR = 2000;
+  ERROR_CODE_SERVICE_UNAVAILABLE = 2001;
+  ERROR_CODE_DATABASE_ERROR = 2002;
+  ERROR_CODE_EXTERNAL_SERVICE_ERROR = 2003;
+  ERROR_CODE_TIMEOUT = 2004;
+  ERROR_CODE_INSUFFICIENT_STORAGE = 2005;
+  
+  // Business logic errors (custom)
+  ERROR_CODE_BUSINESS_RULE_VIOLATION = 3000;
+  ERROR_CODE_INSUFFICIENT_FUNDS = 3001;
+  ERROR_CODE_OUT_OF_STOCK = 3002;
+  ERROR_CODE_DELIVERY_UNAVAILABLE = 3003;
+  ERROR_CODE_PAYMENT_FAILED = 3004;
+  ERROR_CODE_ORDER_CANNOT_BE_MODIFIED = 3005;
+  ERROR_CODE_FARM_NOT_VERIFIED = 3006;
+  ERROR_CODE_PRODUCT_NOT_AVAILABLE = 3007;
+  ERROR_CODE_DISCOUNT_EXPIRED = 3008;
+  ERROR_CODE_DISCOUNT_LIMIT_EXCEEDED = 3009;
+  ERROR_CODE_INVALID_DELIVERY_ADDRESS = 3010;
+  
+  // User-specific errors
+  ERROR_CODE_USER_NOT_VERIFIED = 4000;
+  ERROR_CODE_USER_SUSPENDED = 4001;
+  ERROR_CODE_USER_BANNED = 4002;
+  ERROR_CODE_EMAIL_NOT_VERIFIED = 4003;
+  ERROR_CODE_PHONE_NOT_VERIFIED = 4004;
+  ERROR_CODE_WEAK_PASSWORD = 4005;
+  ERROR_CODE_PASSWORD_EXPIRED = 4006;
+  ERROR_CODE_ACCOUNT_LOCKED = 4007;
+  ERROR_CODE_TOO_MANY_LOGIN_ATTEMPTS = 4008;
+  
+  // Farm/Product specific errors
+  ERROR_CODE_FARM_NOT_APPROVED = 5000;
+  ERROR_CODE_PRODUCT_UNDER_REVIEW = 5001;
+  ERROR_CODE_CERTIFICATION_EXPIRED = 5002;
+  ERROR_CODE_QUALITY_CHECK_FAILED = 5003;
+  ERROR_CODE_HARVEST_NOT_READY = 5004;
+  ERROR_CODE_SEASONAL_UNAVAILABLE = 5005;
+  
+  // Communication errors
+  ERROR_CODE_MESSAGE_TOO_LARGE = 6000;
+  ERROR_CODE_CONVERSATION_FULL = 6001;
+  ERROR_CODE_USER_BLOCKED = 6002;
+  ERROR_CODE_CONVERSATION_ARCHIVED = 6003;
+  ERROR_CODE_FILE_UPLOAD_FAILED = 6004;
+  ERROR_CODE_UNSUPPORTED_FILE_TYPE = 6005;
+  
+  // Notification errors
+  ERROR_CODE_NOTIFICATION_DELIVERY_FAILED = 7000;
+  ERROR_CODE_DEVICE_TOKEN_INVALID = 7001;
+  ERROR_CODE_TEMPLATE_NOT_FOUND = 7002;
+  ERROR_CODE_NOTIFICATION_THROTTLED = 7003;
+  ERROR_CODE_SUBSCRIPTION_EXPIRED = 7004;
+}
+
+// Validation error for specific fields
+message ValidationError {
+  string field_path = 1;      // Dot-notation field path (e.g., "user.email")
+  repeated string violations = 2; // List of validation violations
+  google.protobuf.Any rejected_value = 3; // The value that was rejected
+}
+
+// Rate limiting error details
+message RateLimitError {
+  int32 limit = 1;                    // Rate limit threshold
+  int32 remaining = 2;                // Remaining requests
+  int64 reset_time_unix = 3;          // When the limit resets (Unix timestamp)
+  string retry_after_seconds = 4;     // How long to wait before retrying
+}
+
+// Resource conflict error details
+message ConflictError {
+  string resource_type = 1;    // Type of resource in conflict
+  string resource_id = 2;      // ID of the conflicting resource
+  string conflict_reason = 3;  // Reason for the conflict
+  repeated string suggestions = 4; // Suggested resolutions
+}
+
+// External service error details
+message ExternalServiceError {
+  string service_name = 1;     // Name of the external service
+  string service_error_code = 2; // Error code from external service
+  string service_error_message = 3; // Error message from external service
+  bool is_retryable = 4;       // Whether the error is retryable
+  int32 retry_after_seconds = 5; // Suggested retry delay
+} 

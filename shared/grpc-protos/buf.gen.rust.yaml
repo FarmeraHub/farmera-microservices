@@ -1,0 +1,14 @@
+version: v2
+plugins:
+  - remote: buf.build/community/neoeinstein-prost:v0.4.0
+    out: ../generated/rust/src
+    opt:
+      - bytes=.
+      - file_descriptor_set
+  - remote: buf.build/community/neoeinstein-prost-serde:v0.3.1
+    out: ../generated/rust/src
+  - remote: buf.build/community/neoeinstein-tonic:v0.4.0
+    out: ../generated/rust/src
+    opt:
+      - no_include
+      - compile_well_known_types

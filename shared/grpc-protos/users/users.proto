@@ -1,0 +1,393 @@
+syntax = "proto3";
+
+package farmera.users;
+
+import "common/types.proto";
+import "common/enums.proto";
+import "common/pagination.proto";
+import "common/errors.proto";
+
+option go_package = "github.com/farmera/grpc-protos/users";
+
+// Users service definition
+service UsersService {
+  // Authentication methods
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordResponse);
+  rpc UpdatePassword(UpdatePasswordRequest) returns (UpdatePasswordResponse);
+  
+  // User management
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  
+  // Email verification
+  rpc SendVerificationEmail(SendVerificationEmailRequest) returns (SendVerificationEmailResponse);
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+  
+  // User profile
+  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
+  
+  // Location management
+  rpc AddUserLocation(AddUserLocationRequest) returns (AddUserLocationResponse);
+  rpc UpdateUserLocation(UpdateUserLocationRequest) returns (UpdateUserLocationResponse);
+  rpc DeleteUserLocation(DeleteUserLocationRequest) returns (DeleteUserLocationResponse);
+  rpc GetUserLocations(GetUserLocationsRequest) returns (GetUserLocationsResponse);
+  
+  // Payment methods
+  rpc AddPaymentMethod(AddPaymentMethodRequest) returns (AddPaymentMethodResponse);
+  rpc UpdatePaymentMethod(UpdatePaymentMethodRequest) returns (UpdatePaymentMethodResponse);
+  rpc DeletePaymentMethod(DeletePaymentMethodRequest) returns (DeletePaymentMethodResponse);
+  rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
+  
+  // Admin methods
+  rpc GetUsersByRole(GetUsersByRoleRequest) returns (GetUsersByRoleResponse);
+  rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
+  rpc GetUserStats(GetUserStatsRequest) returns (GetUserStatsResponse);
+}
+
+// User message definition
+message User {
+  string id = 1;
+  string email = 2;
+  string phone = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string farm_id = 6;
+  farmera.common.Gender gender = 7;
+  string avatar_url = 8;
+  farmera.common.Timestamp birthday = 9;
+  farmera.common.UserRole role = 10;
+  int32 points = 11;
+  farmera.common.UserStatus status = 12;
+  repeated farmera.common.Location locations = 13;
+  repeated PaymentMethod payment_methods = 14;
+  farmera.common.Timestamp created_at = 15;
+  farmera.common.Timestamp updated_at = 16;
+  bool email_verified = 17;
+  bool phone_verified = 18;
+  farmera.common.Timestamp last_login = 19;
+}
+
+// Payment method information
+message PaymentMethod {
+  string id = 1;
+  string user_id = 2;
+  farmera.common.PaymentMethod type = 3;
+  string display_name = 4;
+  string last_four_digits = 5;
+  string provider = 6;
+  bool is_default = 7;
+  farmera.common.Timestamp expires_at = 8;
+  farmera.common.Timestamp created_at = 9;
+  farmera.common.Timestamp updated_at = 10;
+  map<string, string> metadata = 11; // Additional payment method specific data
+}
+
+// JWT token information
+message TokenInfo {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;           // Seconds until expiration
+  string token_type = 4;          // "Bearer"
+  repeated string scopes = 5;     // Token scopes/permissions
+}
+
+// Authentication requests/responses
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  bool remember_me = 3;
+  string device_info = 4;   // Optional device information
+}
+
+message LoginResponse {
+  User user = 1;
+  TokenInfo token_info = 2;
+  bool requires_verification = 3;
+  string verification_type = 4; // "email" or "phone"
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  TokenInfo token_info = 1;
+}
+
+message LogoutRequest {
+  string user_id = 1;
+  string device_id = 2; // Optional for device-specific logout
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message ForgotPasswordRequest {
+  string email = 1;
+}
+
+message ForgotPasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UpdatePasswordRequest {
+  string user_id = 1;
+  string current_password = 2;
+  string new_password = 3;
+  string reset_token = 4; // Alternative to current_password for reset flow
+}
+
+message UpdatePasswordResponse {
+  bool success = 1;
+  bool requires_relogin = 2;
+}
+
+// User management requests/responses
+message CreateUserRequest {
+  string email = 1;
+  string password = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string phone = 5;
+  farmera.common.UserRole role = 6;
+  farmera.common.Gender gender = 7;
+  farmera.common.Timestamp birthday = 8;
+  bool send_verification_email = 9;
+}
+
+message CreateUserResponse {
+  User user = 1;
+  bool verification_sent = 2;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+  bool include_locations = 2;
+  bool include_payment_methods = 3;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message UpdateUserRequest {
+  string user_id = 1;
+  optional string first_name = 2;
+  optional string last_name = 3;
+  optional string phone = 4;
+  optional farmera.common.Gender gender = 5;
+  optional string avatar_url = 6;
+  optional farmera.common.Timestamp birthday = 7;
+  map<string, string> custom_fields = 8;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+}
+
+message DeleteUserRequest {
+  string user_id = 1;
+  string reason = 2;
+  bool hard_delete = 3; // True for permanent deletion
+}
+
+message DeleteUserResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListUsersRequest {
+  farmera.common.PaginationRequest pagination = 1;
+  repeated farmera.common.SortOption sort = 2;
+  optional farmera.common.UserRole role_filter = 3;
+  optional farmera.common.UserStatus status_filter = 4;
+  optional string search_query = 5;
+  optional farmera.common.TimeRange created_date_range = 6;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+// Email verification requests/responses
+message SendVerificationEmailRequest {
+  string user_id = 1;
+  string email = 2; // Optional - if different from user's current email
+}
+
+message SendVerificationEmailResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message VerifyEmailRequest {
+  string user_id = 1;
+  string verification_code = 2;
+  string verification_token = 3;
+}
+
+message VerifyEmailResponse {
+  bool success = 1;
+  User user = 2; // Updated user with verified email
+}
+
+// Profile requests/responses
+message GetUserProfileRequest {
+  string user_id = 1;
+}
+
+message GetUserProfileResponse {
+  User user = 1;
+  ProfileStats stats = 2;
+}
+
+message UpdateUserProfileRequest {
+  string user_id = 1;
+  optional string first_name = 2;
+  optional string last_name = 3;
+  optional string phone = 4;
+  optional farmera.common.Gender gender = 5;
+  optional farmera.common.Timestamp birthday = 6;
+  optional string bio = 7;
+  repeated string interests = 8;
+  map<string, string> preferences = 9;
+}
+
+message UpdateUserProfileResponse {
+  User user = 1;
+}
+
+message ProfileStats {
+  int32 total_orders = 1;
+  int32 total_reviews = 2;
+  int32 loyalty_points = 3;
+  double total_spent = 4;
+  int32 favorite_products = 5;
+  farmera.common.Timestamp member_since = 6;
+}
+
+// Location management requests/responses
+message AddUserLocationRequest {
+  string user_id = 1;
+  farmera.common.Location location = 2;
+}
+
+message AddUserLocationResponse {
+  farmera.common.Location location = 1;
+}
+
+message UpdateUserLocationRequest {
+  string user_id = 1;
+  string location_id = 2;
+  farmera.common.Location location = 3;
+}
+
+message UpdateUserLocationResponse {
+  farmera.common.Location location = 1;
+}
+
+message DeleteUserLocationRequest {
+  string user_id = 1;
+  string location_id = 2;
+}
+
+message DeleteUserLocationResponse {
+  bool success = 1;
+}
+
+message GetUserLocationsRequest {
+  string user_id = 1;
+}
+
+message GetUserLocationsResponse {
+  repeated farmera.common.Location locations = 1;
+}
+
+// Payment method requests/responses
+message AddPaymentMethodRequest {
+  string user_id = 1;
+  PaymentMethod payment_method = 2;
+}
+
+message AddPaymentMethodResponse {
+  PaymentMethod payment_method = 1;
+}
+
+message UpdatePaymentMethodRequest {
+  string user_id = 1;
+  string payment_method_id = 2;
+  PaymentMethod payment_method = 3;
+}
+
+message UpdatePaymentMethodResponse {
+  PaymentMethod payment_method = 1;
+}
+
+message DeletePaymentMethodRequest {
+  string user_id = 1;
+  string payment_method_id = 2;
+}
+
+message DeletePaymentMethodResponse {
+  bool success = 1;
+}
+
+message GetPaymentMethodsRequest {
+  string user_id = 1;
+}
+
+message GetPaymentMethodsResponse {
+  repeated PaymentMethod payment_methods = 1;
+}
+
+// Admin requests/responses
+message GetUsersByRoleRequest {
+  farmera.common.UserRole role = 1;
+  farmera.common.PaginationRequest pagination = 2;
+}
+
+message GetUsersByRoleResponse {
+  repeated User users = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message UpdateUserStatusRequest {
+  string user_id = 1;
+  farmera.common.UserStatus status = 2;
+  string reason = 3;
+  string admin_id = 4;
+}
+
+message UpdateUserStatusResponse {
+  User user = 1;
+}
+
+message GetUserStatsRequest {
+  optional farmera.common.TimeRange date_range = 1;
+  optional farmera.common.UserRole role_filter = 2;
+}
+
+message GetUserStatsResponse {
+  UserStatistics stats = 1;
+}
+
+message UserStatistics {
+  int32 total_users = 1;
+  int32 active_users = 2;
+  int32 new_users_this_month = 3;
+  map<string, int32> users_by_role = 4;
+  map<string, int32> users_by_status = 5;
+  double average_session_duration = 6;
+  int32 verified_users = 7;
+  int32 unverified_users = 8;
+} 

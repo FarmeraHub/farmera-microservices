@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package farmera.common;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/farmera/grpc-protos/common";
+
+// Common timestamp wrapper
+message Timestamp {
+  google.protobuf.Timestamp value = 1;
+}
+
+// Location/Address information
+message Location {
+  string id = 1;
+  string user_id = 2;
+  string address_line = 3;
+  string city = 4;
+  string state = 5;
+  string postal_code = 6;
+  string country = 7;
+  double latitude = 8;
+  double longitude = 9;
+  bool is_default = 10;
+  Timestamp created_at = 11;
+  Timestamp updated_at = 12;
+}
+
+// Geohash location for spatial queries
+message GeoLocation {
+  double latitude = 1;
+  double longitude = 2;
+  string geohash = 3;
+  double radius_km = 4;
+}
+
+// Money/Currency representation
+message Money {
+  int64 amount = 1;  // Amount in smallest currency unit (cents)
+  string currency = 2;  // ISO 4217 currency code (e.g., "USD", "VND")
+}
+
+// File/Media representation
+message MediaFile {
+  string id = 1;
+  string filename = 2;
+  string url = 3;
+  string mime_type = 4;
+  int64 size_bytes = 5;
+  Timestamp uploaded_at = 6;
+}
+
+// Image with multiple sizes
+message Image {
+  string id = 1;
+  string original_url = 2;
+  string thumbnail_url = 3;
+  string medium_url = 4;
+  string large_url = 5;
+  string alt_text = 6;
+}
+
+// Video file
+message Video {
+  string id = 1;
+  string url = 2;
+  string thumbnail_url = 3;
+  int32 duration_seconds = 4;
+  string format = 5;
+}
+
+// Contact information
+message ContactInfo {
+  string email = 1;
+  string phone = 2;
+  string website = 3;
+  repeated string social_media = 4;
+}
+
+// Audit trail
+message AuditInfo {
+  string created_by = 1;
+  string updated_by = 2;
+  Timestamp created_at = 3;
+  Timestamp updated_at = 4;
+  string version = 5;
+}
+
+// Rating/Review summary
+message Rating {
+  double average_score = 1;
+  int32 total_reviews = 2;
+  repeated int32 score_distribution = 3;  // [1-star, 2-star, 3-star, 4-star, 5-star]
+}
+
+// Measurement unit
+message Unit {
+  string name = 1;         // "kg", "piece", "bunch", etc.
+  string display_name = 2; // "Kilogram", "Piece", "Bunch"
+  string symbol = 3;       // "kg", "pc", "bunch"
+  string category = 4;     // "weight", "count", "volume"
+}
+
+// Address for delivery
+message DeliveryAddress {
+  string recipient_name = 1;
+  string phone = 2;
+  string address_line1 = 3;
+  string address_line2 = 4;
+  string city = 5;
+  string state = 6;
+  string postal_code = 7;
+  string country = 8;
+  string delivery_notes = 9;
+  GeoLocation coordinates = 10;
+}
+
+// Time range
+message TimeRange {
+  Timestamp start_time = 1;
+  Timestamp end_time = 2;
+}
+
+// Operating hours
+message OperatingHours {
+  enum DayOfWeek {    DAY_OF_WEEK_UNSPECIFIED = 0;    MONDAY = 1;    TUESDAY = 2;    WEDNESDAY = 3;    THURSDAY = 4;    FRIDAY = 5;    SATURDAY = 6;    SUNDAY = 7;  }
+  
+  DayOfWeek day = 1;
+  TimeRange hours = 2;
+  bool is_closed = 3;
+} 

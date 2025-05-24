@@ -1,0 +1,630 @@
+syntax = "proto3";
+
+package farmera.payment;
+
+import "common/types.proto";
+import "common/enums.proto";
+import "common/pagination.proto";
+import "common/errors.proto";
+
+option go_package = "github.com/farmera/grpc-protos/payment";
+
+// Payment service definition
+service PaymentService {
+  // Order management
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse);
+  rpc GetOrdersByStatus(GetOrdersByStatusRequest) returns (GetOrdersByStatusResponse);
+  
+  // Payment processing
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
+  rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
+  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
+  rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
+  
+  // Discount management
+  rpc CreateDiscount(CreateDiscountRequest) returns (CreateDiscountResponse);
+  rpc GetDiscount(GetDiscountRequest) returns (GetDiscountResponse);
+  rpc UpdateDiscount(UpdateDiscountRequest) returns (UpdateDiscountResponse);
+  rpc DeleteDiscount(DeleteDiscountRequest) returns (DeleteDiscountResponse);
+  rpc ListDiscounts(ListDiscountsRequest) returns (ListDiscountsResponse);
+  rpc ApplyDiscount(ApplyDiscountRequest) returns (ApplyDiscountResponse);
+  rpc ValidateDiscountCode(ValidateDiscountCodeRequest) returns (ValidateDiscountCodeResponse);
+  
+  // Delivery management
+  rpc CreateDelivery(CreateDeliveryRequest) returns (CreateDeliveryResponse);
+  rpc GetDelivery(GetDeliveryRequest) returns (GetDeliveryResponse);
+  rpc UpdateDeliveryStatus(UpdateDeliveryStatusRequest) returns (UpdateDeliveryStatusResponse);
+  rpc ListDeliveries(ListDeliveriesRequest) returns (ListDeliveriesResponse);
+  rpc TrackDelivery(TrackDeliveryRequest) returns (TrackDeliveryResponse);
+  rpc AssignDeliveryAgent(AssignDeliveryAgentRequest) returns (AssignDeliveryAgentResponse);
+  
+  // Analytics and reporting
+  rpc GetOrderStats(GetOrderStatsRequest) returns (GetOrderStatsResponse);
+  rpc GetPaymentStats(GetPaymentStatsRequest) returns (GetPaymentStatsResponse);
+  rpc GetRevenueReport(GetRevenueReportRequest) returns (GetRevenueReportResponse);
+}
+
+// Order message definition
+message Order {
+  int32 order_id = 1;
+  string customer_id = 2;
+  repeated OrderItem items = 3;
+  farmera.common.Money total_amount = 4;
+  farmera.common.Money discount_amount = 5;
+  farmera.common.Money shipping_amount = 6;
+  farmera.common.Money tax_amount = 7;
+  farmera.common.Money final_amount = 8;
+  farmera.common.OrderStatus status = 9;
+  farmera.common.DeliveryAddress delivery_address = 10;
+  farmera.common.DeliveryAddress billing_address = 11;
+  Payment payment = 12;
+  Delivery delivery = 13;
+  repeated DiscountUsage discount_usage = 14;
+  farmera.common.Timestamp created_at = 15;
+  farmera.common.Timestamp updated_at = 16;
+  farmera.common.Timestamp estimated_delivery = 17;
+  string notes = 18;
+  OrderMetadata metadata = 19;
+}
+
+// Order item
+message OrderItem {
+  int32 item_id = 1;
+  int32 product_id = 2;
+  string product_name = 3;
+  string product_sku = 4;
+  int32 quantity = 5;
+  farmera.common.Money unit_price = 6;
+  farmera.common.Money total_price = 7;
+  farmera.common.Unit unit = 8;
+  string product_image_url = 9;
+  int32 farm_id = 10;
+  string farm_name = 11;
+  bool is_organic = 12;
+  farmera.common.Timestamp harvest_date = 13;
+  farmera.common.Timestamp expiry_date = 14;
+}
+
+// Payment message definition
+message Payment {
+  int32 payment_id = 1;
+  int32 order_id = 2;
+  string customer_id = 3;
+  farmera.common.Money amount = 4;
+  farmera.common.PaymentMethod method = 5;
+  farmera.common.PaymentStatus status = 6;
+  string provider = 7; // "stripe", "paypal", etc.
+  string provider_transaction_id = 8;
+  string provider_payment_method_id = 9;
+  farmera.common.Timestamp processed_at = 10;
+  farmera.common.Timestamp created_at = 11;
+  repeated PaymentRefund refunds = 12;
+  PaymentMetadata metadata = 13;
+  string failure_reason = 14;
+  int32 retry_count = 15;
+}
+
+// Payment refund
+message PaymentRefund {
+  int32 refund_id = 1;
+  int32 payment_id = 2;
+  farmera.common.Money amount = 3;
+  string reason = 4;
+  string provider_refund_id = 5;
+  farmera.common.PaymentStatus status = 6;
+  farmera.common.Timestamp processed_at = 7;
+  farmera.common.Timestamp created_at = 8;
+}
+
+// Discount message definition
+message Discount {
+  int32 discount_id = 1;
+  string code = 2;
+  string name = 3;
+  string description = 4;
+  farmera.common.DiscountType type = 5;
+  farmera.common.Money value = 6; // Amount or percentage (represented as cents)
+  farmera.common.Money minimum_order_amount = 7;
+  farmera.common.Money maximum_discount_amount = 8;
+  int32 usage_limit = 9;
+  int32 usage_limit_per_customer = 10;
+  int32 current_usage = 11;
+  farmera.common.Timestamp valid_from = 12;
+  farmera.common.Timestamp valid_until = 13;
+  bool is_active = 14;
+  repeated string applicable_product_ids = 15;
+  repeated string applicable_category_ids = 16;
+  repeated string excluded_product_ids = 17;
+  bool is_first_order_only = 18;
+  farmera.common.Timestamp created_at = 19;
+  farmera.common.Timestamp updated_at = 20;
+}
+
+// Discount usage tracking
+message DiscountUsage {
+  int32 usage_id = 1;
+  int32 discount_id = 2;
+  int32 order_id = 3;
+  string customer_id = 4;
+  farmera.common.Money discount_amount = 5;
+  farmera.common.Timestamp used_at = 6;
+  Discount discount = 7;
+}
+
+// Delivery message definition
+message Delivery {
+  int32 delivery_id = 1;
+  int32 order_id = 2;
+  string delivery_agent_id = 3;
+  farmera.common.DeliveryStatus status = 4;
+  farmera.common.DeliveryAddress pickup_address = 5;
+  farmera.common.DeliveryAddress delivery_address = 6;
+  farmera.common.Timestamp scheduled_pickup = 7;
+  farmera.common.Timestamp actual_pickup = 8;
+  farmera.common.Timestamp estimated_delivery = 9;
+  farmera.common.Timestamp actual_delivery = 10;
+  string tracking_number = 11;
+  string delivery_instructions = 12;
+  repeated DeliveryEvent events = 13;
+  farmera.common.Money delivery_fee = 14;
+  string delivery_method = 15; // "standard", "express", "same-day"
+  farmera.common.Timestamp created_at = 16;
+  farmera.common.Timestamp updated_at = 17;
+}
+
+// Delivery event tracking
+message DeliveryEvent {
+  int32 event_id = 1;
+  int32 delivery_id = 2;
+  farmera.common.DeliveryStatus status = 3;
+  string description = 4;
+  farmera.common.GeoLocation location = 5;
+  farmera.common.Timestamp timestamp = 6;
+  string agent_id = 7;
+  string notes = 8;
+}
+
+// Order metadata
+message OrderMetadata {
+  string source = 1; // "mobile_app", "web", "api"
+  string utm_source = 2;
+  string utm_medium = 3;
+  string utm_campaign = 4;
+  string referrer = 5;
+  string user_agent = 6;
+  string ip_address = 7;
+  map<string, string> custom_fields = 8;
+}
+
+// Payment metadata
+message PaymentMetadata {
+  string card_last_four = 1;
+  string card_brand = 2;
+  string bank_name = 3;
+  string gateway_response_code = 4;
+  string gateway_response_message = 5;
+  string risk_score = 6;
+  map<string, string> gateway_metadata = 7;
+}
+
+// Order management requests/responses
+message CreateOrderRequest {
+  string customer_id = 1;
+  repeated OrderItemRequest items = 2;
+  farmera.common.DeliveryAddress delivery_address = 3;
+  farmera.common.DeliveryAddress billing_address = 4;
+  repeated string discount_codes = 5;
+  string delivery_method = 6;
+  string notes = 7;
+  OrderMetadata metadata = 8;
+}
+
+message OrderItemRequest {
+  int32 product_id = 1;
+  int32 quantity = 2;
+  string special_instructions = 3;
+}
+
+message CreateOrderResponse {
+  Order order = 1;
+  repeated string applied_discounts = 2;
+  repeated string failed_discounts = 3;
+}
+
+message GetOrderRequest {
+  int32 order_id = 1;
+  bool include_items = 2;
+  bool include_payment = 3;
+  bool include_delivery = 4;
+}
+
+message GetOrderResponse {
+  Order order = 1;
+}
+
+message UpdateOrderRequest {
+  int32 order_id = 1;
+  optional farmera.common.DeliveryAddress delivery_address = 2;
+  optional string notes = 3;
+  repeated OrderItemRequest updated_items = 4;
+}
+
+message UpdateOrderResponse {
+  Order order = 1;
+}
+
+message CancelOrderRequest {
+  int32 order_id = 1;
+  string reason = 2;
+  bool refund_payment = 3;
+}
+
+message CancelOrderResponse {
+  Order order = 1;
+  PaymentRefund refund = 2;
+}
+
+message ListOrdersRequest {
+  farmera.common.PaginationRequest pagination = 1;
+  repeated farmera.common.SortOption sort = 2;
+  optional farmera.common.OrderStatus status_filter = 3;
+  optional farmera.common.TimeRange date_range = 4;
+  optional string customer_id_filter = 5;
+}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message GetUserOrdersRequest {
+  string user_id = 1;
+  farmera.common.PaginationRequest pagination = 2;
+  optional farmera.common.OrderStatus status_filter = 3;
+}
+
+message GetUserOrdersResponse {
+  repeated Order orders = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message GetOrdersByStatusRequest {
+  farmera.common.OrderStatus status = 1;
+  farmera.common.PaginationRequest pagination = 2;
+  optional farmera.common.TimeRange date_range = 3;
+}
+
+message GetOrdersByStatusResponse {
+  repeated Order orders = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+// Payment processing requests/responses
+message CreatePaymentRequest {
+  int32 order_id = 1;
+  string customer_id = 2;
+  farmera.common.Money amount = 3;
+  farmera.common.PaymentMethod method = 4;
+  string payment_method_id = 5; // Provider-specific payment method ID
+  PaymentMetadata metadata = 6;
+}
+
+message CreatePaymentResponse {
+  Payment payment = 1;
+  string client_secret = 2; // For client-side confirmation (Stripe, etc.)
+  bool requires_action = 3;
+  string next_action_url = 4;
+}
+
+message ProcessPaymentRequest {
+  int32 payment_id = 1;
+  string confirmation_token = 2;
+  map<string, string> provider_data = 3;
+}
+
+message ProcessPaymentResponse {
+  Payment payment = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message GetPaymentRequest {
+  int32 payment_id = 1;
+  bool include_refunds = 2;
+}
+
+message GetPaymentResponse {
+  Payment payment = 1;
+}
+
+message RefundPaymentRequest {
+  int32 payment_id = 1;
+  farmera.common.Money amount = 2; // Partial refund if less than total
+  string reason = 3;
+  bool notify_customer = 4;
+}
+
+message RefundPaymentResponse {
+  PaymentRefund refund = 1;
+  Payment updated_payment = 2;
+}
+
+message ListPaymentsRequest {
+  farmera.common.PaginationRequest pagination = 1;
+  repeated farmera.common.SortOption sort = 2;
+  optional farmera.common.PaymentStatus status_filter = 3;
+  optional string customer_id_filter = 4;
+  optional farmera.common.TimeRange date_range = 5;
+}
+
+message ListPaymentsResponse {
+  repeated Payment payments = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message GetPaymentMethodsRequest {
+  string customer_id = 1;
+}
+
+message GetPaymentMethodsResponse {
+  repeated CustomerPaymentMethod payment_methods = 1;
+}
+
+message CustomerPaymentMethod {
+  string id = 1;
+  farmera.common.PaymentMethod type = 2;
+  string display_name = 3;
+  string last_four = 4;
+  string brand = 5;
+  bool is_default = 6;
+  farmera.common.Timestamp expires_at = 7;
+}
+
+// Discount management requests/responses
+message CreateDiscountRequest {
+  string code = 1;
+  string name = 2;
+  string description = 3;
+  farmera.common.DiscountType type = 4;
+  farmera.common.Money value = 5;
+  farmera.common.Money minimum_order_amount = 6;
+  farmera.common.Money maximum_discount_amount = 7;
+  int32 usage_limit = 8;
+  int32 usage_limit_per_customer = 9;
+  farmera.common.Timestamp valid_from = 10;
+  farmera.common.Timestamp valid_until = 11;
+  repeated string applicable_product_ids = 12;
+  repeated string applicable_category_ids = 13;
+  bool is_first_order_only = 14;
+}
+
+message CreateDiscountResponse {
+  Discount discount = 1;
+}
+
+message GetDiscountRequest {
+  oneof identifier {
+    int32 discount_id = 1;
+    string code = 2;
+  }
+}
+
+message GetDiscountResponse {
+  Discount discount = 1;
+}
+
+message UpdateDiscountRequest {
+  int32 discount_id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional farmera.common.Money minimum_order_amount = 4;
+  optional farmera.common.Money maximum_discount_amount = 5;
+  optional int32 usage_limit = 6;
+  optional farmera.common.Timestamp valid_until = 7;
+  optional bool is_active = 8;
+}
+
+message UpdateDiscountResponse {
+  Discount discount = 1;
+}
+
+message DeleteDiscountRequest {
+  int32 discount_id = 1;
+}
+
+message DeleteDiscountResponse {
+  bool success = 1;
+}
+
+message ListDiscountsRequest {
+  farmera.common.PaginationRequest pagination = 1;
+  repeated farmera.common.SortOption sort = 2;
+  optional bool active_only = 3;
+  optional farmera.common.TimeRange valid_date_range = 4;
+  optional farmera.common.DiscountType type_filter = 5;
+}
+
+message ListDiscountsResponse {
+  repeated Discount discounts = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message ApplyDiscountRequest {
+  int32 order_id = 1;
+  string discount_code = 2;
+  string customer_id = 3;
+}
+
+message ApplyDiscountResponse {
+  bool success = 1;
+  farmera.common.Money discount_amount = 2;
+  string message = 3;
+  Discount discount = 4;
+}
+
+message ValidateDiscountCodeRequest {
+  string code = 1;
+  string customer_id = 2;
+  farmera.common.Money order_amount = 3;
+  repeated int32 product_ids = 4;
+}
+
+message ValidateDiscountCodeResponse {
+  bool is_valid = 1;
+  string message = 2;
+  Discount discount = 3;
+  farmera.common.Money discount_amount = 4;
+}
+
+// Delivery management requests/responses
+message CreateDeliveryRequest {
+  int32 order_id = 1;
+  string delivery_method = 2;
+  farmera.common.DeliveryAddress pickup_address = 3;
+  farmera.common.DeliveryAddress delivery_address = 4;
+  farmera.common.Timestamp scheduled_pickup = 5;
+  string delivery_instructions = 6;
+}
+
+message CreateDeliveryResponse {
+  Delivery delivery = 1;
+}
+
+message GetDeliveryRequest {
+  oneof identifier {
+    int32 delivery_id = 1;
+    string tracking_number = 2;
+    int32 order_id = 3;
+  }
+}
+
+message GetDeliveryResponse {
+  Delivery delivery = 1;
+}
+
+message UpdateDeliveryStatusRequest {
+  int32 delivery_id = 1;
+  farmera.common.DeliveryStatus status = 2;
+  string notes = 3;
+  farmera.common.GeoLocation current_location = 4;
+  string agent_id = 5;
+}
+
+message UpdateDeliveryStatusResponse {
+  Delivery delivery = 1;
+  DeliveryEvent event = 2;
+}
+
+message ListDeliveriesRequest {
+  farmera.common.PaginationRequest pagination = 1;
+  repeated farmera.common.SortOption sort = 2;
+  optional farmera.common.DeliveryStatus status_filter = 3;
+  optional string agent_id_filter = 4;
+  optional farmera.common.TimeRange date_range = 5;
+}
+
+message ListDeliveriesResponse {
+  repeated Delivery deliveries = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message TrackDeliveryRequest {
+  oneof identifier {
+    int32 delivery_id = 1;
+    string tracking_number = 2;
+  }
+}
+
+message TrackDeliveryResponse {
+  Delivery delivery = 1;
+  repeated DeliveryEvent events = 2;
+  farmera.common.GeoLocation current_location = 3;
+  farmera.common.Timestamp estimated_arrival = 4;
+}
+
+message AssignDeliveryAgentRequest {
+  int32 delivery_id = 1;
+  string agent_id = 2;
+  string notes = 3;
+}
+
+message AssignDeliveryAgentResponse {
+  Delivery delivery = 1;
+}
+
+// Analytics and reporting requests/responses
+message GetOrderStatsRequest {
+  farmera.common.TimeRange date_range = 1;
+  optional string farm_id_filter = 2;
+  optional string customer_id_filter = 3;
+}
+
+message GetOrderStatsResponse {
+  OrderStatistics stats = 1;
+}
+
+message OrderStatistics {
+  int32 total_orders = 1;
+  int32 completed_orders = 2;
+  int32 cancelled_orders = 3;
+  farmera.common.Money total_revenue = 4;
+  farmera.common.Money average_order_value = 5;
+  map<string, int32> orders_by_status = 6;
+  repeated OrderTrend daily_trends = 7;
+  int32 unique_customers = 8;
+  int32 repeat_customers = 9;
+}
+
+message OrderTrend {
+  string date = 1; // YYYY-MM-DD format
+  int32 order_count = 2;
+  farmera.common.Money revenue = 3;
+  int32 new_customers = 4;
+}
+
+message GetPaymentStatsRequest {
+  farmera.common.TimeRange date_range = 1;
+  optional farmera.common.PaymentMethod method_filter = 2;
+}
+
+message GetPaymentStatsResponse {
+  PaymentStatistics stats = 1;
+}
+
+message PaymentStatistics {
+  int32 total_payments = 1;
+  int32 successful_payments = 2;
+  int32 failed_payments = 3;
+  farmera.common.Money total_amount = 4;
+  farmera.common.Money total_refunded = 5;
+  map<string, int32> payments_by_method = 6;
+  map<string, int32> payments_by_status = 7;
+  double success_rate = 8;
+  double average_processing_time_seconds = 9;
+}
+
+message GetRevenueReportRequest {
+  farmera.common.TimeRange date_range = 1;
+  string grouping = 2; // "daily", "weekly", "monthly"
+  optional string farm_id_filter = 3;
+}
+
+message GetRevenueReportResponse {
+  repeated RevenueDataPoint data_points = 1;
+  farmera.common.Money total_revenue = 2;
+  farmera.common.Money average_revenue = 3;
+}
+
+message RevenueDataPoint {
+  string period = 1; // Date or period identifier
+  farmera.common.Money revenue = 2;
+  int32 order_count = 3;
+  farmera.common.Money average_order_value = 4;
+} 
