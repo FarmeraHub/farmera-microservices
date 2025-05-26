@@ -1,0 +1,14 @@
+﻿version: v1
+plugins:
+  - plugin: buf.build/protocolbuffers/js:v3.21.2
+    out: ../generated/nodejs
+    opt: import_style=commonjs
+  - plugin: buf.build/grpc/node:v1.8.14
+    out: ../generated/nodejs
+    opt: grpc_js
+  - plugin: buf.build/protocolbuffers/ts:v4.5.0
+    out: ../generated/nodejs
+    opt: 
+      - generate_dependencies=false
+      - long_type_string=false
+      - enum_type=string_literal

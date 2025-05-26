@@ -32,7 +32,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly hashService: HashService,
     private readonly verificationService: VerificationService,
-  ) {}
+  ) { }
 
   async login(req: LoginDto, res: Response) {
     const result = await this.validateUser(req.email, req.password);
@@ -69,10 +69,14 @@ export class AuthService {
         iss: 'from server',
       });
 
+      const expirationSetting = this.configService.get<string>(
+        'REFRESH_TOKEN_COOKIES_KEY',
+        '7d', // Default value if the env var is not set
+      );
       res.cookie(REFRESH_TOKEN_COOKIES_KEY, refreshToken, {
         httpOnly: false,
         maxAge: ms(
-          this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
+          expirationSetting as ms.StringValue
         ),
         sameSite: 'none',
         secure: true,
@@ -156,11 +160,17 @@ export class AuthService {
         });
 
         res.clearCookie(REFRESH_TOKEN_COOKIES_KEY);
-        res.cookie(REFRESH_TOKEN_COOKIES_KEY, newRefreshToken, {
-          httpOnly: false,
-          maxAge: ms(
-            this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
-          ),
+        const expirationSetting = this.configService.get<string>(
+          'JWT_REFRESH_TOKEN_EXPIRATION',
+          '7d', // Default value if the env var is not set
+        );
+
+        // Ensure expirationSetting is not undefined (covered by the default above)
+        // and then assert its type.
+
+        res.cookie(REFRESH_TOKEN_COOKIES_KEY, refreshToken, {
+          httpOnly: false, // Consider setting this to true for refresh tokens if possible
+          maxAge: ms(expirationSetting as ms.StringValue), // Type assertion here
           sameSite: 'none',
           secure: true,
         });
