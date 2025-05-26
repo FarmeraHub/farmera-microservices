@@ -69,8 +69,17 @@ export class AuthService {
         iss: 'from server',
       });
 
+      // res.cookie(REFRESH_TOKEN_COOKIES_KEY, refreshToken, {
+      //   httpOnly: false,
+      //   maxAge: ms(
+      //     this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
+      //   ),
+      //   sameSite: 'none',
+      //   secure: true,
+      // });
+
       const expirationSetting = this.configService.get<string>(
-        'REFRESH_TOKEN_COOKIES_KEY',
+        'JWT_REFRESH_TOKEN_EXPIRATION',
         '7d', // Default value if the env var is not set
       );
       res.cookie(REFRESH_TOKEN_COOKIES_KEY, refreshToken, {
@@ -160,6 +169,17 @@ export class AuthService {
         });
 
         res.clearCookie(REFRESH_TOKEN_COOKIES_KEY);
+
+        // res.cookie(REFRESH_TOKEN_COOKIES_KEY, newRefreshToken, {
+        //   httpOnly: false,
+        //   maxAge: ms(
+        //     this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
+        //   ),
+        //   sameSite: 'none',
+        //   secure: true,
+        // });
+
+
         const expirationSetting = this.configService.get<string>(
           'JWT_REFRESH_TOKEN_EXPIRATION',
           '7d', // Default value if the env var is not set
