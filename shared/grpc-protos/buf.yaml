@@ -10,7 +10,7 @@ breaking:
     - FIELD_SAME_ONEOF
 lint:
   use:
-    - DEFAULT
+    - STANDARD
   except:
     - ENUM_VALUE_PREFIX
     - SERVICE_SUFFIX

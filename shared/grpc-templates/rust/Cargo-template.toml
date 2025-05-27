@@ -1,0 +1,16 @@
+[package]
+name = "farmera-grpc-proto"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tonic = "0.12"  # Match the tonic version compatible with neoeinstein-tonic:v0.4.1
+prost = "0.13"  # Match the prost version compatible with neoeinstein-prost:v0.4.0
+serde = { version = "1.0.219", features = ["derive"] }
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
+prost-types = "0.13"
+pbjson = "0.7.0"
+prost-wkt-types = "0.6.1"   # For Any and Timestamp
+
+[build-dependencies]
+tonic-build = "0.13.1"

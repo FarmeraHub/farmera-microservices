@@ -8,6 +8,6 @@ export type FileType = 'product_images'
     | 'biometric_images'
     | 'biometric_video'
     | 'review_images'
-    | 'review_videos';
+    | 'review_videos'
     | 'process_images'
     | 'process_videos';

@@ -3,12 +3,16 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { join } from 'path';
+import helmet from 'helmet';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    // rawBody: true,
+  })
+  app.use(helmet());
   app.setGlobalPrefix('api');
   
   app.enableVersioning({
@@ -23,7 +27,10 @@ async function bootstrap() {
     forbidNonWhitelisted: true,
   }));
   
-  app.enableCors();
+  app.enableCors({
+    origin: true, // Cho phép tất cả các nguồn
+    credentials: true, // Cho phép cookie và thông tin xác thực
+  });
   
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads',
@@ -50,7 +57,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger/api', app, document); 
   
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3002;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`Swagger documentation: http://localhost:${port}/swagger/api`);

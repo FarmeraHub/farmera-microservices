@@ -14,6 +14,7 @@ import { BiometricsModule } from './biometrics/biometrics.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ProcessModule } from './process/process.module';
 import { BlockchainService } from './services/blockchain.service';
+import { GrpcModule } from './grpc/grpc.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { BlockchainService } from './services/blockchain.service';
     ProductsModule,
     ReviewsModule,
     ProcessModule,
+    GrpcModule,
   ],
 })
 export class AppModule { }
