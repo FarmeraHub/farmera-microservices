@@ -1,1 +1,0 @@
-DELETE FROM user_device_token WHERE device = $1;
