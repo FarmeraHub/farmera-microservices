@@ -1,0 +1,19 @@
+[package]
+name = "test1"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+farmera-grpc-proto = { path = "../../shared/generated/rust" }
+actix-web = "4.11.0"
+tonic = "0.12"
+tokio = {version = "1.45.1", features = ["macros", "rt-multi-thread"] }
+prost = "0.13"
+
+[[bin]]
+name = "server"
+path = "src/server.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
