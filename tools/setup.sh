@@ -230,8 +230,8 @@ main() {
     # Run setup steps
     check_dependencies
     validate_protos
-    # generate_nodejs_code
-    # generate_rust_code
+    generate_nodejs_code
+    generate_rust_code
     setup_nodejs_deps
     setup_rust_deps
     create_dev_scripts
