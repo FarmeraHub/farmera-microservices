@@ -18,8 +18,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = AppState::build().await;
 
     // Set up the gRPC server address and port from environment variables
-    let server_addr = env::var("GRPC_SERVER_ADDRESS").expect("GRPC_SERVER_ADDRESS must be set");
-    let server_port = env::var("GRPC_PORT").expect("GRPC_PORT must be set");
+    let server_addr = env::var("GRPC_SERVER_ADDRESS").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let server_port = env::var("GRPC_PORT").unwrap_or_else(|_| "50054".to_string());
 
     let addr = format!("{}:{}", server_addr, server_port)
         .parse()

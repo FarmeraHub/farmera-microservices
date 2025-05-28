@@ -38,8 +38,8 @@ async fn main() -> std::io::Result<()> {
     tokio::spawn(state.processors.email_processor_1.run());
 
     // Set up the server address and port from environment variables
-    let server_addr = env::var("SERVER_ADDRESS").expect("SERVER_ADDRESS must be set");
-    let server_port = env::var("SERVER_PORT").expect("SERVER_PORT must be set");
+    let server_addr = env::var("SERVER_ADDRESS").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let server_port = env::var("SERVER_PORT").unwrap_or_else(|_| "3004".to_string());
 
     let app_data = web::Data::new(state.services.clone());
 
@@ -49,8 +49,9 @@ async fn main() -> std::io::Result<()> {
     tokio::spawn(async move {
         // Set up the gRPC server address and port from environment variables
         let grpc_server_addr =
-            env::var("GRPC_SERVER_ADDRESS").expect("GRPC_SERVER_ADDRESS must be set");
-        let grpc_server_port = env::var("GRPC_PORT").expect("GRPC_PORT must be set");
+            env::var("GRPC_SERVER_ADDRESS").unwrap_or_else(|_| "127.0.0.1".to_string());
+        let grpc_server_port = env::var("GRPC_PORT").unwrap_or_else(|_| "50054".to_string());
+
         let grpc_addr = format!("{}:{}", grpc_server_addr, grpc_server_port)
             .parse()
             .expect("Invalid address format");
