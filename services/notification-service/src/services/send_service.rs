@@ -3,9 +3,7 @@ use std::{collections::HashSet, sync::Arc};
 use crate::{
     errors::{Error, db_error::DBError},
     models::{
-        Channel, email,
-        notification::{NotificationType, SendNotification},
-        push,
+        Channel, NotificationType, email, notification::SendNotification, push,
         user_preferences::UserPreferences,
     },
 };
@@ -137,29 +135,26 @@ impl SendService {
         send_notification: SendNotification,
         user_preferences: &UserPreferences,
     ) -> Result<(), Error> {
+        let send_email = email::EmailMessage {
+            to: [email::Email {
+                email: user_preferences.user_email.clone(),
+                name: None,
+            }]
+            .to_vec(),
+            from: send_notification.from,
+            template_id: send_notification.template_id,
+            template_props: send_notification.template_props,
+            subject: send_notification.title,
+            content: send_notification.content,
+            content_type: send_notification.content_type,
+            attachments: send_notification.attachments,
+            reply_to: send_notification.reply_to,
+            id: send_notification.id,
+            retry_count: send_notification.retry_count,
+            retry_ids: send_notification.retry_ids,
+        };
         // Put email message to Kafka
-        match self
-            .email_service
-            .send_email(email::EmailMessage {
-                to: [email::Email {
-                    email: user_preferences.user_email.clone(),
-                    name: None,
-                }]
-                .to_vec(),
-                from: send_notification.from,
-                template_id: send_notification.template_id,
-                template_props: send_notification.template_props,
-                subject: send_notification.title,
-                content: send_notification.content,
-                content_type: send_notification.content_type,
-                attachments: send_notification.attachments,
-                reply_to: send_notification.reply_to,
-                id: send_notification.id,
-                retry_count: send_notification.retry_count,
-                retry_ids: send_notification.retry_ids,
-            })
-            .await
-        {
+        match self.email_service.send_email(&send_email).await {
             Ok(()) => Ok(()),
             Err(e) => Err(Error::Kafka(e)),
         }
@@ -179,21 +174,19 @@ impl SendService {
             }
         };
 
+        let send_push = push::PushMessage {
+            recipient: user_devices,
+            r#type: push::PushMessageType::Token,
+            template_id: send_notification.template_id,
+            template_props: send_notification.template_props,
+            title: send_notification.title,
+            content: send_notification.content,
+            retry_count: send_notification.retry_count,
+            retry_ids: send_notification.retry_ids,
+        };
+
         // Put push message to Kafka
-        match self
-            .push_service
-            .send_push(push::PushMessage {
-                recipient: user_devices,
-                r#type: push::PushMessageType::Token,
-                template_id: send_notification.template_id,
-                template_props: send_notification.template_props,
-                title: send_notification.title,
-                content: send_notification.content,
-                retry_count: send_notification.retry_count,
-                retry_ids: send_notification.retry_ids,
-            })
-            .await
-        {
+        match self.push_service.send_push(&send_push).await {
             Ok(()) => Ok(()),
             Err(e) => Err(Error::Kafka(e)),
         }

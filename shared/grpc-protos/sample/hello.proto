@@ -13,7 +13,3 @@ message HelloRequest {
 message HelloReply {
     string message = 1;
 }
-
-message test {
-    string test = 1;
-}

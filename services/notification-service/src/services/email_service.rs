@@ -24,7 +24,7 @@ impl EmailService {
         }
     }
 
-    pub async fn send_email(&self, message: email::EmailMessage) -> Result<(), KafkaError> {
+    pub async fn send_email(&self, message: &email::EmailMessage) -> Result<(), KafkaError> {
         let message = &serde_json::to_string(&message).unwrap();
         let _status = self
             .producer

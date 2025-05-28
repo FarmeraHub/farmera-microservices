@@ -48,10 +48,11 @@ impl UserDeviceTokenRepo {
         Ok(result.into_iter().map(|value| value.0).collect())
     }
 
-    pub async fn delete_device_token(&self, token: &str) -> Result<u64, DBError> {
+    pub async fn delete_device_token(&self, user_id: Uuid, token: &str) -> Result<u64, DBError> {
         let stm = include_str!("./queries/user_device_token/delete_device.sql");
 
         let result = sqlx::query(stm)
+            .bind(user_id)
             .bind(token)
             .execute(&*self.pg_pool)
             .await

@@ -1,16 +1,12 @@
-use std::sync::Arc;
-
 use actix_web::{HttpResponse, Responder, http::StatusCode, web};
 
 use crate::{
+    app::AppServices,
     errors::Error,
     models::{email, notification::SendNotification, push, reponse_wrapper::ResponseWrapper},
-    services::send_service::SendService,
 };
 
-pub struct SendController {
-    send_service: Arc<SendService>,
-}
+pub struct SendController;
 
 impl SendController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -22,18 +18,15 @@ impl SendController {
         );
     }
 
-    pub fn new(send_service: Arc<SendService>) -> Self {
-        Self { send_service }
-    }
-
     pub async fn send_push(
-        self_controller: web::Data<Arc<SendController>>,
+        services: web::Data<AppServices>,
         message: web::Json<push::PushMessage>,
     ) -> impl Responder {
-        match self_controller
+        let send_message = message.into_inner();
+        match services
             .send_service
             .push_service
-            .send_push(message.0)
+            .send_push(&send_message)
             .await
             .map_err(|e| Error::Kafka(e))
         {
@@ -44,13 +37,14 @@ impl SendController {
     }
 
     pub async fn send_email(
-        self_controller: web::Data<Arc<SendController>>,
+        services: web::Data<AppServices>,
         message: web::Json<email::EmailMessage>,
     ) -> impl Responder {
-        match self_controller
+        let send_message = message.into_inner();
+        match services
             .send_service
             .email_service
-            .send_email(message.0)
+            .send_email(&send_message)
             .await
             .map_err(|e| Error::Kafka(e))
         {
@@ -60,14 +54,10 @@ impl SendController {
     }
 
     async fn send(
-        self_controller: web::Data<Arc<SendController>>,
+        services: web::Data<AppServices>,
         send_notification: web::Json<SendNotification>,
     ) -> impl Responder {
-        match self_controller
-            .send_service
-            .send(&send_notification.0)
-            .await
-        {
+        match services.send_service.send(&send_notification.0).await {
             Ok(result) => {
                 let message = match result {
                     Some(message) => message,

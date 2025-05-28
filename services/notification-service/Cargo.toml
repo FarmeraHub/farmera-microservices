@@ -28,3 +28,21 @@ reqwest = "0.12.15"
 async-trait = "0.1.88"
 gcp_auth = "0.12.3"
 jsonwebtoken = "9.3.1"
+once_cell = "1.21.3"
+
+farmera-grpc-proto = { path = "../../shared/generated/rust" }
+tonic = { version = "0.12" }
+prost = { version = "0.13" }
+prost-wkt-types = { version = "0.6.1" }
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+[[bin]]
+name = "grpc-server"
+path = "src/grpc_server.rs"
+
+[[bin]]
+name = "hybrid-server"
+path = "src/hybrid_server.rs"

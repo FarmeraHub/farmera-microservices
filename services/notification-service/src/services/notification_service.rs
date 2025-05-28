@@ -22,7 +22,7 @@ impl NotificationService {
 
     pub async fn create_notification(
         &self,
-        mut notification: NewNotification,
+        notification: &mut NewNotification,
     ) -> Result<Notification, DBError> {
         if notification.template_id.is_some() {
             notification.template_id = None;
@@ -34,7 +34,7 @@ impl NotificationService {
 
     pub async fn create_template_notification(
         &self,
-        notification: NewTemplateNotification,
+        notification: &NewTemplateNotification,
     ) -> Result<Option<Notification>, DBError> {
         if let Some(template) = self
             .template_repo
@@ -47,9 +47,9 @@ impl NotificationService {
                 .notification_repo
                 .insert_notification(&NewNotification {
                     template_id: Some(notification.template_id),
-                    title: notification.title,
+                    title: notification.title.clone(),
                     content,
-                    channel: notification.channel,
+                    channel: notification.channel.clone(),
                 })
                 .await?;
             return Ok(Some(result));

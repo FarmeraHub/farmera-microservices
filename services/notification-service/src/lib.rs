@@ -1,0 +1,13 @@
+pub mod app;
+pub mod config;
+pub mod controllers;
+pub mod dispatchers;
+pub mod docs;
+pub mod errors;
+pub mod middlewares;
+pub mod models;
+pub mod openapi;
+pub mod processor;
+pub mod repositories;
+pub mod services;
+pub mod utils;

@@ -129,4 +129,26 @@ message OperatingHours {
   DayOfWeek day = 1;
   TimeRange hours = 2;
   bool is_closed = 3;
-} 
+}
+
+// Notification email structure
+message NotificationEmail {
+  string email = 1;
+  optional string name = 2;
+}
+
+// Notification attachment structure
+message NotificationAttachment {
+  string content = 1;
+  string filename = 2;
+  string mime_type = 3;
+  string disposition = 4; // e.g., "attachment", "inline"
+}
+
+message NotificationAttachmentList {
+  repeated NotificationAttachment attachments = 1;
+}
+
+message StringMap {
+  map<string, string> values = 1;
+}
