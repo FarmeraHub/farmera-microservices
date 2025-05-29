@@ -1,1 +1,0 @@
-INSERT INTO attachments (message_id, conversation_id, file_url, file_size, file_type) VALUES ($1, $2, $3, $4, $5) RETURNING attachment_id;

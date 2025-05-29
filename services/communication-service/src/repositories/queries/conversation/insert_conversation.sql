@@ -1,1 +1,0 @@
-INSERT INTO conversations (title) VALUES($1) RETURNING conversation_id;
