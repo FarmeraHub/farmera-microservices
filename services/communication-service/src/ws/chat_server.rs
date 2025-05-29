@@ -682,14 +682,16 @@ impl ChatServer {
                 {
                     Ok(result) => {
                         let recipents = result.device_token;
-                        let _ = notification_client.send_push_notification(PushMessage {
-                            recipient: recipents,
-                            r#type: PushMessageType::Token,
-                            template_id: None,
-                            template_props: None,
-                            title: title.clone(),
-                            content: Some(content_clone.clone()),
-                        });
+                        let _ = notification_client
+                            .send_push_notification(PushMessage {
+                                recipient: recipents,
+                                r#type: PushMessageType::Token,
+                                template_id: None,
+                                template_props: None,
+                                title: title.clone(),
+                                content: Some(content_clone.clone()),
+                            })
+                            .await;
                     }
                     Err(e) => {
                         log::error!(

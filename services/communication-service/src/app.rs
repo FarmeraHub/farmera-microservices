@@ -51,7 +51,7 @@ impl AppState {
 
         // init notification service grpc client
         let noti_srv_grpc_server_addr = env::var("NOTIFICATION_SERVICE_GRPC_ADDRESS")
-            .unwrap_or_else(|_| "127.0.0.1".to_string());
+            .unwrap_or_else(|_| "http://127.0.0.1".to_string());
         let noti_srv_grpc_server_port =
             env::var("NOTIFICATION_SERVICE_GRPC_PORT").unwrap_or_else(|_| "50054".to_string());
 
