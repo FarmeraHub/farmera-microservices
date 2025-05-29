@@ -1,19 +1,15 @@
-use std::sync::Arc;
-
 use actix_files::NamedFile;
 use actix_multipart::form::MultipartForm;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use uuid::Uuid;
 
 use crate::{
+    app::AppServices,
     errors::Error,
     models::{attachment::AttachmentParams, response::Response, upload_form::UploadForm},
-    services::attachment_service::AttachmentService,
 };
 
-pub struct AttachmentController {
-    attachment_service: Arc<AttachmentService>,
-}
+pub struct AttachmentController;
 
 impl AttachmentController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -42,12 +38,8 @@ impl AttachmentController {
         );
     }
 
-    pub fn new(attachment_service: Arc<AttachmentService>) -> Self {
-        Self { attachment_service }
-    }
-
     pub async fn upload_file(
-        self_controller: web::Data<Arc<AttachmentController>>,
+        services: web::Data<AppServices>,
         _req: HttpRequest,
         MultipartForm(form): MultipartForm<UploadForm>,
         path: web::Path<i32>,
@@ -57,7 +49,7 @@ impl AttachmentController {
 
         let conversation_id = path.into_inner();
 
-        match self_controller
+        match services
             .attachment_service
             .upload_file(form, conversation_id, user_id)
             .await
@@ -68,14 +60,14 @@ impl AttachmentController {
     }
 
     pub async fn get_file(
-        self_controller: web::Data<Arc<AttachmentController>>,
+        services: web::Data<AppServices>,
         _req: HttpRequest,
         path: web::Path<String>,
     ) -> Result<NamedFile, actix_web::Error> {
         // let user_id = _req
         let attachment_path = path.into_inner();
 
-        self_controller
+        services
             .attachment_service
             .get_file_by_url(&attachment_path)
             .await
@@ -83,12 +75,12 @@ impl AttachmentController {
     }
 
     pub async fn get_attachment_by_id(
-        self_controller: web::Data<Arc<AttachmentController>>,
+        services: web::Data<AppServices>,
         path: web::Path<i32>,
     ) -> impl Responder {
         let attachmet_id = path.into_inner();
 
-        match self_controller
+        match services
             .attachment_service
             .get_attachment_by_id(attachmet_id)
             .await
@@ -106,7 +98,7 @@ impl AttachmentController {
     }
 
     pub async fn get_attachments_by_conversation_id(
-        self_controller: web::Data<Arc<AttachmentController>>,
+        services: web::Data<AppServices>,
         path: web::Path<i32>,
         query: web::Query<AttachmentParams>,
     ) -> impl Responder {
@@ -114,7 +106,7 @@ impl AttachmentController {
         let before = query.before;
         let limit = query.limit;
 
-        match self_controller
+        match services
             .attachment_service
             .get_attachments_by_conversation_id(conversation_id, before, limit)
             .await
@@ -126,12 +118,12 @@ impl AttachmentController {
     }
 
     pub async fn get_attachments_by_message_id(
-        self_controller: web::Data<Arc<AttachmentController>>,
+        services: web::Data<AppServices>,
         path: web::Path<i64>,
     ) -> impl Responder {
         let message_id = path.into_inner();
 
-        match self_controller
+        match services
             .attachment_service
             .get_attachment_by_message_id(message_id)
             .await

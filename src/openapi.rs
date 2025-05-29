@@ -21,7 +21,7 @@ use crate::docs::{attachment_doc, conversation_doc, message_doc};
         attachment_doc::get_attachments_by_message_id,
     ),
     tags(
-        (name = "Message", description = "Message operations"),
+        (name = "Message", description = "Message operations, only for testing"),
         (name = "Conversation", description = "Conversation operations"),
         (name = "Attachment", description = "Attachment operations"),
     )

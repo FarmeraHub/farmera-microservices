@@ -21,8 +21,13 @@ impl ConversationService {
         todo!()
     }
 
-    pub async fn get_conversation_by_id(&self, id: i32) -> Result<Option<Conversation>, DBError> {
-        self.conversation_repo.find_conversation_by_id(id).await
+    pub async fn get_conversation_by_id(
+        &self,
+        conversation_id: i32,
+    ) -> Result<Option<Conversation>, DBError> {
+        self.conversation_repo
+            .find_conversation_by_id(conversation_id)
+            .await
     }
 
     pub async fn create_conversation(&self, title: &str) -> Result<i32, DBError> {

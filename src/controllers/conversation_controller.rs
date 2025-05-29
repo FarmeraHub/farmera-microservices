@@ -1,19 +1,15 @@
-use std::sync::Arc;
-
 use actix_web::{web, HttpResponse, Responder};
 
 use crate::{
+    app::AppServices,
     errors::Error,
     models::{
         conversation::{MessageParams, NewConversation},
         response::Response,
     },
-    services::convesation_service::ConversationService,
 };
 
-pub struct ConversationController {
-    conversation_service: Arc<ConversationService>,
-}
+pub struct ConversationController;
 
 impl ConversationController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -39,19 +35,13 @@ impl ConversationController {
         );
     }
 
-    pub fn new(conversation_service: Arc<ConversationService>) -> Self {
-        Self {
-            conversation_service,
-        }
-    }
-
     pub async fn get_conversation_by_id(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         id: web::Path<i32>,
     ) -> impl Responder {
         let id = id.into_inner();
 
-        match self_controller
+        match services
             .conversation_service
             .get_conversation_by_id(id)
             .await
@@ -69,10 +59,10 @@ impl ConversationController {
     }
 
     pub async fn create_conversation(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         new_conversation: web::Json<NewConversation>,
     ) -> impl Responder {
-        match self_controller
+        match services
             .conversation_service
             .create_conversation(&new_conversation.title)
             .await
@@ -87,11 +77,11 @@ impl ConversationController {
     }
 
     pub async fn delete_conversation(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
     ) -> impl Responder {
         let id = conversation_id.into_inner();
-        match self_controller
+        match services
             .conversation_service
             .delete_conversation(id)
             .await
@@ -106,12 +96,12 @@ impl ConversationController {
     }
 
     pub async fn get_conversation_participants(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
     ) -> impl Responder {
         let id = conversation_id.into_inner();
 
-        match self_controller
+        match services
             .conversation_service
             .get_conversation_participants(id)
             .await
@@ -123,7 +113,7 @@ impl ConversationController {
     }
 
     pub async fn get_conversation_messages(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
         params: web::Query<MessageParams>,
     ) -> impl Responder {
@@ -131,7 +121,7 @@ impl ConversationController {
         let limit = params.limit;
         let before = params.before;
 
-        match self_controller
+        match services
             .conversation_service
             .get_conversation_messages(conversation_id, limit, before)
             .await

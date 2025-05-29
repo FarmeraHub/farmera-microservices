@@ -1,12 +1,8 @@
-use std::sync::Arc;
-
 use actix_web::{web, HttpResponse, Responder};
 
-use crate::{errors::Error, models::response::Response, services::message_service::MessageService};
+use crate::{app::AppServices, errors::Error, models::response::Response};
 
-pub struct MessageController {
-    messages_service: Arc<MessageService>,
-}
+pub struct MessageController;
 
 impl MessageController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -17,17 +13,13 @@ impl MessageController {
         );
     }
 
-    pub fn new(messages_service: Arc<MessageService>) -> Self {
-        Self { messages_service }
-    }
-
     pub async fn get_message_by_id(
-        self_controller: web::Data<Arc<MessageController>>,
+        services: web::Data<AppServices>,
         path: web::Path<i64>,
     ) -> impl Responder {
         let message_id = path.into_inner();
 
-        match self_controller
+        match services
             .messages_service
             .get_message_by_id(message_id)
             .await
@@ -45,12 +37,12 @@ impl MessageController {
     }
 
     pub async fn delete_message(
-        self_controller: web::Data<Arc<MessageController>>,
+        services: web::Data<AppServices>,
         path: web::Path<i64>,
     ) -> impl Responder {
         let message_id = path.into_inner();
 
-        match self_controller
+        match services
             .messages_service
             .delete_message(message_id)
             .await
