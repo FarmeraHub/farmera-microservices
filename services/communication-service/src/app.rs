@@ -4,6 +4,7 @@ use sqlx::migrate;
 
 use crate::{
     config::{pg_db::create_pg_pool, redis::create_redis_pool},
+    grpc::noti_client::NotificationGrpcClient,
     repositories::{
         attachment_repo::AttachmentRepo, conversation_repo::ConversationRepo,
         message_repo::MessageRepo,
@@ -48,6 +49,21 @@ impl AppState {
         migrator.run(&*pg_pool).await.expect("Migration failed");
         log::info!("Migration success");
 
+        // init notification service grpc client
+        let noti_srv_grpc_server_addr = env::var("NOTIFICATION_SERVICE_GRPC_ADDRESS")
+            .unwrap_or_else(|_| "127.0.0.1".to_string());
+        let noti_srv_grpc_server_port =
+            env::var("NOTIFICATION_SERVICE_GRPC_PORT").unwrap_or_else(|_| "50054".to_string());
+
+        let noti_grpc_server_addr = format!(
+            "{}:{}",
+            noti_srv_grpc_server_addr, noti_srv_grpc_server_port
+        );
+
+        let notification_service_client = NotificationGrpcClient::connect(noti_grpc_server_addr)
+            .await
+            .expect("msg");
+
         // init repositories
         let conversation_repository = Arc::new(ConversationRepo::new(pg_pool.clone()));
         let message_repository = Arc::new(MessageRepo::new(pg_pool.clone()));
@@ -76,6 +92,7 @@ impl AppState {
             redis_client.clone(),
             conversation_repository.clone(),
             message_repository.clone(),
+            notification_service_client.clone(),
         )
         .await;
 

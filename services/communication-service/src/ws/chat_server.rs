@@ -20,9 +20,11 @@ use uuid::Uuid;
 
 use crate::{
     errors::chat_error::ChatError,
+    grpc::noti_client::NotificationGrpcClient,
     models::{
         attachment::{MediaContent, SentMedia},
         message::{MessageContent, SentMessage},
+        notification_models::push::{PushMessage, PushMessageType},
     },
     repositories::{conversation_repo::ConversationRepo, message_repo::MessageRepo},
 };
@@ -38,6 +40,7 @@ pub struct ChatServer {
     redis_pool: Arc<Pool>,
     conversation_repo: Arc<ConversationRepo>,
     message_repo: Arc<MessageRepo>,
+    notification_service_client: NotificationGrpcClient,
     pub cmd_rx: mpsc::UnboundedReceiver<Command>,
 }
 
@@ -47,6 +50,7 @@ impl ChatServer {
         redis_client: Arc<redis::Client>,
         conversation_repo: Arc<ConversationRepo>,
         message_repo: Arc<MessageRepo>,
+        notification_service_client: NotificationGrpcClient,
     ) -> (Self, ChatServerHandler) {
         let sessions = Arc::new(RwLock::new(HashMap::new()));
         let subscribed_channels = Arc::new(RwLock::new(HashMap::new()));
@@ -62,6 +66,7 @@ impl ChatServer {
                 conversation_repo,
                 message_repo,
                 cmd_rx,
+                notification_service_client,
             },
             ChatServerHandler::new(cmd_tx),
         )
@@ -649,8 +654,10 @@ impl ChatServer {
         let message_repo = self.message_repo.clone();
         let conversation_repo = self.conversation_repo.clone();
         let content_clone = content.to_owned();
+        let mut notification_client = self.notification_service_client.clone();
 
         tokio::spawn(async move {
+            // get inactive users
             let inactive_users =
                 Self::get_not_active_users(redis_pool, conversation_repo, conversation_id)
                     .await
@@ -664,8 +671,37 @@ impl ChatServer {
                 false
             };
 
-            // !TODO: send notificaiton to inactive users
+            // send push notificaiton to inactive users
+            let title = format!("New message from {}", sender_id);
+            for user_id in inactive_users {
+                // get user device tokens
+                // !TODO: cache
+                match notification_client
+                    .get_user_device_token(user_id.clone())
+                    .await
+                {
+                    Ok(result) => {
+                        let recipents = result.device_token;
+                        let _ = notification_client.send_push_notification(PushMessage {
+                            recipient: recipents,
+                            r#type: PushMessageType::Token,
+                            template_id: None,
+                            template_props: None,
+                            title: title.clone(),
+                            content: Some(content_clone.clone()),
+                        });
+                    }
+                    Err(e) => {
+                        log::error!(
+                            "Cannot get device tokons of user {} - error: {}",
+                            user_id.clone(),
+                            e
+                        );
+                    }
+                };
+            }
 
+            // save message and status to database
             let _ = message_repo
                 .insert_message(
                     conversation_id,
