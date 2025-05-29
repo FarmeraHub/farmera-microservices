@@ -22,22 +22,27 @@ services:
       - notification-network
 
   app:
-    build: .
+    build:
+      context: ../..
+      dockerfile: ./services/notification-service/Dockerfile
     depends_on:
       kafka:
         condition: service_healthy
     environment:
       - SERVER_ADDRESS=0.0.0.0
-      - SERVER_PORT=8080
+      - SERVER_PORT=3004
+      - GRPC_SERVER_ADDRESS=0.0.0.0
+      - GRPC_PORT=50054
       - BROKERS=kafka:9092
       - PG_DATABASE_URL=postgresql://postgres:123@postgres:5432/notification
       - GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json
       - FCM_PROJECT_ID=<project_id>
       - SENDGRID_API_KEY=<key>
     volumes:
-      -  #<path to GOOGLE APPLICATION CREDENTIALS json file>:/app/creds.json
+      - <path to GOOGLE APPLICATION CREDENTIALS json file>:/app/creds.json
     ports:
-      - "8090:8080"
+      - "3004:3004"
+      - "50054:50054"
     networks:
       - notification-network
 
