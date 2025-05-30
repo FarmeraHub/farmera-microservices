@@ -666,8 +666,6 @@ dependencies = [
  "farmera-grpc-proto",
  "futures-util",
  "log",
- "prost",
- "prost-wkt-types",
  "redis",
  "serde",
  "serde_json",
