@@ -3,8 +3,8 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 pub mod email;
-pub mod grpc_impl;
 pub mod notification;
+pub mod notification_mapping_impl;
 pub mod push;
 pub mod reponse_wrapper;
 pub mod template;
