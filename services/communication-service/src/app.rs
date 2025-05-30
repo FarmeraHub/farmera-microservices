@@ -60,9 +60,8 @@ impl AppState {
             noti_srv_grpc_server_addr, noti_srv_grpc_server_port
         );
 
-        let notification_service_client = NotificationGrpcClient::connect(noti_grpc_server_addr)
-            .await
-            .expect("msg");
+        let notification_service_client =
+            NotificationGrpcClient::connect(noti_grpc_server_addr).await;
 
         // init repositories
         let conversation_repository = Arc::new(ConversationRepo::new(pg_pool.clone()));

@@ -681,7 +681,7 @@ impl ChatServer {
                     .await
                 {
                     Ok(result) => {
-                        let recipents = result.device_token;
+                        let recipents = result.into_inner().device_token;
                         let _ = notification_client
                             .send_push_notification(PushMessage {
                                 recipient: recipents,
