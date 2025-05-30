@@ -13,13 +13,12 @@ RUN mkdir -p ./services/communication-service/src && \
 
 WORKDIR /app/services/communication-service
 
-RUN rustup target add x86_64-unknown-linux-musl && \
-    PROTOC_INCLUDE=/usr/include cargo build --target x86_64-unknown-linux-musl --release || true
+RUN PROTOC_INCLUDE=/usr/include cargo build --release || true
 
 COPY ./services/communication-service/src/ ./src/
 COPY ./services/communication-service/migrations/ ./migrations/
 
-RUN PROTOC_INCLUDE=/usr/include cargo build --target x86_64-unknown-linux-musl --release
+RUN PROTOC_INCLUDE=/usr/include cargo build --release
 
 FROM alpine:latest
 
