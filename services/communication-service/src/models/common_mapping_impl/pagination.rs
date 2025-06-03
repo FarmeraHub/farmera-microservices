@@ -2,11 +2,22 @@ use farmera_grpc_proto::SimplePaginationRequest;
 
 use crate::models::Pagination;
 
-impl From<SimplePaginationRequest> for Pagination {
-    fn from(value: SimplePaginationRequest) -> Self {
-        Pagination {
-            page: value.page,
-            limit: value.limit,
-        }
+impl TryFrom<SimplePaginationRequest> for Pagination {
+    type Error = &'static str;
+
+    fn try_from(value: SimplePaginationRequest) -> Result<Self, Self::Error> {
+        let limit = if value.limit.is_none() {
+            Some(10)
+        } else {
+            value.limit
+        };
+
+        let page = if value.page.is_none() {
+            Some(1)
+        } else {
+            value.page
+        };
+
+        Ok(Pagination { page, limit })
     }
 }

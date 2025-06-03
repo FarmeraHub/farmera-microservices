@@ -17,8 +17,8 @@ impl ConversationController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
         cfg.service(
             web::scope("/conversation")
-                .route("/", web::post().to(Self::create_conversation))
-                .route("/", web::get().to(Self::get_user_conversation))
+                .route("", web::post().to(Self::create_conversation))
+                .route("", web::get().to(Self::get_user_conversation))
                 .route(
                     "/{conversation_id}",
                     web::get().to(Self::get_conversation_by_id),

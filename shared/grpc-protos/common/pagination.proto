@@ -68,6 +68,6 @@ message ListResponse {
 
 // Simple Pagination request parameters
 message SimplePaginationRequest {
-  int32 page = 1;
-  int32 limit = 2;
+  optional int32 page = 1;
+  optional int32 limit = 2;
 }

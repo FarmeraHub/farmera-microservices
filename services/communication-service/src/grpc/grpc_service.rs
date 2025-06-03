@@ -77,10 +77,15 @@ impl CommunicationService for GrpcCommunicationService {
         request: Request<ListConversationsRequest>,
     ) -> Result<Response<ListConversationsResponse>, Status> {
         let req = request.into_inner();
-        if req.pagination.is_none() {
-            return Err(Status::invalid_argument("pagination must be set"));
-        }
-        let pagination = Pagination::from(req.pagination.unwrap());
+        let pagination = if req.pagination.is_some() {
+            Pagination::try_from(req.pagination.unwrap())
+                .map_err(|e| Status::invalid_argument(e))?
+        } else {
+            Pagination {
+                limit: Some(10),
+                page: Some(1),
+            }
+        };
         let user_id = Uuid::parse_str(&req.user_id)
             .map_err(|_| Status::invalid_argument("Invalid UUID for user id"))?;
 

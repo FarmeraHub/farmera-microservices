@@ -1,4 +1,4 @@
-use crate::models::{conversation::{Conversation, NewConversation}, message::Message, user_conversation::UserConversation};
+use crate::models::{conversation::{Conversation, ConversationList, ConversationMessages, NewConversation}, response_wrapper::{ResponseWrapper, UnitStruct}, user_conversation::UserConversation};
 
 #[utoipa::path(
     get,
@@ -11,7 +11,7 @@ use crate::models::{conversation::{Conversation, NewConversation}, message::Mess
         (
             status = 200, 
             description = "Conversation found",
-            body = Conversation,
+            body = ResponseWrapper<Conversation>,
         ),
         (
             status = 404, 
@@ -28,13 +28,14 @@ pub async fn get_conversation_by_id() {}
 
 #[utoipa::path(
     post,
-    path = "/api/conversation/",
+    path = "/api/conversation",
     request_body = NewConversation,
     tag = "Conversation",
     responses(
         (
             status = 201, 
             description = "Created",
+            body = ResponseWrapper<Conversation>,
         ),
         (
             status = 500, 
@@ -56,6 +57,7 @@ pub async fn create_conversation() {}
         (
             status = 200, 
             description = "Deleted",
+            body = ResponseWrapper<UnitStruct>
         ),
         (
             status = 500, 
@@ -101,7 +103,7 @@ pub async fn get_conversation_participants() {}
         (
             status = 200, 
             description = "Success operation",
-            body = Vec<Message>,
+            body = ResponseWrapper<ConversationMessages>,
         ),
         (
             status = 500, 
@@ -111,3 +113,26 @@ pub async fn get_conversation_participants() {}
 )]
 #[allow(dead_code)]
 pub async fn get_conversation_messages() {}
+
+#[utoipa::path(
+    get,
+    path = "/api/conversation",
+    tag = "Conversation",
+    params(
+        ("limit" = Option<i32>, Query, description = "Limit the number of messages"),
+        ("page" = Option<i32>, Query, description = "Page"),
+    ),
+    responses(
+        (
+            status = 200, 
+            description = "Success operation",
+            body = ResponseWrapper<ConversationList>,
+        ),
+        (
+            status = 500, 
+            description = "Database error", 
+        )
+    )
+)]
+#[allow(dead_code)]
+pub async fn get_user_conversations() {}

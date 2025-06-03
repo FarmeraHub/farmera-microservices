@@ -38,15 +38,15 @@ where
 #[derive(Debug, Deserialize)]
 pub struct Pagination {
     #[serde(default = "default_page")]
-    pub page: i32,
+    pub page: Option<i32>,
     #[serde(default = "default_limit")]
-    pub limit: i32,
+    pub limit: Option<i32>,
 }
 
-fn default_page() -> i32 {
-    1
+fn default_page() -> Option<i32> {
+    Some(1)
 }
 
-fn default_limit() -> i32 {
-    20
+fn default_limit() -> Option<i32> {
+    Some(20)
 }

@@ -70,8 +70,8 @@ impl ConversationService {
         user_id: Uuid,
         pagination: Pagination,
     ) -> Result<ConversationList, DBError> {
-        let limit = pagination.limit;
-        let offset = (pagination.page - 1) * limit;
+        let limit = pagination.limit.unwrap_or_default();
+        let offset = (pagination.page.unwrap_or_default() - 1) * limit;
 
         let conversations = self
             .conversation_repo
