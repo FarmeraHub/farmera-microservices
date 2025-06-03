@@ -33,10 +33,10 @@ impl ConversationRepo {
         Ok(result)
     }
 
-    pub async fn insert_conversation(&self, title: &str) -> Result<i32, DBError> {
+    pub async fn insert_conversation(&self, title: &str) -> Result<Conversation, DBError> {
         let stm = include_str!("./queries/conversation/insert_conversation.sql");
 
-        let result = sqlx::query_scalar(stm)
+        let result = sqlx::query_as(stm)
             .bind(title)
             .fetch_one(&*self.pg_db_pool)
             .await

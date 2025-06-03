@@ -1,12 +1,14 @@
 use actix_files::NamedFile;
 use actix_multipart::form::MultipartForm;
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse, Responder};
 use uuid::Uuid;
 
 use crate::{
     app::AppServices,
     errors::Error,
-    models::{attachment::AttachmentParams, response::Response, upload_form::UploadForm},
+    models::{
+        attachment::AttachmentParams, response_wrapper::ResponseWrapper, upload_form::UploadForm,
+    },
 };
 
 pub struct AttachmentController;
@@ -54,7 +56,7 @@ impl AttachmentController {
             .upload_file(form, conversation_id, user_id)
             .await
         {
-            Ok(result) => HttpResponse::Created().json(result),
+            Ok(result) => ResponseWrapper::build(StatusCode::OK, "File uploaded", Some(result)),
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -87,11 +89,14 @@ impl AttachmentController {
             .map_err(|e| Error::Db(e))
         {
             Ok(result) => match result {
-                Some(result) => HttpResponse::Ok().json(result),
-                None => HttpResponse::NotFound().json(Response {
-                    r#type: "error".to_string(),
-                    message: "Attachment not found".to_string(),
-                }),
+                Some(result) => {
+                    ResponseWrapper::build(StatusCode::OK, "Attachment retrieved", Some(result))
+                }
+                None => ResponseWrapper::<()>::build(
+                    StatusCode::NOT_FOUND,
+                    "Attachment not found",
+                    None,
+                ),
             },
             Err(e) => HttpResponse::from_error(e),
         }
@@ -112,7 +117,9 @@ impl AttachmentController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Attachments retrieved", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -129,7 +136,9 @@ impl AttachmentController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Attachments retrieved", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }

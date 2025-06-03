@@ -1,11 +1,11 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{http::StatusCode, web, HttpResponse, Responder};
 
 use crate::{
     app::AppServices,
     errors::Error,
     models::{
         conversation::{MessageParams, NewConversation},
-        response::Response,
+        response_wrapper::ResponseWrapper,
     },
 };
 
@@ -48,11 +48,14 @@ impl ConversationController {
             .map_err(|e| Error::Db(e))
         {
             Ok(result) => match result {
-                Some(result) => HttpResponse::Ok().json(result),
-                None => HttpResponse::NotFound().json(Response {
-                    r#type: "error".to_string(),
-                    message: "Conversation not found".to_string(),
-                }),
+                Some(result) => {
+                    ResponseWrapper::build(StatusCode::OK, "Conversation retrieved", Some(result))
+                }
+                None => ResponseWrapper::<()>::build(
+                    StatusCode::NOT_FOUND,
+                    "Conversation not found",
+                    None,
+                ),
             },
             Err(e) => HttpResponse::from_error(e),
         }
@@ -68,10 +71,9 @@ impl ConversationController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(id) => HttpResponse::Created().json(Response {
-                r#type: "success".to_string(),
-                message: format!("Conversation created - id: {id}"),
-            }),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::CREATED, "Conversation created", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -87,10 +89,7 @@ impl ConversationController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(_) => HttpResponse::Ok().json(Response {
-                r#type: "success".to_string(),
-                message: "Deleted".to_string(),
-            }),
+            Ok(_) => ResponseWrapper::<()>::build(StatusCode::OK, "Conversation deleted", None),
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -107,7 +106,9 @@ impl ConversationController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Participants retrieved", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }
@@ -127,7 +128,9 @@ impl ConversationController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Messages retrieved", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }

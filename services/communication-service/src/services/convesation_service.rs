@@ -30,7 +30,7 @@ impl ConversationService {
             .await
     }
 
-    pub async fn create_conversation(&self, title: &str) -> Result<i32, DBError> {
+    pub async fn create_conversation(&self, title: &str) -> Result<Conversation, DBError> {
         self.conversation_repo.insert_conversation(title).await
     }
 

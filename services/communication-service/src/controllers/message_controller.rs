@@ -1,6 +1,6 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{http::StatusCode, web, HttpResponse, Responder};
 
-use crate::{app::AppServices, errors::Error, models::response::Response};
+use crate::{app::AppServices, errors::Error, models::response_wrapper::ResponseWrapper};
 
 pub struct MessageController;
 
@@ -26,11 +26,12 @@ impl MessageController {
             .map_err(|e| Error::Db(e))
         {
             Ok(result) => match result {
-                Some(result) => HttpResponse::Ok().json(result),
-                None => HttpResponse::NotFound().json(Response {
-                    r#type: "error".to_string(),
-                    message: "Message not found".to_string(),
-                }),
+                Some(result) => {
+                    ResponseWrapper::build(StatusCode::OK, "Message retrieved", Some(result))
+                }
+                None => {
+                    ResponseWrapper::<()>::build(StatusCode::NOT_FOUND, "Message not found", None)
+                }
             },
             Err(e) => HttpResponse::from_error(e),
         }
@@ -48,10 +49,7 @@ impl MessageController {
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(_) => HttpResponse::Ok().json(Response {
-                r#type: "success".to_string(),
-                message: "Deleted".to_string(),
-            }),
+            Ok(_) => ResponseWrapper::<()>::build(StatusCode::OK, "Message deleted", None),
             Err(e) => HttpResponse::from_error(e),
         }
     }

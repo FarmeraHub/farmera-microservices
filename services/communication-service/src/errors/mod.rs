@@ -1,15 +1,15 @@
-use actix_web::{HttpResponse, ResponseError};
-
-use db_error::DBError;
-use file_error::FileError;
+use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use thiserror::Error;
-
-use crate::models::response::Response;
 
 pub mod chat_error;
 pub mod db_error;
 pub mod file_error;
 pub mod redis_error;
+
+use db_error::DBError;
+use file_error::FileError;
+
+use crate::models::response_wrapper::ResponseWrapper;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -18,38 +18,35 @@ pub enum Error {
 
     #[error(transparent)]
     File(#[from] FileError),
+
+    #[error("Internal server error")]
+    InternalServerError,
 }
 
 impl ResponseError for Error {
-    fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
+    fn error_response(&self) -> HttpResponse {
+        fn json_error(status: StatusCode, message: &str) -> HttpResponse {
+            ResponseWrapper::<()>::build(status, message, None)
+        }
+
         match self {
-            Error::Db(e) => match e {
-                DBError::QueryError(_) => HttpResponse::InternalServerError().json(Response {
-                    r#type: "error".to_string(),
-                    message: "Database query error".to_string(),
-                }),
-                DBError::QueryFailed(e) => HttpResponse::InternalServerError().json(Response {
-                    r#type: "error".to_string(),
-                    message: e.to_string(),
-                }),
-            },
+            Error::Db(DBError::QueryError(_)) => {
+                json_error(StatusCode::INTERNAL_SERVER_ERROR, "Database query error")
+            }
+            Error::Db(DBError::QueryFailed(e)) => json_error(StatusCode::INTERNAL_SERVER_ERROR, e),
+            Error::Db(DBError::NotFound(e)) => json_error(StatusCode::NOT_FOUND, e),
 
-            Error::File(e) => match e {
-                FileError::Forbidden => HttpResponse::Forbidden().json(Response {
-                    r#type: "error".to_string(),
-                    message: e.to_string(),
-                }),
+            Error::File(FileError::Forbidden) => {
+                json_error(StatusCode::FORBIDDEN, "Access to file is forbidden")
+            }
+            Error::File(FileError::FileNotFound) => {
+                json_error(StatusCode::NOT_FOUND, "File not found")
+            }
+            Error::File(e) => json_error(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()),
 
-                FileError::FileNotFound => HttpResponse::NotFound().json(Response {
-                    r#type: "error".to_string(),
-                    message: e.to_string(),
-                }),
-
-                _ => HttpResponse::InternalServerError().json(Response {
-                    r#type: "error".to_string(),
-                    message: e.to_string(),
-                }),
-            }, // _ => HttpResponse::InternalServerError().finish(),
+            Error::InternalServerError => {
+                json_error(StatusCode::INTERNAL_SERVER_ERROR, "Server error")
+            }
         }
     }
 }
