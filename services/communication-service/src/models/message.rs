@@ -4,6 +4,8 @@ use sqlx::prelude::FromRow;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use crate::models::MessageType;
+
 #[derive(Debug, Serialize, FromRow, ToSchema)]
 pub struct Message {
     #[schema(example = 1)]
@@ -21,8 +23,7 @@ pub struct Message {
     #[schema(example = "2025-04-15T08:14:17.923998Z")]
     pub sent_at: DateTime<Utc>,
 
-    #[schema(example = "message")]
-    pub r#type: String,
+    pub r#type: MessageType,
 }
 
 #[derive(Serialize)]
