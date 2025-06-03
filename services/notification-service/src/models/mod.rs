@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 pub mod email;
 pub mod notification;
+pub mod notification_mapping_impl;
 pub mod push;
 pub mod reponse_wrapper;
 pub mod template;
@@ -21,6 +22,14 @@ pub struct UserIdQuery {
 pub enum Channel {
     Email,
     Push,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum NotificationType {
+    Transactional,
+    SystemAlert,
+    Chat,
 }
 
 pub fn reject_empty_string<'de, D>(deserializer: D) -> Result<String, D::Error>

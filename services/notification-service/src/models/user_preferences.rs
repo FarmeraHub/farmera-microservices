@@ -69,5 +69,6 @@ pub struct NewUserPreferences {
     pub do_not_disturb_end: Option<NaiveTime>,
 
     #[schema(value_type = String, example = "America/New_York")]
+    #[serde(deserialize_with = "reject_empty_string")]
     pub time_zone: String,
 }

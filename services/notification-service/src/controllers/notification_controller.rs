@@ -1,19 +1,15 @@
-use std::sync::Arc;
-
 use actix_web::{HttpResponse, Responder, http::StatusCode, web};
 
 use crate::{
+    app::AppServices,
     errors::Error,
     models::{
         notification::{NewNotification, NewTemplateNotification, NotificationParams},
         reponse_wrapper::ResponseWrapper,
     },
-    services::notification_service::NotificationService,
 };
 
-pub struct NotificationController {
-    notification_service: Arc<NotificationService>,
-}
+pub struct NotificationController;
 
 impl NotificationController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -28,19 +24,14 @@ impl NotificationController {
         );
     }
 
-    pub fn new(notification_service: Arc<NotificationService>) -> Self {
-        Self {
-            notification_service,
-        }
-    }
-
     async fn create_notification(
-        self_controller: web::Data<Arc<NotificationController>>,
+        services: web::Data<AppServices>,
         notification: web::Json<NewNotification>,
     ) -> impl Responder {
-        match self_controller
+        let mut new_notification = notification.into_inner();
+        match services
             .notification_service
-            .create_notification(notification.0)
+            .create_notification(&mut new_notification)
             .await
             .map_err(|e| Error::Db(e))
         {
@@ -54,12 +45,12 @@ impl NotificationController {
     }
 
     async fn create_template_notification(
-        self_controller: web::Data<Arc<NotificationController>>,
+        services: web::Data<AppServices>,
         notification: web::Json<NewTemplateNotification>,
     ) -> impl Responder {
-        match self_controller
+        match services
             .notification_service
-            .create_template_notification(notification.0)
+            .create_template_notification(&notification.0)
             .await
             .map_err(|e| Error::Db(e))
         {
@@ -79,10 +70,10 @@ impl NotificationController {
     }
 
     async fn get_notifications(
-        self_controller: web::Data<Arc<NotificationController>>,
+        services: web::Data<AppServices>,
         params: web::Query<NotificationParams>,
     ) -> impl Responder {
-        match self_controller
+        match services
             .notification_service
             .get_notifications(&params.order, params.limit, params.asc)
             .await

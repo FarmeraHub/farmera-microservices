@@ -1,27 +1,17 @@
-use std::sync::Arc;
-
 use actix_web::{
     HttpResponse, Responder,
     web::{self, ServiceConfig},
 };
 
 use crate::{
+    app::AppServices,
     errors::Error,
     models::{UserIdQuery, user_preferences::NewUserPreferences},
-    services::user_preferences_service::UserPreferencesService,
 };
 
-pub struct UserPreferencesController {
-    user_preferences_service: Arc<UserPreferencesService>,
-}
+pub struct UserPreferencesController;
 
 impl UserPreferencesController {
-    pub fn new(user_preferences_service: Arc<UserPreferencesService>) -> Self {
-        Self {
-            user_preferences_service,
-        }
-    }
-
     pub fn routes(cfg: &mut ServiceConfig) {
         cfg.service(
             web::scope("/preferences")
@@ -32,11 +22,11 @@ impl UserPreferencesController {
     }
 
     async fn create_user_preferences(
-        self_controller: web::Data<Arc<UserPreferencesController>>,
+        services: web::Data<AppServices>,
         user_preferences: web::Json<NewUserPreferences>,
     ) -> impl Responder {
         let mut user_preferences = user_preferences.into_inner();
-        match self_controller
+        match services
             .user_preferences_service
             .create_user_preferences(&mut user_preferences)
             .await
@@ -48,10 +38,10 @@ impl UserPreferencesController {
     }
 
     async fn get_user_preferences(
-        self_controller: web::Data<Arc<UserPreferencesController>>,
+        services: web::Data<AppServices>,
         query: web::Query<UserIdQuery>,
     ) -> impl Responder {
-        match self_controller
+        match services
             .user_preferences_service
             .get_user_preferences_by_user_id(query.0.user_id)
             .await
@@ -66,10 +56,10 @@ impl UserPreferencesController {
     }
 
     async fn update_user_preferences(
-        self_controller: web::Data<Arc<UserPreferencesController>>,
+        services: web::Data<AppServices>,
         user_preferences: web::Json<NewUserPreferences>,
     ) -> impl Responder {
-        match self_controller
+        match services
             .user_preferences_service
             .update_user_preferences(&user_preferences.0)
             .await

@@ -33,7 +33,13 @@ impl UserDeviceService {
             .await
     }
 
-    pub async fn delete_user_device_token(&self, token: &str) -> Result<u64, DBError> {
-        self.user_device_token_repo.delete_device_token(token).await
+    pub async fn delete_user_device_token(
+        &self,
+        user_id: Uuid,
+        token: &str,
+    ) -> Result<u64, DBError> {
+        self.user_device_token_repo
+            .delete_device_token(user_id, token)
+            .await
     }
 }

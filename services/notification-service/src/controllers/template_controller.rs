@@ -1,19 +1,15 @@
-use std::sync::Arc;
-
 use actix_web::{HttpResponse, Responder, http::StatusCode, web};
 
 use crate::{
+    app::AppServices,
     errors::Error,
     models::{
         reponse_wrapper::ResponseWrapper,
         template::{NewTemplate, TemplateParams},
     },
-    services::template_service::TemplateService,
 };
 
-pub struct TemplateController {
-    template_service: Arc<TemplateService>,
-}
+pub struct TemplateController;
 
 impl TemplateController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -25,17 +21,13 @@ impl TemplateController {
         );
     }
 
-    pub fn new(template_service: Arc<TemplateService>) -> Self {
-        Self { template_service }
-    }
-
     async fn get_template_by_id(
-        self_controller: web::Data<Arc<TemplateController>>,
+        services: web::Data<AppServices>,
         path: web::Path<i32>,
     ) -> impl Responder {
         let template_id = path.into_inner();
 
-        match self_controller
+        match services
             .template_service
             .get_template_by_id(template_id)
             .await
@@ -54,11 +46,11 @@ impl TemplateController {
     }
 
     async fn create_template(
-        self_controller: web::Data<Arc<TemplateController>>,
+        services: web::Data<AppServices>,
         template: web::Json<NewTemplate>,
     ) -> impl Responder {
         let template = template.into_inner();
-        match self_controller
+        match services
             .template_service
             .create_template(&template)
             .await
@@ -72,10 +64,10 @@ impl TemplateController {
     }
 
     pub async fn get_templates(
-        self_controller: web::Data<Arc<TemplateController>>,
+        services: web::Data<AppServices>,
         params: web::Query<TemplateParams>,
     ) -> impl Responder {
-        match self_controller
+        match services
             .template_service
             .get_templates(&params.order, params.limit, params.asc)
             .await

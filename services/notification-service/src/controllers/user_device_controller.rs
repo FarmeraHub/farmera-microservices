@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use actix_web::{
     HttpResponse, Responder,
     http::StatusCode,
@@ -7,22 +5,14 @@ use actix_web::{
 };
 
 use crate::{
+    app::AppServices,
     errors::Error,
     models::{UserIdQuery, reponse_wrapper::ResponseWrapper, user_preferences::UserDeviceToken},
-    services::user_devices_service::UserDeviceService,
 };
 
-pub struct UserDeviceController {
-    user_device_service: Arc<UserDeviceService>,
-}
+pub struct UserDeviceController;
 
 impl UserDeviceController {
-    pub fn new(user_device_service: Arc<UserDeviceService>) -> Self {
-        Self {
-            user_device_service,
-        }
-    }
-
     pub fn routes(cfg: &mut ServiceConfig) {
         cfg.service(
             web::resource("/devices")
@@ -33,11 +23,11 @@ impl UserDeviceController {
     }
 
     async fn create_user_device_token(
-        self_controller: web::Data<Arc<UserDeviceController>>,
+        services: web::Data<AppServices>,
         user_token: web::Json<UserDeviceToken>,
     ) -> impl Responder {
-        match self_controller
-            .user_device_service
+        match services
+            .user_devices_service
             .create_user_device_token(&user_token.0)
             .await
             .map_err(|e| Error::Db(e))
@@ -50,12 +40,12 @@ impl UserDeviceController {
     }
 
     async fn get_user_device_tokens(
-        self_controller: web::Data<Arc<UserDeviceController>>,
+        services: web::Data<AppServices>,
         query: web::Query<UserIdQuery>,
     ) -> impl Responder {
         let user_id = query.into_inner().user_id;
-        match self_controller
-            .user_device_service
+        match services
+            .user_devices_service
             .get_user_device_token(user_id)
             .await
             .map_err(|e| Error::Db(e))
@@ -68,13 +58,14 @@ impl UserDeviceController {
     }
 
     async fn delete_user_device_token(
-        self_controller: web::Data<Arc<UserDeviceController>>,
-        token: web::Query<String>,
+        services: web::Data<AppServices>,
+        query: web::Query<UserDeviceToken>,
     ) -> impl Responder {
-        let token = &token.0;
-        match self_controller
-            .user_device_service
-            .delete_user_device_token(token)
+        let token = &query.token;
+        let user_id = query.user_id;
+        match services
+            .user_devices_service
+            .delete_user_device_token(user_id, &token)
             .await
             .map_err(|e| Error::Db(e))
         {

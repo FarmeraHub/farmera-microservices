@@ -13,7 +13,7 @@ impl PushService {
         Self { producer }
     }
 
-    pub async fn send_push(&self, message: push::PushMessage) -> Result<(), KafkaError> {
+    pub async fn send_push(&self, message: &push::PushMessage) -> Result<(), KafkaError> {
         let message = &serde_json::to_string(&message).unwrap();
         let _status = self
             .producer

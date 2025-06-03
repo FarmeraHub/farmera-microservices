@@ -24,12 +24,14 @@ pub struct EmailMessage {
     pub template_props: Option<HashMap<String, String>>,
 
     #[schema(example = "Subject")]
+    #[serde(deserialize_with = "reject_empty_string")]
     pub subject: String,
 
     #[schema(example = "Content")]
     pub content: Option<String>,
 
     #[schema(example = "text/plain")]
+    #[serde(deserialize_with = "reject_empty_string")]
     #[serde(default = "default_content_type")]
     pub content_type: String,
 

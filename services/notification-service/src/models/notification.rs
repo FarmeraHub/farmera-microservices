@@ -1,12 +1,11 @@
-use std::collections::HashMap;
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
+use std::collections::HashMap;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use super::{Channel, email, reject_empty_string};
+use super::{Channel, NotificationType, email, reject_empty_string};
 
 #[derive(Debug, Serialize, FromRow, ToSchema)]
 pub struct Notification {
@@ -83,14 +82,6 @@ pub struct NewTemplateNotification {
     pub channel: Channel,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, ToSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum NotificationType {
-    Transactional,
-    SystemAlert,
-    Chat,
-}
-
 #[derive(Debug, Deserialize, ToSchema, Clone)]
 pub struct SendNotification {
     #[schema(value_type = String)]
@@ -110,6 +101,7 @@ pub struct SendNotification {
     pub content: Option<String>,
 
     #[serde(default = "default_content_type")]
+    #[serde(deserialize_with = "reject_empty_string")]
     #[schema(example = "text/plain")]
     pub content_type: String,
 

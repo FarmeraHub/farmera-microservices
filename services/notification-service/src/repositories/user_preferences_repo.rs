@@ -78,7 +78,7 @@ impl UserPreferencesRepo {
             .fetch_one(&*self.pg_pool)
             .await
             .map_err(|e| {
-                log::error!("Insert user preferences error: {e}");
+                log::error!("Update user preferences error: {e}");
                 DBError::QueryError(e)
             })?;
 

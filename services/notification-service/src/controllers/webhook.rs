@@ -1,15 +1,11 @@
-use std::sync::Arc;
-
 use actix_web::{Responder, http::StatusCode, web};
 
 use crate::{
+    app::AppServices,
     models::{email, reponse_wrapper::ResponseWrapper},
-    services::email_service::EmailService,
 };
 
-pub struct Webhook {
-    email_service: Arc<EmailService>,
-}
+pub struct Webhook;
 
 impl Webhook {
     pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -19,15 +15,12 @@ impl Webhook {
         ));
     }
 
-    pub fn new(email_service: Arc<EmailService>) -> Self {
-        Self { email_service }
-    }
-
     async fn handle_sendgrid_hook_event(
-        self_controller: web::Data<Arc<Webhook>>,
+        services: web::Data<AppServices>,
         sendgrid_events: web::Json<Vec<email::SendGridEvent>>,
     ) -> impl Responder {
-        self_controller
+        services
+            .send_service
             .email_service
             .handle_sendgrid_hook_event(sendgrid_events.0)
             .await;
