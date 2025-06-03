@@ -236,6 +236,7 @@ impl ChatServer {
             .await?;
 
         // add user to database conversation if they are not in it
+        // !TODO: remove insert !!!!!!
         if existed.is_none() {
             self.conversation_repo
                 .insert_conversation_user(conversation_id, user_id)

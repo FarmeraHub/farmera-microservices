@@ -162,12 +162,8 @@ enum ReviewStatus {
 // Message types for communication
 enum MessageType {
   MESSAGE_TYPE_UNSPECIFIED = 0;
-  MESSAGE_TYPE_TEXT = 1;
-  MESSAGE_TYPE_IMAGE = 2;
-  MESSAGE_TYPE_VIDEO = 3;
-  MESSAGE_TYPE_FILE = 4;
-  MESSAGE_TYPE_LOCATION = 5;
-  MESSAGE_TYPE_SYSTEM = 6;
+  MESSAGE = 1;
+  MEDIA = 2;
 }
 
 // Conversation types

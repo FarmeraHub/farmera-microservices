@@ -28,7 +28,7 @@ CREATE TABLE messages (
     content TEXT,
     sent_at TIMESTAMPTZ DEFAULT NOW(),
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
-    type TEXT NOT NULL DEFAULT 'message' CHECK (type IN ('message', 'media')),
+    type TEXT NOT NULL DEFAULT 'Message' CHECK (type IN ('Message', 'Media')),
     deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 

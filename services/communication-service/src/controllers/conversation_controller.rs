@@ -1,4 +1,5 @@
-use actix_web::{http::StatusCode, web, HttpResponse, Responder};
+use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse, Responder};
+use uuid::Uuid;
 
 use crate::{
     app::AppServices,
@@ -6,6 +7,7 @@ use crate::{
     models::{
         conversation::{MessageParams, NewConversation},
         response_wrapper::ResponseWrapper,
+        Pagination,
     },
 };
 
@@ -16,6 +18,7 @@ impl ConversationController {
         cfg.service(
             web::scope("/conversation")
                 .route("/", web::post().to(Self::create_conversation))
+                .route("/", web::get().to(Self::get_user_conversation))
                 .route(
                     "/{conversation_id}",
                     web::get().to(Self::get_conversation_by_id),
@@ -125,6 +128,28 @@ impl ConversationController {
         match services
             .conversation_service
             .get_conversation_messages(conversation_id, limit, before)
+            .await
+            .map_err(|e| Error::Db(e))
+        {
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Messages retrieved", Some(result))
+            }
+            Err(e) => HttpResponse::from_error(e),
+        }
+    }
+
+    pub async fn get_user_conversation(
+        _req: HttpRequest,
+        services: web::Data<AppServices>,
+        query: web::Query<Pagination>,
+    ) -> impl Responder {
+        // !TODO: handler user id
+        let user_id = Uuid::parse_str("11111111-1111-1111-1111-111111111111").unwrap();
+        let pagination = query.into_inner();
+
+        match services
+            .conversation_service
+            .get_user_conversation(user_id, pagination)
             .await
             .map_err(|e| Error::Db(e))
         {

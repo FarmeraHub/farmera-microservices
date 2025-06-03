@@ -1,10 +1,15 @@
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 use crate::{
     errors::db_error::DBError,
-    models::{conversation::Conversation, message::Message, user_conversation::UserConversation},
+    models::{
+        conversation::{Conversation, ConversationList, ConversationMessages},
+        user_conversation::Participants,
+        Pagination,
+    },
     repositories::conversation_repo::ConversationRepo,
 };
 
@@ -15,10 +20,6 @@ pub struct ConversationService {
 impl ConversationService {
     pub fn new(conversation_repo: Arc<ConversationRepo>) -> Self {
         Self { conversation_repo }
-    }
-
-    pub async fn _get_conversation(&self) {
-        todo!()
     }
 
     pub async fn get_conversation_by_id(
@@ -43,10 +44,12 @@ impl ConversationService {
     pub async fn get_conversation_participants(
         &self,
         conversation_id: i32,
-    ) -> Result<Vec<UserConversation>, DBError> {
-        self.conversation_repo
+    ) -> Result<Participants, DBError> {
+        let participants = self
+            .conversation_repo
             .find_users_by_conversation_id(conversation_id)
-            .await
+            .await?;
+        Ok(Participants { participants })
     }
 
     pub async fn get_conversation_messages(
@@ -54,9 +57,26 @@ impl ConversationService {
         conversation_id: i32,
         limit: Option<i32>,
         before: Option<DateTime<Utc>>,
-    ) -> Result<Vec<Message>, DBError> {
-        self.conversation_repo
+    ) -> Result<ConversationMessages, DBError> {
+        let messages = self
+            .conversation_repo
             .get_messages_by_conversation_id(conversation_id, limit, before)
-            .await
+            .await?;
+        Ok(ConversationMessages { messages })
+    }
+
+    pub async fn get_user_conversation(
+        &self,
+        user_id: Uuid,
+        pagination: Pagination,
+    ) -> Result<ConversationList, DBError> {
+        let limit = pagination.limit;
+        let offset = (pagination.page - 1) * limit;
+
+        let conversations = self
+            .conversation_repo
+            .get_conversation_by_user_id(user_id, limit, offset)
+            .await?;
+        Ok(ConversationList { conversations })
     }
 }

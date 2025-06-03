@@ -11,648 +11,151 @@ service CommunicationService {
   // Conversation management
   rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
   rpc GetConversation(GetConversationRequest) returns (GetConversationResponse);
-  rpc UpdateConversation(UpdateConversationRequest) returns (UpdateConversationResponse);
-  rpc DeleteConversation(DeleteConversationRequest) returns (DeleteConversationResponse);
   rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
-  rpc JoinConversation(JoinConversationRequest) returns (JoinConversationResponse);
-  rpc LeaveConversation(LeaveConversationRequest) returns (LeaveConversationResponse);
-  rpc AddParticipant(AddParticipantRequest) returns (AddParticipantResponse);
-  rpc RemoveParticipant(RemoveParticipantRequest) returns (RemoveParticipantResponse);
+  // rpc JoinConversation(JoinConversationRequest) returns (JoinConversationResponse);
+  // rpc LeaveConversation(LeaveConversationRequest) returns (LeaveConversationResponse);
+  // rpc AddParticipant(AddParticipantRequest) returns (AddParticipantResponse);
+  // rpc RemoveParticipant(RemoveParticipantRequest) returns (RemoveParticipantResponse);
+  rpc DeleteConversation(DeleteConversationRequest) returns (DeleteConversationResponse);
   rpc GetConversationParticipants(GetConversationParticipantsRequest) returns (GetConversationParticipantsResponse);
-  
-  // Message management
-  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
-  rpc GetMessage(GetMessageRequest) returns (GetMessageResponse);
-  rpc UpdateMessage(UpdateMessageRequest) returns (UpdateMessageResponse);
-  rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
-  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
   rpc GetConversationMessages(GetConversationMessagesRequest) returns (GetConversationMessagesResponse);
-  rpc MarkMessageRead(MarkMessageReadRequest) returns (MarkMessageReadResponse);
-  rpc MarkConversationRead(MarkConversationReadRequest) returns (MarkConversationReadResponse);
+ 
+  // Message management
+  rpc GetMessage(GetMessageRequest) returns (GetMessageResponse);
+  // rpc UpdateMessage(UpdateMessageRequest) returns (UpdateMessageResponse);
+  rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
+  // rpc MarkMessageRead(MarkMessageReadRequest) returns (MarkMessageReadResponse);
   
   // Real-time messaging streams
-  rpc StreamMessages(StreamMessagesRequest) returns (stream MessageEvent);
-  rpc StreamConversationUpdates(StreamConversationUpdatesRequest) returns (stream ConversationEvent);
-  rpc StreamUserPresence(StreamUserPresenceRequest) returns (stream PresenceEvent);
+  // rpc StreamMessages(StreamMessagesRequest) returns (stream MessageEvent);
+  // rpc StreamConversationUpdates(StreamConversationUpdatesRequest) returns (stream ConversationEvent);
+  // rpc StreamUserPresence(StreamUserPresenceRequest) returns (stream PresenceEvent);
   
   // File attachments
-  rpc UploadAttachment(stream UploadAttachmentRequest) returns (UploadAttachmentResponse);
-  rpc GetAttachment(GetAttachmentRequest) returns (GetAttachmentResponse);
-  rpc DeleteAttachment(DeleteAttachmentRequest) returns (DeleteAttachmentResponse);
-  rpc ListAttachments(ListAttachmentsRequest) returns (ListAttachmentsResponse);
-  rpc GetMessageAttachments(GetMessageAttachmentsRequest) returns (GetMessageAttachmentsResponse);
-  
-  // User presence and status
-  rpc UpdateUserPresence(UpdateUserPresenceRequest) returns (UpdateUserPresenceResponse);
-  rpc GetUserPresence(GetUserPresenceRequest) returns (GetUserPresenceResponse);
-  rpc SetTypingStatus(SetTypingStatusRequest) returns (SetTypingStatusResponse);
-  
+  // rpc UploadAttachment(stream UploadAttachmentRequest) returns (UploadAttachmentResponse);
+  // rpc GetAttachment(GetAttachmentRequest) returns (GetAttachmentResponse);
+  // rpc DeleteAttachment(DeleteAttachmentRequest) returns (DeleteAttachmentResponse);
+  // rpc GetMessageAttachments(GetMessageAttachmentsRequest) returns (GetMessageAttachmentsResponse);
+    
   // Message search and filtering
-  rpc SearchMessages(SearchMessagesRequest) returns (SearchMessagesResponse);
-  rpc SearchConversations(SearchConversationsRequest) returns (SearchConversationsResponse);
-  
-  // Analytics and statistics
-  rpc GetMessageStats(GetMessageStatsRequest) returns (GetMessageStatsResponse);
-  rpc GetConversationStats(GetConversationStatsRequest) returns (GetConversationStatsResponse);
+  // rpc SearchMessages(SearchMessagesRequest) returns (SearchMessagesResponse);
+  // rpc SearchConversations(SearchConversationsRequest) returns (SearchConversationsResponse);
 }
 
-// Conversation message definition
-message Conversation {
-  int64 conversation_id = 1;
-  string title = 2;
-  string description = 3;
-  farmera.common.ConversationType type = 4;
-  string created_by = 5;
-  repeated ConversationParticipant participants = 6;
-  Message last_message = 7;
-  int32 unread_count = 8;
-  bool is_archived = 9;
-  bool is_muted = 10;
-  farmera.common.Timestamp created_at = 11;
-  farmera.common.Timestamp updated_at = 12;
-  farmera.common.Timestamp last_activity = 13;
-  ConversationSettings settings = 14;
-  map<string, string> metadata = 15;
-}
-
-// Conversation participant
-message ConversationParticipant {
-  string user_id = 1;
-  string display_name = 2;
-  string avatar_url = 3;
-  ParticipantRole role = 4;
-  farmera.common.Timestamp joined_at = 5;
-  farmera.common.Timestamp last_read_at = 6;
-  bool is_active = 7;
-  bool is_muted = 8;
-  
-  enum ParticipantRole {
-    PARTICIPANT_ROLE_UNSPECIFIED = 0;
-    PARTICIPANT_ROLE_MEMBER = 1;
-    PARTICIPANT_ROLE_ADMIN = 2;
-    PARTICIPANT_ROLE_MODERATOR = 3;
-    PARTICIPANT_ROLE_OWNER = 4;
-  }
-}
-
-// Conversation settings
-message ConversationSettings {
-  bool allow_file_sharing = 1;
-  bool allow_media_sharing = 2;
-  bool require_approval_for_new_members = 3;
-  bool allow_member_invite = 4;
-  int32 max_participants = 5;
-  repeated string allowed_file_types = 6;
-  int64 max_file_size_bytes = 7;
-  bool enable_message_encryption = 8;
-  int32 message_retention_days = 9;
-}
-
-// Message definition
-message Message {
-  int64 message_id = 1;
-  int64 conversation_id = 2;
-  string sender_id = 3;
-  string sender_name = 4;
-  string sender_avatar_url = 5;
-  farmera.common.MessageType type = 6;
-  string content = 7;
-  repeated Attachment attachments = 8;
-  MessageMetadata metadata = 9;
-  int64 reply_to_message_id = 10;
-  repeated MessageReaction reactions = 11;
-  bool is_edited = 12;
-  bool is_deleted = 13;
-  farmera.common.Timestamp created_at = 14;
-  farmera.common.Timestamp updated_at = 15;
-  farmera.common.Timestamp delivered_at = 16;
-  repeated MessageReadStatus read_status = 17;
-  string thread_id = 18; // For threaded conversations
-}
-
-// Message metadata
-message MessageMetadata {
-  string client_message_id = 1; // Client-generated ID for deduplication
-  farmera.common.GeoLocation location = 2; // For location messages
-  map<string, string> custom_data = 3;
-  string quoted_message_id = 4; // For message quotes
-  bool is_system_message = 5;
-  string system_message_type = 6; // "user_joined", "user_left", etc.
-}
-
-// Message reaction
-message MessageReaction {
-  string user_id = 1;
-  string emoji = 2;
-  farmera.common.Timestamp created_at = 3;
-}
-
-// Message read status
-message MessageReadStatus {
-  string user_id = 1;
-  farmera.common.Timestamp read_at = 2;
-}
-
-// File attachment
-message Attachment {
-  string attachment_id = 1;
-  int64 message_id = 2;
-  int64 conversation_id = 3;
-  string filename = 4;
-  string original_filename = 5;
-  string content_type = 6;
-  int64 file_size = 7;
-  string file_url = 8;
-  string thumbnail_url = 9;
-  AttachmentMetadata metadata = 10;
-  string uploaded_by = 11;
-  farmera.common.Timestamp uploaded_at = 12;
-  bool is_deleted = 13;
-}
-
-// Attachment metadata
-message AttachmentMetadata {
-  int32 image_width = 1;
-  int32 image_height = 2;
-  int32 video_duration_seconds = 3;
-  string video_format = 4;
-  map<string, string> exif_data = 5; // For images
-  bool is_virus_scanned = 6;
-  string checksum = 7;
-}
-
-// User presence information
-message UserPresence {
-  string user_id = 1;
-  PresenceStatus status = 2;
-  string status_message = 3;
-  farmera.common.Timestamp last_seen = 4;
-  farmera.common.Timestamp status_updated_at = 5;
-  bool is_online = 6;
-  string device_type = 7;
-  
-  enum PresenceStatus {
-    PRESENCE_STATUS_UNSPECIFIED = 0;
-    PRESENCE_STATUS_AVAILABLE = 1;
-    PRESENCE_STATUS_AWAY = 2;
-    PRESENCE_STATUS_BUSY = 3;
-    PRESENCE_STATUS_INVISIBLE = 4;
-    PRESENCE_STATUS_OFFLINE = 5;
-  }
-}
-
-// Typing status
-message TypingStatus {
-  string user_id = 1;
-  int64 conversation_id = 2;
-  bool is_typing = 3;
-  farmera.common.Timestamp timestamp = 4;
-}
-
-// Real-time events
-message MessageEvent {
-  EventType event_type = 1;
-  Message message = 2;
-  int64 conversation_id = 3;
-  string user_id = 4;
-  farmera.common.Timestamp timestamp = 5;
-  
-  enum EventType {
-    EVENT_TYPE_UNSPECIFIED = 0;
-    EVENT_TYPE_MESSAGE_SENT = 1;
-    EVENT_TYPE_MESSAGE_UPDATED = 2;
-    EVENT_TYPE_MESSAGE_DELETED = 3;
-    EVENT_TYPE_MESSAGE_READ = 4;
-    EVENT_TYPE_REACTION_ADDED = 5;
-    EVENT_TYPE_REACTION_REMOVED = 6;
-  }
-}
-
-message ConversationEvent {
-  EventType event_type = 1;
-  Conversation conversation = 2;
+// Common
+message UserConversation {
+  int64 id = 1;
+  int32 conversation_id = 2;
   string user_id = 3;
-  farmera.common.Timestamp timestamp = 4;
-  map<string, string> event_data = 5;
-  
-  enum EventType {
-    EVENT_TYPE_UNSPECIFIED = 0;
-    EVENT_TYPE_CONVERSATION_CREATED = 1;
-    EVENT_TYPE_CONVERSATION_UPDATED = 2;
-    EVENT_TYPE_CONVERSATION_DELETED = 3;
-    EVENT_TYPE_PARTICIPANT_JOINED = 4;
-    EVENT_TYPE_PARTICIPANT_LEFT = 5;
-    EVENT_TYPE_PARTICIPANT_ADDED = 6;
-    EVENT_TYPE_PARTICIPANT_REMOVED = 7;
-    EVENT_TYPE_CONVERSATION_ARCHIVED = 8;
-    EVENT_TYPE_CONVERSATION_UNARCHIVED = 9;
-  }
+  optional farmera.common.Timestamp deleted_at = 4;
 }
 
-message PresenceEvent {
-  string user_id = 1;
-  UserPresence presence = 2;
-  farmera.common.Timestamp timestamp = 3;
+message ConversationMessage {
+  int64 message_id = 1;
+  int32 conversation_id = 2;
+  string sender_id = 3;
+  optional string content = 4;
+  farmera.common.Timestamp sent_at = 5;
+  farmera.common.MessageType type = 6;
 }
 
-// Conversation management requests/responses
+message ConversationDTO {
+  int64 id = 1;
+  int32 conversation_id = 2;
+  string title = 3;
+  optional string sender_id = 4;
+  optional string content = 5;
+  optional farmera.common.Timestamp sent_at = 6;
+  optional bool is_read = 7;
+  optional farmera.common.MessageType type = 8;
+}
+
+// Conversation
+// Create conversation
 message CreateConversationRequest {
-  string title = 1;
-  string description = 2;
-  farmera.common.ConversationType type = 3;
-  repeated string participant_ids = 4;
-  ConversationSettings settings = 5;
-  map<string, string> metadata = 6;
+  string titile = 1;
 }
 
 message CreateConversationResponse {
-  Conversation conversation = 1;
+  int32 conversation_id = 1;
+  string title = 2;
+  optional int64 latest_message = 3;
+  farmera.common.Timestamp created_at = 4;
 }
 
+// Get Conversation
 message GetConversationRequest {
-  int64 conversation_id = 1;
-  string user_id = 2; // For permission check
-  bool include_participants = 3;
-  bool include_last_message = 4;
+  int32 conversation_id = 1;
 }
 
 message GetConversationResponse {
-  Conversation conversation = 1;
+  int32 conversation_id = 1;
+  string title = 2;
+  optional int64 latest_message = 3;
+  farmera.common.Timestamp created_at = 4;
 }
 
-message UpdateConversationRequest {
-  int64 conversation_id = 1;
-  string user_id = 2; // For permission check
-  optional string title = 3;
-  optional string description = 4;
-  optional ConversationSettings settings = 5;
-  map<string, string> metadata = 6;
+// List conversation
+message ListConversationsRequest {
+  string user_id = 1;
+  farmera.common.SimplePaginationRequest pagination = 2;
 }
 
-message UpdateConversationResponse {
-  Conversation conversation = 1;
+message ListConversationsResponse {
+  repeated ConversationDTO conversations = 1;
 }
 
+// Delete conversation
 message DeleteConversationRequest {
-  int64 conversation_id = 1;
-  string user_id = 2; // For permission check
+  int32 conversation_id = 1;
 }
 
 message DeleteConversationResponse {
   bool success = 1;
 }
 
-message ListConversationsRequest {
-  string user_id = 1;
-  farmera.common.PaginationRequest pagination = 2;
-  optional farmera.common.ConversationType type_filter = 3;
-  optional bool archived_only = 4;
-  optional bool unread_only = 5;
-  optional string search_query = 6;
-}
-
-message ListConversationsResponse {
-  repeated Conversation conversations = 1;
-  farmera.common.PaginationResponse pagination = 2;
-}
-
-message JoinConversationRequest {
-  int64 conversation_id = 1;
-  string user_id = 2;
-  string invite_code = 3; // Optional invite code
-}
-
-message JoinConversationResponse {
-  Conversation conversation = 1;
-  ConversationParticipant participant = 2;
-}
-
-message LeaveConversationRequest {
-  int64 conversation_id = 1;
-  string user_id = 2;
-}
-
-message LeaveConversationResponse {
-  bool success = 1;
-}
-
-message AddParticipantRequest {
-  int64 conversation_id = 1;
-  string added_by_user_id = 2;
-  string participant_user_id = 3;
-  ConversationParticipant.ParticipantRole role = 4;
-}
-
-message AddParticipantResponse {
-  ConversationParticipant participant = 1;
-}
-
-message RemoveParticipantRequest {
-  int64 conversation_id = 1;
-  string removed_by_user_id = 2;
-  string participant_user_id = 3;
-}
-
-message RemoveParticipantResponse {
-  bool success = 1;
-}
-
+// Get participants
 message GetConversationParticipantsRequest {
-  int64 conversation_id = 1;
-  string user_id = 2; // For permission check
-  farmera.common.PaginationRequest pagination = 3;
+  int32 conversation_id = 1;
 }
 
 message GetConversationParticipantsResponse {
-  repeated ConversationParticipant participants = 1;
-  farmera.common.PaginationResponse pagination = 2;
+ repeated UserConversation participants = 1;
 }
 
-// Message management requests/responses
-message SendMessageRequest {
-  int64 conversation_id = 1;
-  string sender_id = 2;
-  farmera.common.MessageType type = 3;
-  string content = 4;
-  repeated string attachment_ids = 5;
-  int64 reply_to_message_id = 6;
-  MessageMetadata metadata = 7;
-  string thread_id = 8;
+// Get conversation messages
+message GetConversationMessagesRequest {
+  int32 conversation_id = 1;
+  optional farmera.common.Timestamp before = 2;
+  optional int32 limit = 3;
 }
 
-message SendMessageResponse {
-  Message message = 1;
+message GetConversationMessagesResponse {
+  repeated ConversationMessage messages = 1;
 }
 
+// Message
+// Get message
 message GetMessageRequest {
   int64 message_id = 1;
-  string user_id = 2; // For permission check
-  bool include_attachments = 3;
-  bool include_reactions = 4;
 }
 
 message GetMessageResponse {
-  Message message = 1;
-}
-
-message UpdateMessageRequest {
   int64 message_id = 1;
-  string user_id = 2; // For permission check
-  string content = 3;
+  int32 conversation_id = 2;
+  string sender_id = 3;
+  optional string content = 4;
+  farmera.common.Timestamp sent_at = 5;
+  farmera.common.MessageType type = 6;
 }
 
-message UpdateMessageResponse {
-  Message message = 1;
-}
-
+// Delete message
 message DeleteMessageRequest {
   int64 message_id = 1;
-  string user_id = 2; // For permission check
-  bool delete_for_everyone = 3;
 }
 
 message DeleteMessageResponse {
   bool success = 1;
 }
 
-message ListMessagesRequest {
-  string user_id = 1;
-  farmera.common.PaginationRequest pagination = 2;
-  optional int64 conversation_id_filter = 3;
-  optional farmera.common.MessageType type_filter = 4;
-  optional farmera.common.TimeRange date_range = 5;
-}
-
-message ListMessagesResponse {
-  repeated Message messages = 1;
-  farmera.common.PaginationResponse pagination = 2;
-}
-
-message GetConversationMessagesRequest {
-  int64 conversation_id = 1;
-  string user_id = 2; // For permission check
-  farmera.common.PaginationRequest pagination = 3;
-  optional farmera.common.MessageType type_filter = 4;
-  optional string thread_id = 5;
-  optional farmera.common.TimeRange date_range = 6;
-}
-
-message GetConversationMessagesResponse {
-  repeated Message messages = 1;
-  farmera.common.PaginationResponse pagination = 2;
-}
-
-message MarkMessageReadRequest {
-  int64 message_id = 1;
-  string user_id = 2;
-}
-
-message MarkMessageReadResponse {
-  bool success = 1;
-  Message message = 2;
-}
-
-message MarkConversationReadRequest {
-  int64 conversation_id = 1;
-  string user_id = 2;
-  int64 last_read_message_id = 3;
-}
-
-message MarkConversationReadResponse {
-  bool success = 1;
-  int32 marked_read_count = 2;
-}
-
-// Real-time streaming requests
-message StreamMessagesRequest {
-  string user_id = 1;
-  repeated int64 conversation_ids = 2; // If empty, stream all conversations
-}
-
-message StreamConversationUpdatesRequest {
-  string user_id = 1;
-  repeated int64 conversation_ids = 2;
-}
-
-message StreamUserPresenceRequest {
-  string user_id = 1;
-  repeated string watched_user_ids = 2; // Users to watch for presence updates
-}
-
-// File attachment requests/responses
-message UploadAttachmentRequest {
-  oneof data {
-    AttachmentInfo info = 1;
-    bytes chunk = 2;
-  }
-}
-
-message AttachmentInfo {
-  int64 conversation_id = 1;
-  string filename = 2;
-  string content_type = 3;
-  int64 file_size = 4;
-  string uploaded_by = 5;
-}
-
-message UploadAttachmentResponse {
-  Attachment attachment = 1;
-}
-
-message GetAttachmentRequest {
-  string attachment_id = 1;
-  string user_id = 2; // For permission check
-}
-
-message GetAttachmentResponse {
-  Attachment attachment = 1;
-}
-
-message DeleteAttachmentRequest {
-  string attachment_id = 1;
-  string user_id = 2; // For permission check
-}
-
-message DeleteAttachmentResponse {
-  bool success = 1;
-}
-
-message ListAttachmentsRequest {
-  string user_id = 1;
-  farmera.common.PaginationRequest pagination = 2;
-  optional int64 conversation_id_filter = 3;
-  optional string content_type_filter = 4;
-  optional farmera.common.TimeRange date_range = 5;
-}
-
-message ListAttachmentsResponse {
-  repeated Attachment attachments = 1;
-  farmera.common.PaginationResponse pagination = 2;
-}
-
-message GetMessageAttachmentsRequest {
-  int64 message_id = 1;
-  string user_id = 2; // For permission check
-}
-
-message GetMessageAttachmentsResponse {
-  repeated Attachment attachments = 1;
-}
-
-// User presence requests/responses
-message UpdateUserPresenceRequest {
-  string user_id = 1;
-  UserPresence.PresenceStatus status = 2;
-  string status_message = 3;
-  string device_type = 4;
-}
-
-message UpdateUserPresenceResponse {
-  UserPresence presence = 1;
-}
-
-message GetUserPresenceRequest {
-  string user_id = 1;
-  string requesting_user_id = 2; // For privacy check
-}
-
-message GetUserPresenceResponse {
-  UserPresence presence = 1;
-}
-
-message SetTypingStatusRequest {
-  string user_id = 1;
-  int64 conversation_id = 2;
-  bool is_typing = 3;
-}
-
-message SetTypingStatusResponse {
-  bool success = 1;
-}
-
-// Search requests/responses
-message SearchMessagesRequest {
-  string user_id = 1;
-  string query = 2;
-  farmera.common.PaginationRequest pagination = 3;
-  optional int64 conversation_id_filter = 4;
-  optional farmera.common.MessageType type_filter = 5;
-  optional farmera.common.TimeRange date_range = 6;
-  optional string sender_id_filter = 7;
-}
-
-message SearchMessagesResponse {
-  repeated MessageSearchResult results = 1;
-  farmera.common.PaginationResponse pagination = 2;
-  repeated string highlighted_terms = 3;
-}
-
-message MessageSearchResult {
-  Message message = 1;
-  repeated string highlights = 2; // Highlighted text snippets
-  double relevance_score = 3;
-  Conversation conversation = 4; // Basic conversation info
-}
-
-message SearchConversationsRequest {
-  string user_id = 1;
-  string query = 2;
-  farmera.common.PaginationRequest pagination = 3;
-  optional farmera.common.ConversationType type_filter = 4;
-}
-
-message SearchConversationsResponse {
-  repeated ConversationSearchResult results = 1;
-  farmera.common.PaginationResponse pagination = 2;
-}
-
-message ConversationSearchResult {
-  Conversation conversation = 1;
-  repeated string highlights = 2;
-  double relevance_score = 3;
-  int32 matching_message_count = 4;
-}
-
-// Analytics requests/responses
-message GetMessageStatsRequest {
-  string user_id = 1;
-  farmera.common.TimeRange date_range = 2;
-  optional int64 conversation_id_filter = 3;
-}
-
-message GetMessageStatsResponse {
-  MessageStatistics stats = 1;
-}
-
-message MessageStatistics {
-  int32 total_messages_sent = 1;
-  int32 total_messages_received = 2;
-  int32 total_attachments_shared = 3;
-  map<string, int32> messages_by_type = 4;
-  map<string, int32> messages_by_conversation = 5;
-  double average_messages_per_day = 6;
-  int32 active_conversations = 7;
-  farmera.common.Timestamp most_active_day = 8;
-  farmera.common.Timestamp most_active_hour = 9;
-}
-
-message GetConversationStatsRequest {
-  int64 conversation_id = 1;
-  string user_id = 2; // For permission check
-  farmera.common.TimeRange date_range = 3;
-}
-
-message GetConversationStatsResponse {
-  ConversationStatistics stats = 1;
-}
-
-message ConversationStatistics {
-  int32 total_messages = 1;
-  int32 total_participants = 2;
-  int32 active_participants = 3;
-  map<string, int32> messages_by_participant = 4;
-  map<string, int32> messages_by_type = 5;
-  double average_messages_per_day = 6;
-  farmera.common.Timestamp last_activity = 7;
-  farmera.common.Timestamp peak_activity_period = 8;
-} 
+// Attachment

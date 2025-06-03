@@ -22,6 +22,7 @@ pub struct AppState {
     pub chat_server_handler: ChatServerHandler,
 }
 
+#[derive(Clone)]
 pub struct AppServices {
     pub attachment_service: Arc<AttachmentService>,
     pub conversation_service: Arc<ConversationService>,
