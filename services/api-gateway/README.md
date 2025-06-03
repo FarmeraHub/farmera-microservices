@@ -11,16 +11,22 @@ Central entry point for all Farmera microservices, providing unified authenticat
 - **📚 API Documentation** - Auto-generated Swagger documentation
 - **🛡️ Security** - Helmet, CORS, and input validation
 - **🔍 Request Logging** - Detailed request/response logging
+- **🔌 gRPC Integration** - Direct communication with microservices via gRPC
+- **🔄 Standardized Responses** - Consistent API response format
 
 ## 📁 Project Structure
 
 ```
 src/
+├── auth/                   # Authentication module and controllers
 ├── common/
-│   └── decorators/          # Custom decorators (Public, etc.)
-├── guards/                  # Authentication guards
-├── health/                  # Health check endpoints
-├── proxy/                   # Service routing and proxying
+│   ├── decorators/         # Custom decorators (Public, User, ResponseMessage)
+│   ├── interceptors/       # Response transformers and interceptors
+│   └── interfaces/         # Common interfaces (User, etc.)
+├── guards/                 # Authentication guards
+├── health/                 # Health check endpoints
+├── proxy/                  # Service routing and proxying
+├── services/               # gRPC client services
 ├── app.module.ts           # Main application module
 ├── app.controller.ts       # Basic app endpoints
 ├── app.service.ts          # App service
@@ -50,6 +56,11 @@ PRODUCTS_SERVICE_URL=http://localhost:3002
 PAYMENT_SERVICE_URL=http://localhost:3003
 NOTIFICATION_SERVICE_URL=http://localhost:3004
 COMMUNICATION_SERVICE_URL=http://localhost:3005
+
+# gRPC Services
+USERS_GRPC_URL=localhost:50051
+PRODUCTS_GRPC_URL=localhost:50052
+PAYMENT_GRPC_URL=localhost:50053
 
 # Rate Limiting
 THROTTLE_TTL=60
@@ -104,6 +115,18 @@ npm run start:prod
 - `GET /api/services/health/:service` - Individual service health
 - `GET /api/services` - List all registered services
 
+### Authentication Endpoints
+
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/verify-email` - Email verification
+- `POST /api/auth/send-verification-email` - Send verification email
+- `GET /api/auth/profile` - Get user profile
+- `GET /api/auth/refresh-token` - Refresh access token
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/update-new-password` - Update password with reset code
+- `POST /api/auth/logout` - User logout
+
 ### Service Routing
 
 All microservice endpoints are accessible through:
@@ -125,13 +148,34 @@ The gateway handles JWT authentication automatically:
 - **Public endpoints** - Use `@Public()` decorator
 - **Protected endpoints** - Require valid JWT token in Authorization header
 - **Token validation** - Automatic JWT verification and user context injection
+- **User extraction** - Use `@User()` decorator to access the authenticated user
 
 ## 🔐 Authentication Flow
 
-1. **Login Request** → Forwarded to users-service
-2. **JWT Generation** → Handled by users-service
+1. **Login Request** → Processed by API Gateway via gRPC to users-service
+2. **JWT Generation** → Handled by users-service, returned via Gateway
 3. **Token Validation** → Gateway validates on subsequent requests
 4. **User Context** → Injected into request for downstream services
+5. **Refresh Flow** → Automatic token refresh using refresh tokens
+
+### Using the User Decorator
+
+```typescript
+import { User } from '../common/decorators/user.decorator';
+import { User as UserInterface } from '../common/interfaces/user.interface';
+
+@Get('profile')
+async getUserProfile(@User() user: UserInterface) {
+  // Access user properties: user.id, user.email, etc.
+  return await this.userService.getProfile(user.id);
+}
+
+// Get specific properties
+@Get('user-id')
+async getUserId(@User('id') userId: string) {
+  return { userId };
+}
+```
 
 ## 🏗️ Architecture
 
@@ -148,10 +192,14 @@ API Gateway (Port 3000)
 │  Request Routing & Proxying        │
 └─────────────────────────────────────┘
      ↓
+┌─────────────────────┐  ┌─────────────────────┐
+│  HTTP REST APIs     │  │  gRPC Services      │
+└─────────────────────┘  └─────────────────────┘
+     ↓                         ↓
 Microservices
-├── Users Service (3001)
-├── Products Service (3002)
-├── Payment Service (3003)
+├── Users Service (3001/50051)
+├── Products Service (3002/50052)
+├── Payment Service (3003/50053)
 ├── Notification Service (3004)
 └── Communication Service (3005)
 ```
@@ -197,6 +245,30 @@ Interactive API documentation available at:
 - **Swagger UI** with all endpoints documented
 - **Authentication testing** built-in
 
+## 🔄 Standardized Response Format
+
+All API responses follow a consistent format:
+
+```json
+{
+  "statusCode": 200,
+  "message": "Operation successful",
+  "data": {
+    // Response data here
+  }
+}
+```
+
+Error responses:
+
+```json
+{
+  "statusCode": 400,
+  "message": "Error message",
+  "error": "Bad Request"
+}
+```
+
 ## 🔧 Development
 
 ### Adding New Services
@@ -214,6 +286,25 @@ Interactive API documentation available at:
 2. Add environment variable:
    ```bash
    NEW_SERVICE_URL=http://localhost:3006
+   ```
+
+### Adding New gRPC Services
+
+1. Create a client service in the `services` directory
+2. Register the service in the appropriate module:
+
+   ```typescript
+   ClientsModule.register([
+     {
+       name: 'NEW_GRPC_PACKAGE',
+       transport: Transport.GRPC,
+       options: {
+         url: this.configService.get<string>('NEW_GRPC_URL'),
+         package: 'farmera.newservice',
+         protoPath: join(__dirname, '../../shared/grpc-protos/newservice/newservice.proto'),
+       },
+     },
+   ]),
    ```
 
 ### Custom Middleware
@@ -247,9 +338,6 @@ npm run test:e2e
 
 # Test coverage
 npm run test:cov
-
-# Test specific service health
-curl http://localhost:3000/api/services/health/users
 ```
 
 ## 📈 Performance
