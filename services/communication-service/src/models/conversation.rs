@@ -12,7 +12,7 @@ pub struct Conversation {
     pub title: String,
 
     #[schema(example = 1)]
-    pub lastest_message: Option<i64>,
+    pub latest_message: Option<i64>,
 
     #[schema(example = "2025-04-15T08:14:17.923998Z")]
     pub created_at: DateTime<Utc>,
