@@ -1,17 +1,100 @@
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { AppModule } from './app.module';
+import { Module } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { Logger } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
+import { EmailModule } from './email/email.module';
+import { UsersModule } from './users/users.module';
+import { VerificationModule } from './verification/verification.module';
+import { GrpcModule } from './grpc/grpc.module';
+
+// Create a special module for gRPC that doesn't use the global AuthGuard
+@Module({
+  imports: [
+    CacheModule.register({ isGlobal: true }),
+    ScheduleModule.forRoot(),
+    ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 10000,
+        limit: 20,
+      },
+    ]),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USERNAME'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_NAME'),
+        entities: [join(__dirname, '**', '*.entity{.ts,.js}')],
+        synchronize: configService.get<boolean>('DB_SYNC'),
+        ssl: false,
+      }),
+    }),
+    AuthModule,
+    UsersModule,
+    EmailModule,
+    VerificationModule,
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (config: ConfigService) => ({
+        transport: {
+          host: config.get('MAIL_HOST'),
+          secure: false,
+          auth: {
+            user: config.get('MAIL_USER'),
+            pass: config.get('MAIL_PASSWORD'),
+          },
+        },
+        defaults: {
+          from: `"No Reply" <${config.get('MAIL_FROM')}>`,
+        },
+        template: {
+          dir: join(__dirname, 'src/templates'),
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    GrpcModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class GrpcAppModule {}
 
 async function bootstrap() {
-  // Create the gRPC microservice
+  const logger = new Logger('GrpcMain');
+  logger.log('Starting Users gRPC Service...');
+
+  // Create the gRPC microservice using GrpcAppModule instead of AppModule
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
+    GrpcAppModule, // Use the special gRPC module without the global AuthGuard
     {
       transport: Transport.GRPC,
       options: {
         package: 'farmera.users',
-        protoPath: join(__dirname, '../../../shared/grpc-protos/users/users.proto'),
+        protoPath: join(
+          __dirname,
+          '../../../shared/grpc-protos/users/users.proto',
+        ),
         url: 'localhost:50051',
         loader: {
           keepCase: true,
@@ -27,10 +110,11 @@ async function bootstrap() {
 
   // Start the gRPC server
   await app.listen();
-  console.log('✅ Users gRPC Service is running on localhost:50051');
+  logger.log('✅ Users gRPC Service is running on localhost:50051');
 }
 
 bootstrap().catch((error) => {
-  console.error('❌ Failed to start Users gRPC Service:', error);
+  const logger = new Logger('GrpcMain');
+  logger.error('❌ Failed to start Users gRPC Service:', error);
   process.exit(1);
 });

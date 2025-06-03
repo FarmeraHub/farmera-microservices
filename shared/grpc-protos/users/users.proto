@@ -162,6 +162,7 @@ message CreateUserRequest {
   farmera.common.Gender gender = 7;
   farmera.common.Timestamp birthday = 8;
   bool send_verification_email = 9;
+  string verification_code = 10; // Verification code for pre-verified registration
 }
 
 message CreateUserResponse {

@@ -1,6 +1,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
+import { Public } from '../decorators/public.decorator';
 import { UsersService } from '../users/users.service';
 import { AuthService } from '../auth/auth.service';
 import { VerificationService } from '../verification/verification.service';
@@ -32,6 +33,7 @@ export class UsersGrpcController {
   ) {}
 
   // Authentication Methods
+  @Public()
   @GrpcMethod('UsersService', 'Login')
   async login(data: LoginRequest) {
     try {
@@ -54,7 +56,7 @@ export class UsersGrpcController {
         token_info: UserMapper.createTokenInfo(
           result.access_token,
           result.refresh_token,
-          3600,
+          7 * 24 * 60 * 60 * 1000,
         ),
         requires_verification: false,
         verification_type: '',
@@ -68,6 +70,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'RefreshToken')
   async refreshToken(data: RefreshTokenRequest) {
     try {
@@ -94,6 +97,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'ForgotPassword')
   async forgotPassword(data: { email: string }) {
     try {
@@ -116,22 +120,19 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'UpdatePassword')
   async updatePassword(data: {
-    user_id: string;
-    current_password?: string;
+    email: string;
+    verification_code: string;
     new_password: string;
-    reset_token?: string;
   }) {
     try {
-      this.logger.log(`gRPC UpdatePassword request for user: ${data.user_id}`);
-
-      // Get user email from user_id
-      const user = await this.usersService.getUserById(data.user_id);
+      this.logger.log(`gRPC UpdatePassword request for user: ${data.email}`);
 
       await this.authService.updateNewPassword({
-        email: user.email,
-        code: data.reset_token || '',
+        email: data.email,
+        code: data.verification_code || '',
         newPassword: data.new_password,
       });
 
@@ -149,29 +150,26 @@ export class UsersGrpcController {
   }
 
   // User Management Methods
+  @Public()
   @GrpcMethod('UsersService', 'CreateUser')
   async createUser(data: CreateUserRequest) {
     try {
       this.logger.log(`gRPC CreateUser request for email: ${data.email}`);
+
+      console.log(data);
 
       const createUserDto = {
         email: data.email,
         password: data.password,
         firstName: data.first_name,
         lastName: data.last_name,
-        code: '000000', // Note: You should implement proper verification
+        code: data.verification_code,
       };
 
       const user = await this.usersService.createUserSignUp(createUserDto);
 
-      // Send verification email if requested
-      if (data.send_verification_email) {
-        await this.verificationService.create({ email: data.email });
-      }
-
       return {
         user: UserMapper.toGrpcUser(user as any),
-        verification_sent: data.send_verification_email || false,
       };
     } catch (error) {
       this.logger.error(`CreateUser error: ${error.message}`);
@@ -182,6 +180,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'GetUser')
   async getUser(data: GetUserRequest) {
     try {
@@ -203,6 +202,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'GetUserProfile')
   async getUserProfile(data: { user_id: string }) {
     try {
@@ -228,21 +228,17 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'SendVerificationEmail')
   async sendVerificationEmail(data: SendVerificationEmailRequest) {
     try {
       this.logger.log(`gRPC SendVerificationEmail request`);
 
       let email = data.email;
-      if (!email && data.user_id) {
-        const user = await this.usersService.getUserById(data.user_id);
-        email = user.email;
-      }
-
       if (!email) {
         throw new RpcException({
           code: status.INVALID_ARGUMENT,
-          message: 'Email or user_id is required',
+          message: 'Email is required',
         });
       }
 
@@ -261,26 +257,24 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'VerifyEmail')
   async verifyEmail(data: VerifyEmailRequest) {
     try {
-      this.logger.log(`gRPC VerifyEmail request for user: ${data.user_id}`);
-
-      const user = await this.usersService.getUserById(data.user_id);
+      this.logger.log(`gRPC VerifyEmail request`);
 
       if (data.verification_code) {
         await this.verificationService.verifyCode({
-          email: user.email,
+          email: data.email as string,
           code: data.verification_code,
         });
 
         // Clean up verification
-        await this.verificationService.deleteVerification(user.email);
+        await this.verificationService.deleteVerification(data.email as string);
       }
 
       return {
         success: true,
-        user: UserMapper.toGrpcUser(user),
       };
     } catch (error) {
       this.logger.error(`VerifyEmail error: ${error.message}`);
@@ -291,6 +285,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'Logout')
   async logout(data: { user_id: string; device_id?: string }) {
     try {
@@ -312,6 +307,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'UpdateUser')
   async updateUser(data: UpdateUserRequest) {
     try {
@@ -338,6 +334,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'DeleteUser')
   async deleteUser(data: DeleteUserRequest) {
     try {
@@ -358,6 +355,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'ListUsers')
   async listUsers(data: ListUsersRequest) {
     try {
@@ -397,6 +395,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'UpdateUserProfile')
   async updateUserProfile(data: any) {
     try {
@@ -428,6 +427,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'AddUserLocation')
   async addUserLocation(data: AddUserLocationRequest) {
     try {
@@ -469,6 +469,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'AddPaymentMethod')
   async addPaymentMethod(data: AddPaymentMethodRequest) {
     try {
@@ -520,6 +521,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'GetUsersByRole')
   async getUsersByRole(data: { role: string; pagination?: any }) {
     try {
@@ -543,6 +545,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'UpdateUserStatus')
   async updateUserStatus(data: UpdateUserStatusRequest) {
     try {
@@ -567,6 +570,7 @@ export class UsersGrpcController {
     }
   }
 
+  @Public()
   @GrpcMethod('UsersService', 'GetUserStats')
   async getUserStats(data: GetUserStatsRequest) {
     try {

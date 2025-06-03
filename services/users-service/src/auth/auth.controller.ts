@@ -9,6 +9,8 @@ import {
   UpdateNewPasswordDto,
 } from './dto/forgot_password.dto';
 
+// NOTE: Auth endpoints are active for API Gateway to proxy to
+// API Gateway will handle centralized auth and proxy to these endpoints
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

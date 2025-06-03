@@ -2,11 +2,56 @@
 
 A comprehensive microservices architecture for agricultural technology platform, handling everything from user management to real-time communication, payments, and IoT device integration.
 
+## 🏗️ Architecture Overview
+
+### **Services Architecture**
+
+```
+API Gateway (Port 3000) ← Primary Entry Point
+├── Authentication Module (JWT, OAuth, etc.)
+├── Request Routing & Load Balancing
+├── Rate Limiting & Security
+└── Service Health Monitoring
+
+Microservices:
+├── Users Service (Port 3001 | gRPC 50051)
+├── Products Service (Port 3002 | gRPC 50052)
+├── Payment Service (Port 3003 | gRPC 50053)
+├── Notification Service (Port 3004 | gRPC 50054) - Rust
+└── Communication Service (Port 3005 | gRPC 50055) - Rust
+```
+
+### **Phase 2 Completed: Authentication Migration** ✅
+
+**Authentication is now centralized in the API Gateway:**
+
+- ✅ **Authentication endpoints** moved to API Gateway (`/api/auth/*`)
+- ✅ **JWT validation** handled at gateway level
+- ✅ **gRPC communication** between gateway and users-service
+- ✅ **Backward compatibility** maintained for existing services
+- ✅ **Users-service auth endpoints** commented out to avoid conflicts
+
+**Authentication Flow:**
+
+1. **Client** → API Gateway (`/api/auth/login`)
+2. **API Gateway** → Users Service (via gRPC)
+3. **Users Service** → Database operations + JWT generation
+4. **API Gateway** → Client (JWT tokens + user data)
+
+**Available Auth Endpoints:**
+
+- `POST /api/auth/login` - User authentication
+- `GET /api/auth/refresh-token` - Token refresh
+- `POST /api/auth/forgot-password` - Password reset request
+- `POST /api/auth/update-new-password` - Password update
+- `POST /api/auth/logout` - User logout
+
 ## 📁 **Project Structure**
 
 ```
 farmera-microservices/
 ├── services/                 # All microservices
+│   ├── api-gateway/         # Central API Gateway & authentication (Node.js/NestJS)
 │   ├── users-service/       # User management & authentication (Node.js/NestJS)
 │   ├── products-service/    # Product catalog & farm management (Node.js/NestJS)
 │   ├── payment-service/     # Orders, payments & delivery (Node.js/NestJS)
@@ -21,6 +66,16 @@ farmera-microservices/
 ```
 
 ## 🚀 **Services Overview**
+
+### **API Gateway** (Node.js/NestJS) - **NEW!** 🎉
+
+- 🌐 Central entry point for all microservices
+- 🔐 Centralized JWT authentication & authorization
+- 🔄 Intelligent request routing & load balancing
+- 📊 Health monitoring & service discovery
+- ⚡ Rate limiting & security middleware
+- 📚 Unified API documentation (Swagger)
+- 🛡️ CORS, Helmet, and input validation
 
 ### **Users Service** (Node.js/NestJS)
 
@@ -128,6 +183,9 @@ cargo install buf
 # Start infrastructure
 docker-compose up -d postgres redis
 
+# Start API Gateway (recommended entry point)
+cd services/api-gateway && npm run start:dev
+
 # Start each service (in separate terminals)
 cd services/users-service && npm run start:dev
 cd services/products-service && npm run start:dev
@@ -172,7 +230,21 @@ npm run test:e2e
 
 ## 📡 **Service Communication**
 
-### **gRPC Endpoints**
+### **🌐 API Gateway (Primary Entry Point)**
+
+- **API Gateway**: `http://localhost:3000`
+- **API Documentation**: `http://localhost:3000/api/docs`
+- **Health Monitoring**: `http://localhost:3000/api/health`
+
+**All microservices accessible through gateway:**
+
+- `POST /api/users/auth/login` → Users Service
+- `GET /api/products/categories` → Products Service
+- `POST /api/payment/orders` → Payment Service
+- `GET /api/notification/status` → Notification Service
+- `POST /api/communication/messages` → Communication Service
+
+### **gRPC Endpoints (Internal Communication)**
 
 - **Users Service**: `localhost:50051`
 - **Products Service**: `localhost:50052`
@@ -180,8 +252,9 @@ npm run test:e2e
 - **Notification Service**: `localhost:50054`
 - **Communication Service**: `localhost:50055`
 
-### **REST APIs**
+### **Direct REST APIs (Development Only)**
 
+- **API Gateway**: `http://localhost:3000` ⭐ **Primary Entry Point**
 - **Users Service**: `http://localhost:3001`
 - **Products Service**: `http://localhost:3002`
 - **Payment Service**: `http://localhost:3003`
@@ -203,7 +276,7 @@ npm run test:e2e
 - **Logging**: Structured logging with correlation IDs
 - **Distributed Tracing**: OpenTelemetry integration (coming soon)
 
-## 🤝 **Contributing**
+## 🛠 **Contributing**
 
 1. **Fork the repository**
 2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
