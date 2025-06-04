@@ -29,7 +29,7 @@ export interface CreateUserRequest {
   role: UserRole;
   gender?: string;
   birthday?: any; // Timestamp from protobuf
-  send_verification_email?: boolean;
+  verification_code: string;
 }
 
 export interface GetUserRequest {
@@ -72,12 +72,11 @@ export interface ListUsersRequest {
 }
 
 export interface SendVerificationEmailRequest {
-  user_id?: string;
   email?: string;
 }
 
 export interface VerifyEmailRequest {
-  user_id: string;
+  email?: string;
   verification_code?: string;
   verification_token?: string;
 }

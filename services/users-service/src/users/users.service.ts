@@ -35,6 +35,8 @@ export class UsersService {
   ) {}
 
   async createUserSignUp(createUserSignUpDto: CreateUserSignUpDto) {
+    console.log(createUserSignUpDto);
+
     await this.verificationService.verifyCode({
       email: createUserSignUpDto.email,
       code: createUserSignUpDto.code,

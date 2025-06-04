@@ -32,7 +32,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly hashService: HashService,
     private readonly verificationService: VerificationService,
-  ) { }
+  ) {}
 
   async login(req: LoginDto, res: Response) {
     const result = await this.validateUser(req.email, req.password);
@@ -69,27 +69,19 @@ export class AuthService {
         iss: 'from server',
       });
 
-      // res.cookie(REFRESH_TOKEN_COOKIES_KEY, refreshToken, {
-      //   httpOnly: false,
-      //   maxAge: ms(
-      //     this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
-      //   ),
-      //   sameSite: 'none',
-      //   secure: true,
-      // });
-
-      const expirationSetting = this.configService.get<string>(
-        'JWT_REFRESH_TOKEN_EXPIRATION',
-        '7d', // Default value if the env var is not set
-      );
-      res.cookie(REFRESH_TOKEN_COOKIES_KEY, refreshToken, {
-        httpOnly: false,
-        maxAge: ms(
-          expirationSetting as ms.StringValue
-        ),
-        sameSite: 'none',
-        secure: true,
-      });
+      // Only set cookies if we're in an HTTP context (res.cookie exists)
+      if (res && typeof res.cookie === 'function') {
+        const expirationSetting = this.configService.get<string>(
+          'JWT_REFRESH_TOKEN_EXPIRATION',
+          '7d', // Default value if the env var is not set
+        );
+        res.cookie(REFRESH_TOKEN_COOKIES_KEY, refreshToken, {
+          httpOnly: false,
+          maxAge: ms(expirationSetting as ms.StringValue),
+          sameSite: 'none',
+          secure: true,
+        });
+      }
 
       return {
         access_token: accessToken,
@@ -168,32 +160,22 @@ export class AuthService {
           iss: 'from server',
         });
 
-        res.clearCookie(REFRESH_TOKEN_COOKIES_KEY);
+        // Only manipulate cookies if we're in an HTTP context (res.cookie exists)
+        if (res && typeof res.cookie === 'function') {
+          res.clearCookie(REFRESH_TOKEN_COOKIES_KEY);
 
-        // res.cookie(REFRESH_TOKEN_COOKIES_KEY, newRefreshToken, {
-        //   httpOnly: false,
-        //   maxAge: ms(
-        //     this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
-        //   ),
-        //   sameSite: 'none',
-        //   secure: true,
-        // });
+          const expirationSetting = this.configService.get<string>(
+            'JWT_REFRESH_TOKEN_EXPIRATION',
+            '7d', // Default value if the env var is not set
+          );
 
-
-        const expirationSetting = this.configService.get<string>(
-          'JWT_REFRESH_TOKEN_EXPIRATION',
-          '7d', // Default value if the env var is not set
-        );
-
-        // Ensure expirationSetting is not undefined (covered by the default above)
-        // and then assert its type.
-
-        res.cookie(REFRESH_TOKEN_COOKIES_KEY, refreshToken, {
-          httpOnly: false, // Consider setting this to true for refresh tokens if possible
-          maxAge: ms(expirationSetting as ms.StringValue), // Type assertion here
-          sameSite: 'none',
-          secure: true,
-        });
+          res.cookie(REFRESH_TOKEN_COOKIES_KEY, newRefreshToken, {
+            httpOnly: false, // Consider setting this to true for refresh tokens if possible
+            maxAge: ms(expirationSetting as ms.StringValue), // Type assertion here
+            sameSite: 'none',
+            secure: true,
+          });
+        }
 
         return {
           access_token: newAccessToken,
