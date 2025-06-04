@@ -17,9 +17,12 @@ import { Public } from '../common/decorators/public.decorator';
 export class ProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
-  @All(':service/*')
+  @All(':service(users|products|payment|notification|communication)/*')
   @ApiOperation({ summary: 'Proxy requests to microservices' })
-  @ApiParam({ name: 'service', description: 'Target service name (users, products, payment, etc.)' })
+  @ApiParam({
+    name: 'service',
+    description: 'Target service name (users, products, payment, etc.)',
+  })
   async proxyRequest(
     @Param('service') service: string,
     @Req() req: Request,
@@ -29,10 +32,10 @@ export class ProxyController {
       // Extract the path after the service name
       const fullPath = req.url;
       const servicePath = fullPath.substring(fullPath.indexOf('/', 1));
-      
+
       // Remove /api prefix if present
-      const cleanPath = servicePath.startsWith('/api') 
-        ? servicePath.substring(4) 
+      const cleanPath = servicePath.startsWith('/api')
+        ? servicePath.substring(4)
         : servicePath;
 
       // Forward headers (excluding host to avoid conflicts)
@@ -43,30 +46,33 @@ export class ProxyController {
       console.log(`[Gateway] Proxying ${req.method} /${service}${cleanPath}`);
 
       // Forward the request to the target service
-      this.proxyService.forwardRequest(
-        service,
-        cleanPath,
-        req.method,
-        req.body,
-        forwardHeaders,
-      ).subscribe({
-        next: (data) => {
-          res.status(200).json(data);
-        },
-        error: (error) => {
-          console.error(`[Gateway Error] Service ${service}:`, error.message);
-          
-          const status = error.getStatus?.() || HttpStatus.INTERNAL_SERVER_ERROR;
-          const message = error.message || 'Service unavailable';
-          
-          res.status(status).json({
-            statusCode: status,
-            message,
-            service,
-            timestamp: new Date().toISOString(),
-          });
-        },
-      });
+      this.proxyService
+        .forwardRequest(
+          service,
+          cleanPath,
+          req.method,
+          req.body,
+          forwardHeaders,
+        )
+        .subscribe({
+          next: (data) => {
+            res.status(200).json(data);
+          },
+          error: (error) => {
+            console.error(`[Gateway Error] Service ${service}:`, error.message);
+
+            const status =
+              error.getStatus?.() || HttpStatus.INTERNAL_SERVER_ERROR;
+            const message = error.message || 'Service unavailable';
+
+            res.status(status).json({
+              statusCode: status,
+              message,
+              service,
+              timestamp: new Date().toISOString(),
+            });
+          },
+        });
     } catch (error) {
       console.error('[Gateway] Proxy error:', error);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
@@ -87,7 +93,7 @@ export class ProxyController {
   ) {
     try {
       const isHealthy = await this.proxyService.checkServiceHealth(service);
-      
+
       if (isHealthy) {
         res.status(200).json({
           service,
@@ -122,4 +128,4 @@ export class ProxyController {
       timestamp: new Date().toISOString(),
     });
   }
-} 
+}

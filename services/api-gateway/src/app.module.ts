@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { GuardsModule } from './guards/guards.module';
 import { HealthModule } from './health/health.module';
+import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
@@ -56,9 +57,10 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
     // Custom modules
     AuthModule,
-    ProxyModule,
     GuardsModule,
     HealthModule,
+    MediaModule,
+    ProxyModule,
   ],
   controllers: [AppController],
   providers: [
