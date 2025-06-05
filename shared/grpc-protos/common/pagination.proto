@@ -65,3 +65,9 @@ message ListResponse {
   repeated SortOption applied_sort = 2;
   map<string, string> applied_filters = 3;
 } 
+
+// Simple Pagination request parameters
+message SimplePaginationRequest {
+  optional int32 page = 1;
+  optional int32 limit = 2;
+}

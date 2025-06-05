@@ -13,6 +13,7 @@ use crate::docs::{attachment_doc, conversation_doc, message_doc};
         conversation_doc::delete_conversation,
         conversation_doc::get_conversation_participants,
         conversation_doc::get_conversation_messages,
+        conversation_doc::get_user_conversations,
 
         attachment_doc::upload_file,
         attachment_doc::get_file,

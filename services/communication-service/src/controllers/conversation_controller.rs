@@ -1,25 +1,24 @@
-use std::sync::Arc;
-
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse, Responder};
+use uuid::Uuid;
 
 use crate::{
+    app::AppServices,
     errors::Error,
     models::{
         conversation::{MessageParams, NewConversation},
-        response::Response,
+        response_wrapper::ResponseWrapper,
+        Pagination,
     },
-    services::convesation_service::ConversationService,
 };
 
-pub struct ConversationController {
-    conversation_service: Arc<ConversationService>,
-}
+pub struct ConversationController;
 
 impl ConversationController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
         cfg.service(
             web::scope("/conversation")
-                .route("/", web::post().to(Self::create_conversation))
+                .route("", web::post().to(Self::create_conversation))
+                .route("", web::get().to(Self::get_user_conversation))
                 .route(
                     "/{conversation_id}",
                     web::get().to(Self::get_conversation_by_id),
@@ -39,91 +38,86 @@ impl ConversationController {
         );
     }
 
-    pub fn new(conversation_service: Arc<ConversationService>) -> Self {
-        Self {
-            conversation_service,
-        }
-    }
-
     pub async fn get_conversation_by_id(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         id: web::Path<i32>,
     ) -> impl Responder {
         let id = id.into_inner();
 
-        match self_controller
+        match services
             .conversation_service
             .get_conversation_by_id(id)
             .await
             .map_err(|e| Error::Db(e))
         {
             Ok(result) => match result {
-                Some(result) => HttpResponse::Ok().json(result),
-                None => HttpResponse::NotFound().json(Response {
-                    r#type: "error".to_string(),
-                    message: "Conversation not found".to_string(),
-                }),
+                Some(result) => {
+                    ResponseWrapper::build(StatusCode::OK, "Conversation retrieved", Some(result))
+                }
+                None => ResponseWrapper::<()>::build(
+                    StatusCode::NOT_FOUND,
+                    "Conversation not found",
+                    None,
+                ),
             },
             Err(e) => HttpResponse::from_error(e),
         }
     }
 
     pub async fn create_conversation(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         new_conversation: web::Json<NewConversation>,
     ) -> impl Responder {
-        match self_controller
+        match services
             .conversation_service
             .create_conversation(&new_conversation.title)
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(id) => HttpResponse::Created().json(Response {
-                r#type: "success".to_string(),
-                message: format!("Conversation created - id: {id}"),
-            }),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::CREATED, "Conversation created", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }
 
     pub async fn delete_conversation(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
     ) -> impl Responder {
         let id = conversation_id.into_inner();
-        match self_controller
+        match services
             .conversation_service
             .delete_conversation(id)
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(_) => HttpResponse::Ok().json(Response {
-                r#type: "success".to_string(),
-                message: "Deleted".to_string(),
-            }),
+            Ok(_) => ResponseWrapper::<()>::build(StatusCode::OK, "Conversation deleted", None),
             Err(e) => HttpResponse::from_error(e),
         }
     }
 
     pub async fn get_conversation_participants(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
     ) -> impl Responder {
         let id = conversation_id.into_inner();
 
-        match self_controller
+        match services
             .conversation_service
             .get_conversation_participants(id)
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Participants retrieved", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }
 
     pub async fn get_conversation_messages(
-        self_controller: web::Data<Arc<ConversationController>>,
+        services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
         params: web::Query<MessageParams>,
     ) -> impl Responder {
@@ -131,13 +125,37 @@ impl ConversationController {
         let limit = params.limit;
         let before = params.before;
 
-        match self_controller
+        match services
             .conversation_service
             .get_conversation_messages(conversation_id, limit, before)
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(result) => HttpResponse::Ok().json(result),
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Messages retrieved", Some(result))
+            }
+            Err(e) => HttpResponse::from_error(e),
+        }
+    }
+
+    pub async fn get_user_conversation(
+        _req: HttpRequest,
+        services: web::Data<AppServices>,
+        query: web::Query<Pagination>,
+    ) -> impl Responder {
+        // !TODO: handler user id
+        let user_id = Uuid::parse_str("11111111-1111-1111-1111-111111111111").unwrap();
+        let pagination = query.into_inner();
+
+        match services
+            .conversation_service
+            .get_user_conversation(user_id, pagination)
+            .await
+            .map_err(|e| Error::Db(e))
+        {
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::OK, "Messages retrieved", Some(result))
+            }
             Err(e) => HttpResponse::from_error(e),
         }
     }

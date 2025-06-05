@@ -24,3 +24,17 @@ chrono = { version = "0.4.40", features = ["serde"] }
 futures-util = "0.3.31"
 utoipa = { version = "5.3.1", features = ["actix_extras", "chrono"] }
 utoipa-swagger-ui = { version = "9.0.1", features = ["actix-web", "reqwest"] }
+failsafe = "1.3.0"
+
+farmera-grpc-proto = { path = "../../shared/generated/rust" }
+tonic = { version = "0.12" }
+prost = { version = "0.13" }
+prost-wkt-types = { version = "0.6.1" }
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+[[bin]]
+name = "grpc-server"
+path = "src/grpc_server.rs"

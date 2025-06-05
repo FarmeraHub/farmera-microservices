@@ -7,10 +7,12 @@ use communication_service::{
         conversation_controller::ConversationController, message_controller::MessageController,
         ws_controller::WSController,
     },
+    grpc::grpc_service::GrpcCommunicationService,
     openapi::ApiDoc,
 };
 use dotenvy::dotenv;
 use env_logger::Env;
+use farmera_grpc_proto::communication::communication_service_server::CommunicationServiceServer;
 use std::env;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -30,12 +32,41 @@ async fn main() -> std::io::Result<()> {
 
     let state = AppState::build().await;
 
-    let app_data = web::Data::new(state.app_services);
+    let app_data = web::Data::new(state.app_services.clone());
     let chat_server_handler = web::Data::new(state.chat_server_handler);
 
     // start chat server
     let chat_server = tokio::spawn(state.app_processors.chat_server.run());
 
+    // create the gRPC communication service instance
+    let grpc_communication_service = GrpcCommunicationService::new(state.app_services.clone());
+
+    // start grpc server
+    tokio::spawn(async move {
+        // Set up the gRPC server address and port from environment variables
+        let grpc_server_addr =
+            env::var("GRPC_SERVER_ADDRESS").unwrap_or_else(|_| "127.0.0.1".to_string());
+        let grpc_server_port = env::var("GRPC_PORT").unwrap_or_else(|_| "50055".to_string());
+
+        let grpc_addr = format!("{}:{}", grpc_server_addr, grpc_server_port)
+            .parse()
+            .expect("Invalid address format");
+
+        log::info!("gRPC server listening on {}", grpc_addr);
+
+        tonic::transport::Server::builder()
+            .add_service(CommunicationServiceServer::new(grpc_communication_service))
+            .serve_with_shutdown(grpc_addr, async {
+                tokio::signal::ctrl_c()
+                    .await
+                    .expect("Failed to listen for ctrl_c");
+                log::info!("Shutting down grpc server gracefully...");
+            })
+            .await
+            .unwrap();
+    });
+
+    // start http server
     let http_server = HttpServer::new(move || {
         App::new()
             // server states

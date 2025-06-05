@@ -47,7 +47,7 @@ pub struct SentMedia {
     pub media: Vec<MediaContent>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct MediaContent {
     pub url: String,
     pub size: i32,

@@ -1,21 +1,28 @@
-FROM rust:1.86-slim AS builder
+FROM clux/muslrust:stable AS builder
 WORKDIR /app
 
-RUN apt-get update -qq && apt-get install -yqq musl-tools
+RUN apt update && \
+    apt install -y protobuf-compiler libprotobuf-dev
 
-COPY src/ src/
-COPY migrations/ migrations/
-COPY Cargo.toml .
-COPY Cargo.lock .
+COPY ./services/communication-service/Cargo.toml ./services/communication-service/Cargo.toml
+COPY ./services/communication-service/Cargo.lock ./services/communication-service/Cargo.lock
+COPY ./shared/generated/rust/ ./shared/generated/rust/
 
-RUN rustup target add x86_64-unknown-linux-musl && \
-    cargo build --target x86_64-unknown-linux-musl --release
+RUN mkdir -p ./services/communication-service/src && \
+    echo "fn main() {}" > ./services/communication-service/src/main.rs
+
+WORKDIR /app/services/communication-service
+
+RUN PROTOC_INCLUDE=/usr/include cargo build --release || true
+
+COPY ./services/communication-service/src/ ./src/
+COPY ./services/communication-service/migrations/ ./migrations/
+
+RUN PROTOC_INCLUDE=/usr/include cargo build --release
 
 FROM alpine:latest
 
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/communication-service /usr/local/bin
-COPY --from=builder /app/migrations /app/migrations
-
-WORKDIR /app
+COPY --from=builder /app/services/communication-service/target/x86_64-unknown-linux-musl/release/communication-service /usr/local/bin
+COPY --from=builder /app/services/communication-service/migrations ./migrations
 
 ENTRYPOINT ["/usr/local/bin/communication-service"]

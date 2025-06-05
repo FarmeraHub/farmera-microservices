@@ -6,7 +6,11 @@ use uuid::Uuid;
 
 use crate::{
     errors::db_error::DBError,
-    models::{conversation::Conversation, message::Message, user_conversation::UserConversation},
+    models::{
+        conversation::{Conversation, GetConversationDTO},
+        message::Message,
+        user_conversation::UserConversation,
+    },
 };
 
 pub struct ConversationRepo {
@@ -33,10 +37,10 @@ impl ConversationRepo {
         Ok(result)
     }
 
-    pub async fn insert_conversation(&self, title: &str) -> Result<i32, DBError> {
+    pub async fn insert_conversation(&self, title: &str) -> Result<Conversation, DBError> {
         let stm = include_str!("./queries/conversation/insert_conversation.sql");
 
-        let result = sqlx::query_scalar(stm)
+        let result = sqlx::query_as(stm)
             .bind(title)
             .fetch_one(&*self.pg_db_pool)
             .await
@@ -149,6 +153,28 @@ impl ConversationRepo {
             .await
             .map_err(|e| {
                 log::error!("Fetching messages in conversation error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        Ok(result)
+    }
+
+    pub async fn get_conversation_by_user_id(
+        &self,
+        user_id: Uuid,
+        limit: i32,
+        offset: i32,
+    ) -> Result<Vec<GetConversationDTO>, DBError> {
+        let stm = include_str!("./queries/conversation/get_conversation_by_user_id.sql");
+
+        let result = sqlx::query_as(stm)
+            .bind(user_id)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&*self.pg_db_pool)
+            .await
+            .map_err(|e| {
+                log::error!("Fetching conversation error: {e}");
                 DBError::QueryError(e)
             })?;
 

@@ -1,12 +1,8 @@
-use std::sync::Arc;
+use actix_web::{http::StatusCode, web, HttpResponse, Responder};
 
-use actix_web::{web, HttpResponse, Responder};
+use crate::{app::AppServices, errors::Error, models::response_wrapper::ResponseWrapper};
 
-use crate::{errors::Error, models::response::Response, services::message_service::MessageService};
-
-pub struct MessageController {
-    messages_service: Arc<MessageService>,
-}
+pub struct MessageController;
 
 impl MessageController {
     pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -17,49 +13,43 @@ impl MessageController {
         );
     }
 
-    pub fn new(messages_service: Arc<MessageService>) -> Self {
-        Self { messages_service }
-    }
-
     pub async fn get_message_by_id(
-        self_controller: web::Data<Arc<MessageController>>,
+        services: web::Data<AppServices>,
         path: web::Path<i64>,
     ) -> impl Responder {
         let message_id = path.into_inner();
 
-        match self_controller
+        match services
             .messages_service
             .get_message_by_id(message_id)
             .await
             .map_err(|e| Error::Db(e))
         {
             Ok(result) => match result {
-                Some(result) => HttpResponse::Ok().json(result),
-                None => HttpResponse::NotFound().json(Response {
-                    r#type: "error".to_string(),
-                    message: "Message not found".to_string(),
-                }),
+                Some(result) => {
+                    ResponseWrapper::build(StatusCode::OK, "Message retrieved", Some(result))
+                }
+                None => {
+                    ResponseWrapper::<()>::build(StatusCode::NOT_FOUND, "Message not found", None)
+                }
             },
             Err(e) => HttpResponse::from_error(e),
         }
     }
 
     pub async fn delete_message(
-        self_controller: web::Data<Arc<MessageController>>,
+        services: web::Data<AppServices>,
         path: web::Path<i64>,
     ) -> impl Responder {
         let message_id = path.into_inner();
 
-        match self_controller
+        match services
             .messages_service
             .delete_message(message_id)
             .await
             .map_err(|e| Error::Db(e))
         {
-            Ok(_) => HttpResponse::Ok().json(Response {
-                r#type: "success".to_string(),
-                message: "Deleted".to_string(),
-            }),
+            Ok(_) => ResponseWrapper::<()>::build(StatusCode::OK, "Message deleted", None),
             Err(e) => HttpResponse::from_error(e),
         }
     }

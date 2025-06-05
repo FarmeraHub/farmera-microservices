@@ -1,4 +1,4 @@
-use crate::models::message::Message;
+use crate::models::{message::Message, response_wrapper::{ResponseWrapper, UnitStruct}};
 
 #[utoipa::path(
     get,
@@ -11,7 +11,7 @@ use crate::models::message::Message;
         (
             status = 200, 
             description = "Message found",
-            body = Message,
+            body = ResponseWrapper<Message>,
         ),
         (
             status = 404, 
@@ -37,6 +37,7 @@ pub async fn get_message_by_id() {}
         (
             status = 200, 
             description = "Deleted",
+            body = ResponseWrapper<UnitStruct>
         ),
         (
             status = 500, 

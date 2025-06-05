@@ -24,7 +24,7 @@ impl MessageService {
     }
 
     pub async fn delete_message(&self, message_id: i64) -> Result<(), DBError> {
-        let _ = self.message_repo.delete_message(message_id).await;
+        let _ = self.message_repo.delete_message(message_id).await?;
         let _ = self
             .attachment_repo
             .delete_attachment_by_message_id(message_id)

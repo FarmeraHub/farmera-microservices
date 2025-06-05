@@ -18,3 +18,8 @@ pub struct UserConversation {
     #[schema(value_type = Option<String>, format = "date-time")]
     pub deleted_at: Option<DateTime<Utc>>,
 }
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct Participants {
+    pub participants: Vec<UserConversation>,
+}
