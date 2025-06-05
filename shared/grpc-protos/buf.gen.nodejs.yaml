@@ -2,4 +2,6 @@ version: v2
 plugins:
   - remote: buf.build/community/stephenh-ts-proto:v2.6.1
     out: ../generated/nodejs/src
+    opt: 
+      - nestJs=true
     # opt: useDate=false # use google.probuf.Timestamp {secs, nanos}

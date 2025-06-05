@@ -73,7 +73,7 @@ message ConversationDTO {
 // Conversation
 // Create conversation
 message CreateConversationRequest {
-  string titile = 1;
+  string title = 1;
 }
 
 message CreateConversationResponse {
