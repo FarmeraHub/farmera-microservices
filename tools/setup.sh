@@ -86,12 +86,6 @@ generate_nodejs_code() {
 
     # Generate using buf
     buf generate --template buf.gen.nodejs.yaml
-
-    # fix timestamp alias
-    print_warning "Fixing timestamp alias"
-    
-    cd $SCRIPT_DIR
-    node fix-timestamp.js
     
     print_success "Node.js gRPC code generated"
 }
