@@ -15,20 +15,32 @@ import {
   DefaultValuePipe,
   ParseIntPipe,
   Headers,
+  Logger,
 } from "@nestjs/common";
 
 import { Role } from "src/common/enums/role.enum";
 import { ProductsService } from "./products.service";
-import { CreateProductDto } from "./dto/create-product.dto";
+import { CreateProductDto } from "./dto/request/create-product.dto";
 import { FileFieldsInterceptor } from "@nestjs/platform-express";
 import { ProductStatus } from "src/common/enums/product-status.enum";
-import { UpdateProductDto } from "./dto/update-product.dto";
-import { ResponseProductDto } from "./dto/response-product.dto";
+import { UpdateProductDto } from "./dto/request/update-product.dto";
+import { ResponseProductDto } from "./dto/response/response-product.dto";
+import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString } from "class-validator";
 
 
+
+export class GetProductsByIdsRequestDto {
+
+  @IsArray()
+  @ArrayNotEmpty() // Đảm bảo mảng không rỗng
+  @IsString({ each: true }) // Đảm bảo mỗi phần tử là string
+  @IsNotEmpty({ each: true }) // Đảm bảo mỗi phần tử không rỗng
+  product_ids: string[];
+}
 @Controller('product')
 export class ProductsController {
 
+  private readonly logger = new Logger(ProductsController.name);
   constructor(private readonly productsService: ProductsService) { }
 
   @Post('create')
@@ -128,4 +140,22 @@ export class ProductsController {
     );
   }
 
+
+  @Post('by-ids')
+  async getMultipleProductsByIds(
+    @Body() getProductsDto: GetProductsByIdsRequestDto,
+  ): Promise<ResponseProductDto[]> {
+    this.logger.log(`[HTTP Test - GetMultipleProductsByIds] Received request for product IDs: ${JSON.stringify(getProductsDto.product_ids)}`);
+
+    try {
+      const products = await this.productsService.getProductsByIds(getProductsDto.product_ids);
+      this.logger.log(`[HTTP Test - GetMultipleProductsByIds] Found ${products.length} products.`);
+      return products;
+    } catch (error) {
+      this.logger.error(`[HTTP Test - GetMultipleProductsByIds] Error: ${error.message}`, error.stack);
+      // NestJS sẽ tự động xử lý các exception chuẩn như BadRequestException, NotFoundException
+      // Bạn có thể ném lại lỗi để NestJS xử lý hoặc custom response nếu cần
+      throw error;
+    }
+  }
 }

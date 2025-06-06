@@ -21,6 +21,6 @@ import { FileStorageModule } from "src/file-storage/file-storage.module";
       ],
     controllers: [ProductsController],
     providers: [ProductsService,],
-    exports: [],
+    exports: [ProductsService],
     })
 export class ProductsModule {}

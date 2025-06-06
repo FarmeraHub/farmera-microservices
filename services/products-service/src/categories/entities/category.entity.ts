@@ -11,5 +11,5 @@ export class Category {
     @Column()
     image_url: string;
     @CreateDateColumn()
-    createdAt: Date;
+    created: Date;
 }

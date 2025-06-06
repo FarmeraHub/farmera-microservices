@@ -8,12 +8,15 @@ import { Address } from './entities/address.entity';
 import { multerAsyncConfig } from '../config/multer.config';
 import { BiometricsModule } from 'src/biometrics/biometrics.module';
 import { Identification } from './entities/identification.entity';
+import { GhnModule } from 'src/ghn/ghn.module';
+import { AddressGHN } from './entities/address-ghn.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Farm, Address, Identification]),
+    TypeOrmModule.forFeature([Farm, Address, Identification, AddressGHN]),
     MulterModule.registerAsync(multerAsyncConfig),
     BiometricsModule,
+    GhnModule,
   ],
   controllers: [FarmsController],
   providers: [FarmsService],

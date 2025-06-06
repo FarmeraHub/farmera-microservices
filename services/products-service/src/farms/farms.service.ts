@@ -1,6 +1,7 @@
+import { GhnService } from './../ghn/ghn.service';
 import { BadRequestException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Farm } from './entities/farm.entity';
 import { Address } from './entities/address.entity';
 import { FarmStatus } from '../common/enums/farm-status.enum';
@@ -13,6 +14,7 @@ import { FileStorageService } from 'src/file-storage/file-storage.service';
 import { FptIdrCccdFrontData, FptIdrCardFrontData } from 'src/biometrics/interfaces/fpt-idr-front.interface';
 import { SavedFileResult } from 'src/file-storage/storage.strategy.interface';
 import { ResponseFarmDto } from './dto/response-farm.dto';
+import { AddressGHN } from './entities/address-ghn.entity';
 
 @Injectable()
 export class FarmsService {
@@ -24,9 +26,12 @@ export class FarmsService {
     private addressRepository: Repository<Address>,
     @InjectRepository(Identification)
     private identification: Repository<Identification>,
+    @InjectRepository(AddressGHN)
+    private addressGHNRepository: Repository<AddressGHN>,
     private readonly biometricsService: BiometricsService,
     private dataSource: DataSource,
     private readonly fileStorageService: FileStorageService,
+    private readonly GhnService: GhnService,
 
   ) { }
 
@@ -101,11 +106,34 @@ export class FarmsService {
       this.logger.log(`[Register] Ảnh CCCD đã được lưu. URL: ${savedCccdFileResult.url}, Định danh: ${savedCccdFileResult.identifier}`);
 
       this.logger.log(`[Register] Bước 4: Lưu thông tin đăng ký vào database cho user ${userId}.`);
+
+      const ghn_province_id = await this.GhnService.getIdProvince(registerDto.city);
+      if (!ghn_province_id) {
+        this.logger.error(`[Register] Không tìm thấy ID tỉnh GHN cho thành phố ${registerDto.city}`);
+        throw new BadRequestException(`Không tìm thấy ID tỉnh GHN cho thành phố ${registerDto.city}`);
+      }
+      const ghn_district_id = await this.GhnService.getIdDistrict(registerDto.district, ghn_province_id);
+      if (!ghn_district_id) {
+        this.logger.error(`[Register] Không tìm thấy ID quận huyện GHN cho ${registerDto.district} trong tỉnh ${registerDto.city}`);
+        throw new BadRequestException(`Không tìm thấy ID quận huyện GHN cho ${registerDto.district} trong tỉnh ${registerDto.city}`);
+      }
+      const ghn_ward_id = await this.GhnService.getIdWard(registerDto.ward, ghn_district_id);
+      if (!ghn_ward_id) {
+        this.logger.error(`[Register] Không tìm thấy ID phường xã GHN cho ${registerDto.ward} trong quận ${registerDto.district}`);
+        throw new BadRequestException(`Không tìm thấy ID phường xã GHN cho ${registerDto.ward} trong quận ${registerDto.district}`);
+      }
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
 
       try {
+
+        const ghnAddress = new AddressGHN();
+        ghnAddress.province_id = ghn_province_id;
+        ghnAddress.district_id = ghn_district_id;
+        ghnAddress.ward_code = ghn_ward_id;
+        const savedGhnAddress = await queryRunner.manager.save(ghnAddress);
+
 
         const farm = new Farm();
         farm.farm_name = registerDto.farm_name;
@@ -123,6 +151,7 @@ export class FarmsService {
         address.street = registerDto.street;
         address.coordinate = registerDto.coordinate;
         farm.address = address;
+        address.address_ghn = savedGhnAddress;
 
         const identification = new Identification();
         identification.status = IdentificationStatus.APPROVED;
@@ -238,7 +267,7 @@ export class FarmsService {
   // }
 
 
-  async findByUserID(userId: string): Promise<ResponseFarmDto | Farm> {
+  async findByUserID(userId: string): Promise<Farm> {
     const farm = await this.farmsRepository.findOne({
       where: { user_id: userId },
     });
@@ -247,7 +276,7 @@ export class FarmsService {
       throw new NotFoundException(`Không tìm thấy trang trại của người dùng với ID ${userId}`);
     }
     if (userId !== farm.user_id) {
-      const response: ResponseFarmDto = new ResponseFarmDto(farm);
+      throw new BadRequestException('Người dùng không có quyền truy cập trang trại này');
     }
 
     return farm;
@@ -265,7 +294,18 @@ export class FarmsService {
 
     return farm;
   }
+  async findFarmsByIds(farmIds: string[]): Promise<Farm[]> { // Hoặc number[]
+    if (!farmIds || farmIds.length === 0) {
+      return [];
+    }
 
+    const result = await this.farmsRepository.find({
+      where: { farm_id: In(farmIds) },
+      relations: ['address', 'address.address_ghn'],
+    });
+    this.logger.log(`result: ${JSON.stringify(result, null, 2)}`);
+    return result;
+  }
   async updateFarm(
     farmId: string,
     updateFarmDto: UpdateFarmDto,
@@ -310,7 +350,7 @@ export class FarmsService {
 
       if (files.avatarFile) {
         if (farm.avatar_url) {
-          oldAvatarUrlToDelete = farm.avatar_url; 
+          oldAvatarUrlToDelete = farm.avatar_url;
         }
         const [savedAvatar] = await this.fileStorageService.saveFiles(
           [files.avatarFile],
@@ -343,7 +383,7 @@ export class FarmsService {
         newlySavedFiles.push(...savedNewProfileImages);
         finalProfileImageUrls.push(...savedNewProfileImages.map(f => f.url));
       }
-      
+
       const newUniqueProfileUrls = [...new Set(finalProfileImageUrls)];
       if (JSON.stringify(newUniqueProfileUrls.sort()) !== JSON.stringify(currentProfileImageUrls.sort())) {
         farm.profile_image_urls = newUniqueProfileUrls;
@@ -370,15 +410,15 @@ export class FarmsService {
         newlySavedFiles.push(...savedNewCertificateImages);
         finalCertificateImageUrls.push(...savedNewCertificateImages.map(f => f.url));
       }
-      
+
       const newUniqueCertificateUrls = [...new Set(finalCertificateImageUrls)];
       if (JSON.stringify(newUniqueCertificateUrls.sort()) !== JSON.stringify(currentCertificateImageUrls.sort())) {
-          farm.certificate_img_urls = newUniqueCertificateUrls;
-          isUpdated = true;
+        farm.certificate_img_urls = newUniqueCertificateUrls;
+        isUpdated = true;
       }
 
       if (!farm.address) {
-         farm.address = new Address();
+        farm.address = new Address();
       }
 
       let addressUpdated = false;
@@ -387,17 +427,17 @@ export class FarmsService {
         if (updateFarmDto[field] !== undefined && updateFarmDto[field] !== farm.address[field]) {
           farm.address[field] = updateFarmDto[field];
           addressUpdated = true;
-          isUpdated = true; 
+          isUpdated = true;
         }
       }
 
-      if (!isUpdated && !addressUpdated) { 
+      if (!isUpdated && !addressUpdated) {
         return { message: 'Không có dữ liệu nào được cập nhật' };
       }
 
       farm.updated = new Date();
-      await queryRunner.manager.save(Farm, farm); 
-      if (addressUpdated) { 
+      await queryRunner.manager.save(Farm, farm);
+      if (addressUpdated) {
         await queryRunner.manager.save(Address, farm.address);
       }
 
@@ -406,7 +446,7 @@ export class FarmsService {
       //  After successful commit, delete old files from storage
       if (oldAvatarUrlToDelete) {
         this.fileStorageService.deleteFilesByUrl([oldAvatarUrlToDelete]).catch(err => {
-          console.error('Failed to delete old avatar:', err); 
+          console.error('Failed to delete old avatar:', err);
         });
       }
       if (oldProfileImageUrlsToDelete.length > 0) {
@@ -420,9 +460,9 @@ export class FarmsService {
         });
       }
 
-      const newFarm = await this.farmsRepository.findOne({ 
-          where: { farm_id: farmId },
-          relations: ['address'],
+      const newFarm = await this.farmsRepository.findOne({
+        where: { farm_id: farmId },
+        relations: ['address'],
       });
       if (!newFarm) {
         throw new NotFoundException(`Không tìm thấy trang trại với ID ${farmId}`);

@@ -24,7 +24,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json"
-    },
+  },
   "dependencies": {
     "@azure/storage-blob": "^12.27.0",
     "@grpc/grpc-js": "^1.13.4",
@@ -55,7 +55,7 @@
     "pinata": "^2.4.0",
     "react": "^19.1.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
+    "rxjs": "^7.8.2",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.22"
   },

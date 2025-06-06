@@ -8,17 +8,18 @@ export class ResponseProductDto {
     price_per_unit: number;
     unit: string;
     stock_quantity: number;
+    weight: number; // in grams
     image_urls: string[];
     video_urls: string[];
-    status: string; 
+    status: string;
     created: Date;
     updated: Date;
 
-    farm:ResponseFarmDto;
+    farm: ResponseFarmDto;
     categories: {
         category: string;
         subcategories: string[];
-      }[];
+    }[];
     constructor(partial: Partial<ResponseProductDto>) {
         Object.assign(this, partial);
     }
