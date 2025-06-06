@@ -5,7 +5,7 @@ package farmera.users;
 import "common/types.proto";
 import "common/enums.proto";
 import "common/pagination.proto";
-import "common/errors.proto";
+// import "common/errors.proto";
 
 option go_package = "github.com/farmera/grpc-protos/users";
 
@@ -35,15 +35,15 @@ service UsersService {
   
   // Location management
   rpc AddUserLocation(AddUserLocationRequest) returns (AddUserLocationResponse);
-  rpc UpdateUserLocation(UpdateUserLocationRequest) returns (UpdateUserLocationResponse);
-  rpc DeleteUserLocation(DeleteUserLocationRequest) returns (DeleteUserLocationResponse);
-  rpc GetUserLocations(GetUserLocationsRequest) returns (GetUserLocationsResponse);
+  // rpc UpdateUserLocation(UpdateUserLocationRequest) returns (UpdateUserLocationResponse);
+  // rpc DeleteUserLocation(DeleteUserLocationRequest) returns (DeleteUserLocationResponse);
+  // rpc GetUserLocations(GetUserLocationsRequest) returns (GetUserLocationsResponse);
   
   // Payment methods
   rpc AddPaymentMethod(AddPaymentMethodRequest) returns (AddPaymentMethodResponse);
-  rpc UpdatePaymentMethod(UpdatePaymentMethodRequest) returns (UpdatePaymentMethodResponse);
-  rpc DeletePaymentMethod(DeletePaymentMethodRequest) returns (DeletePaymentMethodResponse);
-  rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
+  // rpc UpdatePaymentMethod(UpdatePaymentMethodRequest) returns (UpdatePaymentMethodResponse);
+  // rpc DeletePaymentMethod(DeletePaymentMethodRequest) returns (DeletePaymentMethodResponse);
+  // rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
   
   // Admin methods
   rpc GetUsersByRole(GetUsersByRoleRequest) returns (GetUsersByRoleResponse);
@@ -140,10 +140,11 @@ message ForgotPasswordResponse {
 }
 
 message UpdatePasswordRequest {
-  string user_id = 1;
+  string email = 1;
   string current_password = 2;
   string new_password = 3;
-  string reset_token = 4; // Alternative to current_password for reset flow
+  optional string verification_code = 4;
+  // string reset_token = 5; // Alternative to current_password for reset flow
 }
 
 message UpdatePasswordResponse {
@@ -232,14 +233,13 @@ message SendVerificationEmailResponse {
 }
 
 message VerifyEmailRequest {
-  string user_id = 1;
+  string email = 1;
   string verification_code = 2;
   string verification_token = 3;
 }
 
 message VerifyEmailResponse {
   bool success = 1;
-  User user = 2; // Updated user with verified email
 }
 
 // Profile requests/responses
@@ -262,6 +262,7 @@ message UpdateUserProfileRequest {
   optional string bio = 7;
   repeated string interests = 8;
   map<string, string> preferences = 9;
+  optional string avatar_url = 10;
 }
 
 message UpdateUserProfileResponse {
@@ -273,8 +274,7 @@ message ProfileStats {
   int32 total_reviews = 2;
   int32 loyalty_points = 3;
   double total_spent = 4;
-  int32 favorite_products = 5;
-  farmera.common.Timestamp member_since = 6;
+  farmera.common.Timestamp member_since = 5;
 }
 
 // Location management requests/responses
