@@ -79,7 +79,7 @@ check_dependencies() {
 }
 
 # Generate gRPC code for Node.js services
-generate_nodejs_code() {
+generate_nestjs_code() {
     print_status "Generating gRPC code for Node.js services..."
 
     cd "$SCRIPT_DIR/../shared/grpc-protos/"
@@ -137,17 +137,16 @@ validate_protos() {
 
 
 # Install Node.js dependencies for generated code
-setup_nodejs_deps() {
+setup_nestjs_deps() {
     print_status "Setting up Node.js dependencies..."
 
-    # Copy package.json from template
-    cp "$NODEJS_TEMPLATE_DIR/package.json" "$OUT_DIR_NODEJS/package.json"
-    cp "$NODEJS_TEMPLATE_DIR/index.ts" "$OUT_DIR_NODEJS/src/index.ts"
-    cp "$NODEJS_TEMPLATE_DIR/tsconfig.json" "$OUT_DIR_NODEJS/tsconfig.json"
+    mkdir -p "$OUT_DIR_NODEJS/nestjs"
 
+    # Copy templates
+    cp -r "$NODEJS_TEMPLATE_DIR/nestjs" "$OUT_DIR_NODEJS"
 
     # Install dependencies
-    cd $OUT_DIR_NODEJS && npm install
+    cd $OUT_DIR_NODEJS/nestjs && npm install
     
     print_success "Node.js dependencies installed"
 }
@@ -208,9 +207,9 @@ main() {
     # Run setup steps
     check_dependencies
     validate_protos
-    generate_nodejs_code
+    generate_nestjs_code
     generate_rust_code
-    setup_nodejs_deps
+    setup_nestjs_deps
     setup_rust_deps
     create_dev_scripts
     

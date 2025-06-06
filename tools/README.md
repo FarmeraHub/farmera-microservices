@@ -73,7 +73,7 @@ tools/
 
 ## How to Use Generated Proto Objects
 
-### Nodejs
+### Nodejs/Nestjs
 
 #### 1. Dependencies setup
 
@@ -83,7 +83,7 @@ In package.json, you might be tempted to include your shared gRPC library like t
 
 ```json
 "dependencies": {
-  "@farmera/grpc-proto": "file:../../shared/generated/nodejs/dist"
+  "@farmera/grpc-proto": "file:../../shared/generated/nodejs/nestjs/dist"
 }
 ```
 This works, but it has significant drawbacks during active development:
@@ -100,7 +100,7 @@ To make development easier and avoid manual syncing, use npm link to symlink the
 
 In the shared library folder:
 ```bash
-cd ./shared/generated/nodejs
+cd ./shared/generated/nodejs/nestjs
 
 # Run the build script if the library has not been built yet.
 npm run build
@@ -128,7 +128,7 @@ This will create a symbolic link to the shared package, allowing:
 
 #### 2. Usage
 
-The generated objects in `shared/generated/nodejs` can be use like this:
+The generated objects in `shared/generated/nodejs/nestjs` can be use like this:
 
 ```TypeScript
 import { CreateUserRequest, CreateUserResponse } from '@farmera/grpc-proto/dist/users/users';

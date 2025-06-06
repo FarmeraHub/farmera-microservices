@@ -74,6 +74,8 @@ The generated gRPC code provides TypeScript interfaces and decorators. To implem
 - Implement the interface provided:
 
 ```TypeScript
+import { YourServiceControllerMethods, YourServiceController } from '@farmera/grpc-proto/dist/service/service';
+
 @Controller()
 @YourServiceControllerMethods()
 export class YourController implements YourServiceController {
@@ -88,6 +90,8 @@ export class YourController implements YourServiceController {
 ```
 Example:
 ```TypeScript
+import { CommunicationServiceControllerMethods, CommunicationServiceController } from '@farmera/grpc-proto/dist/communication/communication';
+
 @Controller()
 @CommunicationServiceControllerMethods()
 export class CommunicationController implements CommunicationServiceController {
