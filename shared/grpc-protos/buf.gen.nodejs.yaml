@@ -4,4 +4,5 @@ plugins:
     out: ../generated/nodejs/nestjs/src
     opt: 
       - nestJs=true
+      - snakeToCamel=false
     # opt: useDate=false # use google.probuf.Timestamp {secs, nanos}
