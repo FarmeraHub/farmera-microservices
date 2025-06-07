@@ -9,38 +9,62 @@ import {
   ProductsServiceControllerMethods,
   ProductsServiceController,
   GetListProductsRequest,
-  GetListProductsResponse,
+  GetListProductsResponse as GrpcGetListProductsResponse,
   ProductRequest,
-  ProductResponse,
+  ProductResponse as GrpcProductResponse,
   Product as GrpcProduct,
   Farm as GrpcFarm,
   Address as GrpcAddress,
   AddressGHN as GrpcAddressGHN,
   ProductSubcategoryDetail as GrpcProductSubcategoryDetail,
+  Identification as GrpcIdentification,
 } from '@farmera/grpc-proto/dist/products/products';
 import { CommonMapper } from "./common.mapper";
 export class ProductMapper {
 
 
-  static toGrpcProduct(product: Product): GrpcProduct {
+
+  static toGpcProductRequest(productRequest: any): ProductRequest {
+    return {
+      product_id: productRequest.product_id || '',
+      farm_id: productRequest.farm_id || '',
+      product_name: productRequest.product_name || '',
+    }
+  }
+  static toGrpcGetListProductRequest(productRequest: any): GetListProductsRequest {
+    if (!productRequest || !Array.isArray(productRequest.products)) {
+      throw new BadGatewayException('Invalid request format: "products" array is required.');
+    }
+
+    const products: ProductRequest[] = productRequest.products.map((product: any) => ({
+      product_id: product.product_id || '',
+      farm_id: product.farm_id || '',
+      product_name: product.product_name || '',
+    }));
+
+    return { products };
+
+  }
+  static toGrpcProduct(product: Product): GrpcProduct | undefined {
+    if (!product) { return undefined; } 
     const farmEntity = product.farm as Farm | undefined;
     const grpcProduct: GrpcProduct = {
-      productId: product.product_id,
-      farmId: farmEntity ? farmEntity.farm_id : '',
-      productName: product.product_name,
+      product_id: product.product_id,
+      farm_id: farmEntity ? farmEntity.farm_id : '',
+      product_name: product.product_name,
       description: product.description,
-      pricePerUnit: product.price_per_unit,
+      price_per_unit: product.price_per_unit,
       unit: product.unit,
-      stockQuantity: product.stock_quantity,
+      stock_quantity: product.stock_quantity,
       weight: product.weight,
-      imageUrls: product.image_urls,
-      videoUrls: product.video_urls,
+      image_urls: product.image_urls,
+      video_urls: product.video_urls,
       status: CommonMapper.toGrpcProductStatus(product.status),
-      averageRating: product.average_rating,
-      totalSold: product.total_sold,
-      createdAt: CommonMapper.toGrpcTimestamp(product.created),
-      updatedAt: CommonMapper.toGrpcTimestamp(product.updated),
-      subcategoryDetails: product.productSubcategoryDetails
+      average_rating: product.average_rating,
+      total_sold: product.total_sold,
+      created: CommonMapper.toGrpcTimestamp(product.created),
+      updated: CommonMapper.toGrpcTimestamp(product.updated),
+      subcategory_details: product.productSubcategoryDetails
         ? product.productSubcategoryDetails
           .map(detailEntity => this.mapProductSubcategoryDetailEntityToGrpc(detailEntity))
           .filter(Boolean) as GrpcProductSubcategoryDetail[]
@@ -54,26 +78,23 @@ export class ProductMapper {
     if (!farm) {
       return undefined;
     }
-    const addressEntity = farm.address as Address | undefined;
-    const identificationEntity = farm.identification as Identification | undefined;
-
 
     return {
-      farmId: farm.farm_id,
-      farmName: farm.farm_name,
+      farm_id: farm.farm_id,
+      farm_name: farm.farm_name,
       description: farm.description,
-      userId: farm.user_id,
+      user_id: farm.user_id,
       email: farm.email,
       phone: farm.phone,
-      avatarUrl: farm.avatar_url,
-      profileImageUrls: farm.profile_image_urls,
-      certificateImgUrls: farm.certificate_img_urls,
-      taxNumber: farm.tax_number,
+      avatar_url: farm.avatar_url,
+      profile_image_urls: farm.profile_image_urls,
+      certificate_img_urls: farm.certificate_img_urls,
+      tax_number: farm.tax_number,
       status: CommonMapper.toGrpcFarmStatus(farm.status),
       created: CommonMapper.toGrpcTimestamp(farm.created),
       updated: CommonMapper.toGrpcTimestamp(farm.updated),
-      addressId: Number(addressEntity?.address_id) || 0,
-      identificationId: identificationEntity?.id || '',
+      address: this.toGrpcFarmAddress(farm.address),
+      identification: this.toGrpcFarmIdentification(farm.identification),
 
     }
   }
@@ -87,30 +108,47 @@ export class ProductMapper {
       ? this.toGrpcFarmAddressGhn(addressGhnEntity)
       : undefined;
     return {
-      addressId: address.address_id,
+      address_id: address.address_id,
       city: address.city,
       district: address.district,
       ward: address.ward,
       street: address.street,
       coordinate: address.coordinate,
-      farmId: address.farm.farm_id,
-      addressGhn: addressGhnData,
+      farm_id: address.farm ? address.farm.farm_id : '',
+      address_ghn: addressGhnData,
       created: CommonMapper.toGrpcTimestamp(address.created),
     };
   }
 
-  static toGrpcFarmAddressGhn(addressGhn: AddressGHN): GrpcAddressGHN | undefined {
+  static toGrpcFarmAddressGhn(addressGhn: AddressGHN): GrpcAddressGHN  {
     if (!addressGhn) {
-      return undefined;
+      return {
+        id: 0,
+        province_id: 0,
+        district_id: 0,
+        ward_code: ''
+      };  
     }
     return {
       id: addressGhn.id,
-      provinceId: addressGhn.province_id,
-      districtId: addressGhn.district_id,
-      wardCode: addressGhn.ward_code
+      province_id: addressGhn.province_id,
+      district_id: addressGhn.district_id,
+      ward_code: addressGhn.ward_code
     };
   }
-
+  static toGrpcFarmIdentification(identification: Identification): GrpcIdentification | undefined {
+    if (!identification) {
+      return undefined;
+    }
+    return {
+      id: identification.id,
+      status: CommonMapper.toGrpcIdentificationStatus(identification.status),
+      method: CommonMapper.toGrpcIdentificationMethod(identification.method),
+      nationality: identification.nationality,
+      id_number: identification.id_number,
+      full_name: identification.full_name,
+    };
+  }
 
   static mapProductSubcategoryDetailEntityToGrpc(entity: any): GrpcProductSubcategoryDetail | undefined {
     if (!entity) return undefined;
@@ -118,51 +156,25 @@ export class ProductMapper {
     // Chỉ map các ID theo định nghĩa của GrpcProductSubcategoryDetail
     return {
       id: entity.id,
-      productId: entity.product_id, // Map từ product_id của entity
-      subcategoryId: entity.subcategory_id, // Map từ subcategory_id của entity
+      product_id: entity.product_id, // Map từ product_id của entity
+      subcategory_id: entity.subcategory_id, // Map từ subcategory_id của entity
     };
   }
 
-  static toGrpcProductResponse(product: GrpcProduct, Farm: GrpcFarm): ProductResponse {
+  static toGrpcProductResponse(product: Product, Farm?: Farm): GrpcProductResponse {
+    const grpcProduct = this.toGrpcProduct(product);
+    const grpcFarm = Farm ? this.toGrpcFarm(Farm) : undefined;
     return {
-      product: product,
-      farm: Farm,
+      product: grpcProduct,
+      farm: grpcFarm,
     };
+   
   }
-  static toGrpcGetListProductsResponse(productEntities: Product[]): GetListProductsResponse {
-
-    if (!productEntities || productEntities.length === 0) {
-      return { products: [] };
-    }
-
-    const mappedProductResponses: ProductResponse[] = [];
-
-    for (const entity of productEntities) {
-      if (!entity) {
-        console.warn("mapProductEntityListToFullGrpcResponse encountered an undefined entity in the list.");
-        continue;
-      }
-
-      // 1. Map ProductEntity sang GrpcProduct
-      const grpcProduct = this.toGrpcProduct(entity);
-
-      // 2. Map FarmEntity (nếu có trong ProductEntity) sang GrpcFarm
-      // Giả sử ProductEntity có trường 'farm' kiểu FarmEntity đã được load
-      const grpcFarm = entity.farm ? this.toGrpcFarm(entity.farm) : undefined;
-
-      // 3. Tạo đối tượng ProductResponse
-      const productResponse: ProductResponse = {
-        product: grpcProduct,
-        farm: grpcFarm,
-      };
-
-      // 4. Push ProductResponse đã map vào mảng kết quả
-      mappedProductResponses.push(productResponse);
-    }
-
-    // 5. Tạo đối tượng GetListProductsResponse cuối cùng
+  static toGrpcGetListProductsResponse(productResponseItems: GrpcProductResponse[]): GrpcGetListProductsResponse {
     return {
-      products: mappedProductResponses,
-    };
+      products_found: productResponseItems || [],
+    }
+
+
   }
 }

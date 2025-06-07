@@ -810,6 +810,7 @@ export class ProductsService {
             includeCategory?: boolean;
             includeAddress?: boolean;
             includeAddressGhn?: boolean;
+            includeIdentification?: boolean;
         }
     ): Promise<Product[]> {
         if (!productIds || productIds.length === 0) {
@@ -831,6 +832,12 @@ export class ProductsService {
                 relationsToLoads.push('productSubcategoryDetails.subcategory');
             }
             relationsToLoads.push('productSubcategoryDetails.subcategory.category');
+        }
+        if (options?.includeIdentification) {
+            if (!relationsToLoads.includes('farm')) {
+                relationsToLoads.push('farm');
+            }
+            relationsToLoads.push('farm.identification');
         }
         // Tương tự cho address và address_ghn
         if (options?.includeAddress) {
@@ -859,6 +866,7 @@ export class ProductsService {
             this.logger.warn(`(findProductsByIds) Không tìm thấy sản phẩm nào cho các ID: ${JSON.stringify(productIds)}`);
         } else {
             this.logger.log(`(findProductsByIds) Đã tìm thấy ${products.length} sản phẩm.`);
+            this.logger.log(`(findProductsByIds) Product details: ${JSON.stringify(products, null, 2)}`);
         }
         return products;
     }
