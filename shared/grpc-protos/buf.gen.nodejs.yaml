@@ -1,8 +1,8 @@
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/js:v3.21.2
-    out: ../generated/nodejs
-    opt: import_style=commonjs
-  - remote: buf.build/grpc/node:v1.13.0
-    out: ../generated/nodejs
-    opt: grpc_js
+  - remote: buf.build/community/stephenh-ts-proto:v2.6.1
+    out: ../generated/nodejs/nestjs/src
+    opt: 
+      - nestJs=true
+      - snakeToCamel=false
+    # opt: useDate=false # use google.probuf.Timestamp {secs, nanos}

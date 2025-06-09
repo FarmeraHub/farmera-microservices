@@ -32,7 +32,7 @@ export class UsersService {
     private verificationService: VerificationService,
 
     private hashService: HashService,
-  ) {}
+  ) { }
 
   async createUserSignUp(createUserSignUpDto: CreateUserSignUpDto) {
     console.log(createUserSignUpDto);
@@ -76,6 +76,7 @@ export class UsersService {
   }
 
   async getUserById(id: string) {
+
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ['locations', 'payment_methods'],

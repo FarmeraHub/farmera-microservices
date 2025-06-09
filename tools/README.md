@@ -70,3 +70,108 @@ tools/
 - If proto file validation fails (e.g., linting issues or breaking changes), the scripts will prompt for confirmation to continue.
 - Generated code is organized by service type (e.g., `common`, `users`, `products`) for Node.js and in a single `src` directory for Rust.
 - For detailed implementation guidance, refer to the project’s main documentation or contact the development team.
+
+## How to Use Generated Proto Objects
+
+### Nodejs/Nestjs
+
+#### 1. Dependencies setup
+
+##### **⚠️ Option 1: Using `file:` dependencies (not recommended)**
+
+In package.json, you might be tempted to include your shared gRPC library like this:
+
+```json
+"dependencies": {
+  "@farmera/grpc-proto": "file:../../shared/generated/nodejs/nestjs/dist"
+}
+```
+This works, but it has significant drawbacks during active development:
+
+- You must manually rebuild the library (tsc or other build command).
+
+- Every time the .proto file changes, the library will change, and you must run npm install again to sync the changes.
+
+The dependency is treated as a static snapshot, not a live source — meaning changes in the original folder will not automatically reflect in your project.
+
+##### **✅ Option 2: Using npm link (recommended for local development)**
+
+To make development easier and avoid manual syncing, use npm link to symlink the local package:
+
+In the shared library folder:
+```bash
+cd ./shared/generated/nodejs/nestjs
+
+# Run the build script if the library has not been built yet.
+npm run build
+
+# Note: This folder is built automatically when running setup.sh.
+
+# Create a global symlink to this package.
+npm link
+```
+In your NestJS project
+
+```bash
+cd ./service/your-service
+
+npm link @farmera/grpc-proto
+```
+
+This will create a symbolic link to the shared package, allowing:
+
+- Instant reflection of code changes after rebuilds.
+
+- No need to reinstall dependencies after each change.
+
+- Better developer experience when iterating on both projects.
+
+#### 2. Usage
+
+The generated objects in `shared/generated/nodejs/nestjs` can be use like this:
+
+```TypeScript
+import { CreateUserRequest, CreateUserResponse } from '@farmera/grpc-proto/dist/users/users';
+
+const req = CreateUserRequest.fromPartial({
+  username: "john_doe",
+});
+
+const res: CreateUserResponse = {
+  success: true,
+  message: `User ${req.username} created`,
+};
+```
+
+### Rust
+
+Add the following to your `Cargo.toml`:
+
+```toml
+farmera-grpc-proto = { path = "../../shared/generated/rust" }
+```
+
+Then use the generated request/response objects like so:
+```rust
+use farmera_grpc_proto::farmera::users::{CreateUserRequest, CreateUserResponse};
+
+fn handle_create_user(req: CreateUserRequest) -> CreateUserResponse {
+    let username = req.username;
+
+    CreateUserResponse {
+        success: true,
+        message: format!("User {} created", username),
+        ..Default::default()
+    }
+}
+```
+
+Notes:
+
+- If your message includes types like Timestamp, make sure prost-types is added to your dependencies.
+
+
+
+
+
+
