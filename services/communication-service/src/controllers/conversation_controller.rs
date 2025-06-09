@@ -5,7 +5,7 @@ use crate::{
     app::AppServices,
     errors::Error,
     models::{
-        conversation::{MessageParams, NewConversation},
+        conversation::{MessageParams, NewConversation, NewPrivateConversation},
         response_wrapper::ResponseWrapper,
         Pagination,
     },
@@ -19,6 +19,10 @@ impl ConversationController {
             web::scope("/conversation")
                 .route("", web::post().to(Self::create_conversation))
                 .route("", web::get().to(Self::get_user_conversation))
+                .route(
+                    "/private",
+                    web::post().to(Self::create_private_conversation),
+                )
                 .route(
                     "/{conversation_id}",
                     web::get().to(Self::get_conversation_by_id),
@@ -38,7 +42,7 @@ impl ConversationController {
         );
     }
 
-    pub async fn get_conversation_by_id(
+    async fn get_conversation_by_id(
         services: web::Data<AppServices>,
         id: web::Path<i32>,
     ) -> impl Responder {
@@ -64,7 +68,7 @@ impl ConversationController {
         }
     }
 
-    pub async fn create_conversation(
+    async fn create_conversation(
         services: web::Data<AppServices>,
         new_conversation: web::Json<NewConversation>,
     ) -> impl Responder {
@@ -81,7 +85,7 @@ impl ConversationController {
         }
     }
 
-    pub async fn delete_conversation(
+    async fn delete_conversation(
         services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
     ) -> impl Responder {
@@ -97,11 +101,11 @@ impl ConversationController {
         }
     }
 
-    pub async fn get_conversation_participants(
+    async fn get_conversation_participants(
         services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
     ) -> impl Responder {
-        let id = conversation_id.into_inner();
+        let id: i32 = conversation_id.into_inner();
 
         match services
             .conversation_service
@@ -116,7 +120,7 @@ impl ConversationController {
         }
     }
 
-    pub async fn get_conversation_messages(
+    async fn get_conversation_messages(
         services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
         params: web::Query<MessageParams>,
@@ -138,13 +142,20 @@ impl ConversationController {
         }
     }
 
-    pub async fn get_user_conversation(
-        _req: HttpRequest,
+    async fn get_user_conversation(
+        req: HttpRequest,
         services: web::Data<AppServices>,
         query: web::Query<Pagination>,
     ) -> impl Responder {
-        // !TODO: handler user id
-        let user_id = Uuid::parse_str("11111111-1111-1111-1111-111111111111").unwrap();
+        // get user id from req
+        let user_id = match req.headers().get("X-user-id").and_then(|v| v.to_str().ok()) {
+            Some(id_str) => match Uuid::parse_str(id_str) {
+                Ok(uuid) => uuid,
+                Err(_) => return HttpResponse::Unauthorized().finish(),
+            },
+            None => return HttpResponse::Unauthorized().finish(),
+        };
+
         let pagination = query.into_inner();
 
         match services
@@ -155,6 +166,39 @@ impl ConversationController {
         {
             Ok(result) => {
                 ResponseWrapper::build(StatusCode::OK, "Messages retrieved", Some(result))
+            }
+            Err(e) => HttpResponse::from_error(e),
+        }
+    }
+
+    async fn create_private_conversation(
+        req: HttpRequest,
+        services: web::Data<AppServices>,
+        new_conversation: web::Json<NewPrivateConversation>,
+    ) -> impl Responder {
+        // get user id from req
+        let user_id = match req.headers().get("X-user-id").and_then(|v| v.to_str().ok()) {
+            Some(id_str) => match Uuid::parse_str(id_str) {
+                Ok(uuid) => uuid,
+                Err(_) => return HttpResponse::Unauthorized().finish(),
+            },
+            None => return HttpResponse::Unauthorized().finish(),
+        };
+
+        let new_conversation = new_conversation.into_inner();
+
+        match services
+            .conversation_service
+            .create_private_conversation(
+                &new_conversation.title,
+                user_id,
+                new_conversation.other_user_id,
+            )
+            .await
+            .map_err(|e| Error::Db(e))
+        {
+            Ok(result) => {
+                ResponseWrapper::build(StatusCode::CREATED, "Conversation created", Some(result))
             }
             Err(e) => HttpResponse::from_error(e),
         }

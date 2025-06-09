@@ -180,4 +180,59 @@ impl ConversationRepo {
 
         Ok(result)
     }
+
+    pub async fn insert_private_conversation(
+        &self,
+        title: &str,
+        user_a: Uuid,
+        user_b: Uuid,
+    ) -> Result<Conversation, DBError> {
+        let insert_conversation_stm =
+            include_str!("./queries/conversation/insert_conversation.sql");
+        let insert_user_convsersation_stm =
+            include_str!("./queries/user_conversation/insert_user_conversation.sql");
+
+        let mut tx = self.pg_db_pool.begin().await.map_err(|e| {
+            log::error!("Failed to begin transaction: {}", e);
+            DBError::TransactionError("Failed to begin transaction".to_string())
+        })?;
+
+        let conversation: Conversation = sqlx::query_as(insert_conversation_stm)
+            .bind(title)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(|e| {
+                log::error!("Insert user in conversation error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        let conversation_id = conversation.conversation_id;
+        sqlx::query(insert_user_convsersation_stm)
+            .bind(conversation_id)
+            .bind(user_a)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                log::error!("Insert user in conversation error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        let conversation_id = conversation.conversation_id;
+        sqlx::query(insert_user_convsersation_stm)
+            .bind(conversation_id)
+            .bind(user_b)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                log::error!("Insert user in conversation error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        tx.commit().await.map_err(|e| {
+            log::error!("Failed to commit transaction: {}", e);
+            DBError::TransactionError("Failed to commit transaction".to_string())
+        })?;
+
+        Ok(conversation)
+    }
 }

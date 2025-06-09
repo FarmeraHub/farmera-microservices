@@ -30,6 +30,16 @@ pub struct NewConversation {
     pub title: String,
 }
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct NewPrivateConversation {
+    #[schema(example = "New conversation")]
+    #[serde(deserialize_with = "reject_empty_string")]
+    pub title: String,
+
+    #[schema(value_type = String, format = "uuid", example = "c8dd591b-4105-4608-869b-1dfb96f313b3")]
+    pub other_user_id: Uuid,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct MessageParams {
     pub before: Option<DateTime<Utc>>,

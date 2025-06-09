@@ -79,4 +79,15 @@ impl ConversationService {
             .await?;
         Ok(ConversationList { conversations })
     }
+
+    pub async fn create_private_conversation(
+        &self,
+        title: &str,
+        user_a: Uuid,
+        user_b: Uuid,
+    ) -> Result<Conversation, DBError> {
+        self.conversation_repo
+            .insert_private_conversation(&title, user_a, user_b)
+            .await
+    }
 }

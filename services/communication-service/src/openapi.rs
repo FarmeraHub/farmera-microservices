@@ -1,6 +1,6 @@
 use utoipa::OpenApi;
 
-use crate::docs::{attachment_doc, conversation_doc, message_doc};
+use crate::docs::{attachment_doc, conversation_doc, message_doc, user_doc};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -14,17 +14,21 @@ use crate::docs::{attachment_doc, conversation_doc, message_doc};
         conversation_doc::get_conversation_participants,
         conversation_doc::get_conversation_messages,
         conversation_doc::get_user_conversations,
+        conversation_doc::create_private_conversation,
 
         attachment_doc::upload_file,
         attachment_doc::get_file,
         attachment_doc::get_attachment_by_id,
         attachment_doc::get_attachments_by_conversation_id,
         attachment_doc::get_attachments_by_message_id,
+
+        user_doc::check_online_user
     ),
     tags(
         (name = "Message", description = "Message operations"),
         (name = "Conversation", description = "Conversation operations"),
         (name = "Attachment", description = "Attachment operations"),
+        (name = "User", description = "User operations"),
     )
 )]
 pub struct ApiDoc;

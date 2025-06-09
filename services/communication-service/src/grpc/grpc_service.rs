@@ -1,10 +1,12 @@
 use farmera_grpc_proto::communication::{
-    communication_service_server::CommunicationService, CreateConversationRequest,
-    CreateConversationResponse, DeleteConversationRequest, DeleteConversationResponse,
-    DeleteMessageRequest, DeleteMessageResponse, GetConversationMessagesRequest,
-    GetConversationMessagesResponse, GetConversationParticipantsRequest,
-    GetConversationParticipantsResponse, GetConversationRequest, GetConversationResponse,
-    GetMessageRequest, GetMessageResponse, ListConversationsRequest, ListConversationsResponse,
+    communication_service_server::CommunicationService, CheckOnlineUserRequest,
+    CheckOnlineUserResponse, CreateConversationRequest, CreateConversationResponse,
+    CreatePrivateConversationRequest, CreatePrivateConversationResponse, DeleteConversationRequest,
+    DeleteConversationResponse, DeleteMessageRequest, DeleteMessageResponse,
+    GetConversationMessagesRequest, GetConversationMessagesResponse,
+    GetConversationParticipantsRequest, GetConversationParticipantsResponse,
+    GetConversationRequest, GetConversationResponse, GetMessageRequest, GetMessageResponse,
+    ListConversationsRequest, ListConversationsResponse,
 };
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
@@ -197,5 +199,47 @@ impl CommunicationService for GrpcCommunicationService {
             .map_err(|e| Status::from_error(Box::new(e)))?;
 
         Ok(Response::new(DeleteMessageResponse { success: true }))
+    }
+
+    async fn check_online_user(
+        &self,
+        request: Request<CheckOnlineUserRequest>,
+    ) -> Result<Response<CheckOnlineUserResponse>, Status> {
+        let id = request.into_inner().user_id;
+
+        let user_id =
+            Uuid::parse_str(&id).map_err(|_| Status::invalid_argument("Invalid user id"))?;
+
+        let result = self
+            .app_services
+            .user_service
+            .check_online_user(user_id)
+            .await
+            .map_err(|_| Status::internal("Internal server error"))?;
+
+        Ok(Response::new(CheckOnlineUserResponse { is_online: result }))
+    }
+
+    async fn create_private_conversation(
+        &self,
+        request: Request<CreatePrivateConversationRequest>,
+    ) -> Result<Response<CreatePrivateConversationResponse>, Status> {
+        let create_req = request.into_inner();
+
+        let user_a = Uuid::parse_str(&create_req.user_a)
+            .map_err(|_| Status::invalid_argument("Invalid UUID for user id"))?;
+        let user_b = Uuid::parse_str(&create_req.user_b)
+            .map_err(|_| Status::invalid_argument("Invalid UUID for user id"))?;
+
+        let result = self
+            .app_services
+            .conversation_service
+            .create_private_conversation(&create_req.title, user_a, user_b)
+            .await
+            .map_err(|e| Status::from_error(Box::new(e)))?;
+
+        Ok(Response::new(CreatePrivateConversationResponse::from(
+            result,
+        )))
     }
 }
