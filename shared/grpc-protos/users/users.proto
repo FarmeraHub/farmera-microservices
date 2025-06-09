@@ -103,7 +103,7 @@ message LoginRequest {
   string email = 1;
   string password = 2;
   bool remember_me = 3;
-  string device_info = 4;   // Optional device information
+  optional string device_info = 4;   // Optional device information
 }
 
 message LoginResponse {
@@ -123,7 +123,7 @@ message RefreshTokenResponse {
 
 message LogoutRequest {
   string user_id = 1;
-  string device_id = 2; // Optional for device-specific logout
+  optional string device_id = 2; // Optional for device-specific logout
 }
 
 message LogoutResponse {
@@ -141,10 +141,8 @@ message ForgotPasswordResponse {
 
 message UpdatePasswordRequest {
   string email = 1;
-  string current_password = 2;
+  string code = 2;
   string new_password = 3;
-  optional string verification_code = 4;
-  // string reset_token = 5; // Alternative to current_password for reset flow
 }
 
 message UpdatePasswordResponse {
@@ -162,13 +160,11 @@ message CreateUserRequest {
   farmera.common.UserRole role = 6;
   farmera.common.Gender gender = 7;
   farmera.common.Timestamp birthday = 8;
-  bool send_verification_email = 9;
-  string verification_code = 10; // Verification code for pre-verified registration
+  string verification_code = 9; // Verification code for pre-verified registration
 }
 
 message CreateUserResponse {
   User user = 1;
-  bool verification_sent = 2;
 }
 
 message GetUserRequest {
@@ -223,8 +219,7 @@ message ListUsersResponse {
 
 // Email verification requests/responses
 message SendVerificationEmailRequest {
-  string user_id = 1;
-  string email = 2; // Optional - if different from user's current email
+  string email = 1;
 }
 
 message SendVerificationEmailResponse {

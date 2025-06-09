@@ -136,7 +136,7 @@ export class UsersGrpcController implements UsersServiceController {
 
       await this.authService.updateNewPassword({
         email: request.email,
-        code: request.verification_code || '',
+        code: request.code || '',
         newPassword: request.new_password,
       });
 
@@ -171,8 +171,7 @@ export class UsersGrpcController implements UsersServiceController {
       const user = await this.usersService.createUserSignUp(createUserDto);
 
       return {
-        user: UserMapper.anyToGrpcUser(user as any),
-        verification_sent: false
+        user: UserMapper.anyToGrpcUser(user as any)
       };
     } catch (error) {
       this.logger.error(`CreateUser error: ${error.message}`);
