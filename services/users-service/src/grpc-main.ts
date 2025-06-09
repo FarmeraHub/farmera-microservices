@@ -84,6 +84,9 @@ async function bootstrap() {
   const logger = new Logger('GrpcMain');
   logger.log('Starting Users gRPC Service...');
 
+  const grpcPort = process.env.GRPC_PORT || '50051';
+  const grpcUrl = `0.0.0.0:${grpcPort}`;
+
   // Create the gRPC microservice using GrpcAppModule instead of AppModule
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     GrpcAppModule, // Use the special gRPC module without the global AuthGuard
@@ -95,7 +98,7 @@ async function bootstrap() {
           __dirname,
           '../../../shared/grpc-protos/users/users.proto',
         ),
-        url: 'localhost:50051',
+        url: grpcUrl,
         loader: {
           keepCase: true,
           longs: String,
@@ -110,7 +113,7 @@ async function bootstrap() {
 
   // Start the gRPC server
   await app.listen();
-  logger.log('✅ Users gRPC Service is running on localhost:50051');
+  logger.log(`✅ Users gRPC Service is running on ${grpcUrl}`);
 }
 
 bootstrap().catch((error) => {
