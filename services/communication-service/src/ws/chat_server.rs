@@ -25,6 +25,7 @@ use crate::{
         attachment::{MediaContent, SentMedia},
         message::{MessageContent, SentMessage},
         notification_models::push::{PushMessage, PushMessageType},
+        MessageType,
     },
     repositories::{conversation_repo::ConversationRepo, message_repo::MessageRepo},
 };
@@ -712,7 +713,7 @@ impl ChatServer {
                     }
                     Err(e) => {
                         log::error!(
-                            "Cannot get device tokons of user {} - error: {}",
+                            "Cannot get device tokens of user {} - error: {}",
                             user_id.clone(),
                             e
                         );
@@ -726,7 +727,7 @@ impl ChatServer {
                     conversation_id,
                     sender_id,
                     Some(content_clone),
-                    "message".to_string(),
+                    MessageType::Message,
                     sent_at,
                     is_read,
                 )

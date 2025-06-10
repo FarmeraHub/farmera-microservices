@@ -128,11 +128,13 @@ impl CommunicationService for GrpcCommunicationService {
     ) -> Result<Response<GetConversationParticipantsResponse>, Status> {
         let get_participants_req = request.into_inner();
         let conversation_id = get_participants_req.conversation_id;
+        let user_id = Uuid::parse_str(&get_participants_req.user_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID for user id"))?;
 
         let result = self
             .app_services
             .conversation_service
-            .get_conversation_participants(conversation_id)
+            .get_user_conversation_participants(user_id, conversation_id)
             .await
             .map_err(|e| Status::from_error(Box::new(e)))?;
 
@@ -147,16 +149,18 @@ impl CommunicationService for GrpcCommunicationService {
     ) -> Result<Response<GetConversationMessagesResponse>, Status> {
         let get_messages_req = request.into_inner();
 
+        let conversation_id = get_messages_req.conversation_id;
+
+        let user_id = Uuid::parse_str(&get_messages_req.user_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID for user id"))?;
+
         let params =
             MessageParams::try_from(get_messages_req).map_err(|e| Status::invalid_argument(e))?;
+
         let result = self
             .app_services
             .conversation_service
-            .get_conversation_messages(
-                get_messages_req.conversation_id,
-                params.limit,
-                params.before,
-            )
+            .get_conversation_messages(user_id, conversation_id, params.limit, params.before)
             .await
             .map_err(|e| Status::from_error(Box::new(e)))?;
 
@@ -191,10 +195,13 @@ impl CommunicationService for GrpcCommunicationService {
     ) -> Result<Response<DeleteMessageResponse>, Status> {
         let delete_msg_req = request.into_inner();
 
+        let user_id = Uuid::parse_str(&delete_msg_req.user_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID for user id"))?;
+
         let message_id = delete_msg_req.message_id;
         self.app_services
             .messages_service
-            .delete_message(message_id)
+            .delete_message(user_id, message_id)
             .await
             .map_err(|e| Status::from_error(Box::new(e)))?;
 

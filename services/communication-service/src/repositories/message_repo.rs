@@ -4,7 +4,10 @@ use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{errors::db_error::DBError, models::message::Message};
+use crate::{
+    errors::db_error::DBError,
+    models::{message::Message, MessageType},
+};
 
 pub struct MessageRepo {
     pg_db_pool: Arc<PgPool>,
@@ -20,7 +23,7 @@ impl MessageRepo {
         conversation_id: i32,
         sender_id: Uuid,
         content: Option<String>,
-        r#type: String,
+        r#type: MessageType,
         sent_at: DateTime<Utc>,
         is_read: bool,
     ) -> Result<i64, DBError> {
@@ -43,11 +46,12 @@ impl MessageRepo {
         Ok(result)
     }
 
-    pub async fn delete_message(&self, message_id: i64) -> Result<u64, DBError> {
+    pub async fn delete_message(&self, user_id: Uuid, message_id: i64) -> Result<u64, DBError> {
         let stm = include_str!("./queries/message/delete_message.sql");
 
         let result = sqlx::query(stm)
             .bind(message_id)
+            .bind(user_id)
             .execute(&*self.pg_db_pool)
             .await
             .map_err(|e| {

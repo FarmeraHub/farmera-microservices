@@ -65,7 +65,7 @@ impl TryFrom<GetConversationMessagesRequest> for MessageParams {
         let limit = if value.limit.is_some() {
             Some(value.limit.unwrap())
         } else {
-            None
+            Some(10)
         };
 
         Ok(MessageParams { before, limit })
@@ -97,6 +97,7 @@ impl From<GetConversationDTO> for ConversationDto {
             sent_at: value.sent_at.map(|v| datetime_to_grpc_timestamp(v)),
             is_read: value.is_read,
             r#type: value.r#type.map(|v| v as i32),
+            message_id: value.message_id,
         }
     }
 }

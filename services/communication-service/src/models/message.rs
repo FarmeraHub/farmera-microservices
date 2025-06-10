@@ -24,6 +24,9 @@ pub struct Message {
     pub sent_at: DateTime<Utc>,
 
     pub r#type: MessageType,
+
+    #[schema(example = true)]
+    pub is_read: bool,
 }
 
 #[derive(Serialize)]

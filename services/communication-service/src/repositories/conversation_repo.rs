@@ -97,6 +97,41 @@ impl ConversationRepo {
         Ok(result)
     }
 
+    pub async fn find_participants_by_conversation_id(
+        &self,
+        user_id: Uuid,
+        conversation_id: i32,
+    ) -> Result<Vec<UserConversation>, DBError> {
+        if self
+            .find_conversation_by_id(conversation_id)
+            .await?
+            .is_none()
+        {
+            return Ok(Vec::new());
+        }
+
+        let existed = self
+            .check_user_in_conversation(conversation_id, user_id)
+            .await?;
+
+        if existed.unwrap_or_default() < 1 {
+            return Err(DBError::NotFound("User not found".to_string()));
+        }
+
+        let stm = include_str!("./queries/user_conversation/find_users_by_conversation_id.sql");
+
+        let result: Vec<UserConversation> = sqlx::query_as(stm)
+            .bind(conversation_id)
+            .fetch_all(&*self.pg_db_pool)
+            .await
+            .map_err(|e| {
+                log::error!("Fetching users error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        Ok(result)
+    }
+
     pub async fn check_user_in_conversation(
         &self,
         conversation_id: i32,
@@ -139,10 +174,20 @@ impl ConversationRepo {
 
     pub async fn get_messages_by_conversation_id(
         &self,
+        user_id: Uuid,
         conversation_id: i32,
         limit: Option<i32>,
         before: Option<DateTime<Utc>>,
     ) -> Result<Vec<Message>, DBError> {
+        // check user in conversation
+        let existed = self
+            .check_user_in_conversation(conversation_id, user_id)
+            .await?;
+
+        if existed.unwrap_or_default() < 1 {
+            return Err(DBError::NotFound("User not found".to_string()));
+        }
+
         let stm = include_str!("./queries/conversation/get_messages_by_conversation_id.sql");
 
         let result: Vec<Message> = sqlx::query_as(stm)

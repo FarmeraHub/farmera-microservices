@@ -63,6 +63,7 @@ pub struct GetConversationDTO {
     pub id: i64,
     pub conversation_id: i32,
     pub title: String,
+    pub message_id: Option<i64>,
     #[schema(value_type = String, format = "uuid", example = "c8dd591b-4105-4608-869b-1dfb96f313b3")]
     pub sender_id: Option<Uuid>,
     pub content: Option<String>,

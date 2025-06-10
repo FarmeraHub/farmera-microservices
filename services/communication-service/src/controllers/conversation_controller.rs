@@ -102,14 +102,24 @@ impl ConversationController {
     }
 
     async fn get_conversation_participants(
+        req: HttpRequest,
         services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
     ) -> impl Responder {
         let id: i32 = conversation_id.into_inner();
 
+        // get user id from req
+        let user_id = match req.headers().get("X-user-id").and_then(|v| v.to_str().ok()) {
+            Some(id_str) => match Uuid::parse_str(id_str) {
+                Ok(uuid) => uuid,
+                Err(_) => return HttpResponse::Unauthorized().finish(),
+            },
+            None => return HttpResponse::Unauthorized().finish(),
+        };
+
         match services
             .conversation_service
-            .get_conversation_participants(id)
+            .get_user_conversation_participants(user_id, id)
             .await
             .map_err(|e| Error::Db(e))
         {
@@ -121,17 +131,27 @@ impl ConversationController {
     }
 
     async fn get_conversation_messages(
+        req: HttpRequest,
         services: web::Data<AppServices>,
         conversation_id: web::Path<i32>,
         params: web::Query<MessageParams>,
     ) -> impl Responder {
+        // get user id from req
+        let user_id = match req.headers().get("X-user-id").and_then(|v| v.to_str().ok()) {
+            Some(id_str) => match Uuid::parse_str(id_str) {
+                Ok(uuid) => uuid,
+                Err(_) => return HttpResponse::Unauthorized().finish(),
+            },
+            None => return HttpResponse::Unauthorized().finish(),
+        };
+
         let conversation_id = conversation_id.into_inner();
         let limit = params.limit;
         let before = params.before;
 
         match services
             .conversation_service
-            .get_conversation_messages(conversation_id, limit, before)
+            .get_conversation_messages(user_id, conversation_id, limit, before)
             .await
             .map_err(|e| Error::Db(e))
         {
