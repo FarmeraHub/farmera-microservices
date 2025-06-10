@@ -12,6 +12,8 @@ import { GuardsModule } from './guards/guards.module';
 import { HealthModule } from './health/health.module';
 import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CommunicationModule } from './communication/communication.module';
+import { CommunicationGateway } from './communication/communication.gateway';
 
 @Module({
   imports: [
@@ -61,6 +63,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     HealthModule,
     MediaModule,
     ProxyModule,
+    CommunicationModule,
   ],
   controllers: [AppController],
   providers: [
@@ -71,4 +74,4 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
