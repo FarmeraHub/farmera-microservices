@@ -792,15 +792,7 @@ export class ProductsService {
 
         return responseProductDto;
     }
-    private toResponseDtoList(products: Product[]): ResponseProductDto[] {
-        if (!products || products.length === 0) {
-            return [];
-        }
-        // Lọc ra các kết quả null nếu toResponseDto có thể trả về null
-        // Hoặc đảm bảo toResponseDto luôn trả về DTO hoặc throw lỗi
-        return products.map(product => this.toResponseDto(product))
-            .filter(dto => dto !== null) as ResponseProductDto[];
-    }
+
 
     async findProductsByIds(
         productIds: number[],

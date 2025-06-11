@@ -6,14 +6,13 @@ import "common/types.proto";
 import "common/enums.proto";
 import "common/pagination.proto";
 import "common/errors.proto";
-
 option go_package = "github.com/farmera/grpc-protos/products";
 
 // Products service definition
 service ProductsService {
   // Product management
   //rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
-  //rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
   rpc GetListProducts(GetListProductsRequest) returns (GetListProductsResponse);
   //rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
   //rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
@@ -33,13 +32,15 @@ service ProductsService {
   //rpc VerifyFarm(VerifyFarmRequest) returns (VerifyFarmResponse);
   
   // Category management
-  //rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
-  //rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse);
+  rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
+  rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse);
   //rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse);
   //rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
   //rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
   //rpc GetCategoryTree(GetCategoryTreeRequest) returns (GetCategoryTreeResponse);
-  
+  rpc GetAllCategoryWithSubcategory(AllCategoryRequest) returns (ListCategoriesResponse);
+
+
   // Review management
   //rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse);
   //rpc GetReview(GetReviewRequest) returns (GetReviewResponse);
@@ -158,7 +159,7 @@ message Subcategory {
 message ProductSubcategoryDetail {
   int32 id = 1;
   int32 product_id = 2;
-  int32 subcategory_id = 3;
+  Subcategory subcategory = 3;
 }
 
 // Review message definition
@@ -251,10 +252,7 @@ message CreateProductResponse {
 
 message GetProductRequest {
   int32 product_id = 1;
-  bool include_farm = 2;
-  bool include_reviews = 3;
-  bool include_processes = 4;
-  bool include_biometrics = 5;
+  optional bool include_farm = 2;
 }
 
 message GetProductResponse {
@@ -443,11 +441,11 @@ message VerifyFarmResponse {
 // Category management requests/responses
 message CreateCategoryRequest {
   string name = 1;
-  string description = 2;
-  int32 parent_category_id = 3;
-  string icon_url = 4;
-  string banner_url = 5;
-  int32 sort_order = 6;
+  optional string description = 2;
+  bytes category_icon_data = 3;
+  optional string icon_filename = 4;
+  optional string icon_mime_type = 5;
+
 }
 
 message CreateCategoryResponse {
@@ -723,4 +721,8 @@ message GetListProductsResponse{
 
 message GetListProductsRequest{
   repeated ProductRequest products = 1;
+}
+
+message AllCategoryRequest{
+  
 }

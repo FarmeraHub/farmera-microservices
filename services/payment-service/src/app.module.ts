@@ -10,22 +10,26 @@ import productServiceConfig from './config/product-service.config';
 import { PaymentModule } from './payments/payment.module';
 import { DiscountModule } from './discounts/discount.module';
 import { DeliveryModule } from './delivery/delivery.module';
+import { PaymentGrpcServerModule } from './grpc/server/payment-grpc.server.module';
+import { PaymentGrpcClientModule } from './grpc/client/grpc-client.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, 
+      isGlobal: true,
       envFilePath: '.env',
-      load:[productServiceConfig],
+      load: [productServiceConfig],
     }),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
-    OrdersModule, 
+    OrdersModule,
     PaymentModule,
     DiscountModule,
-    DeliveryModule
+    DeliveryModule,
+    PaymentGrpcServerModule,
+    PaymentGrpcClientModule,
 
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
