@@ -6,6 +6,7 @@ option go_package = "github.com/farmera/grpc-protos/files";
 
 service FileService {
     rpc UploadImage(stream UploadImageRequest) returns (UploadImageResponse); 
+    rpc OneStreamUploadImage(stream OneStreamUploadImageRequest) returns (OneStreamUploadImageResponse); 
 }
 
 enum UploadStatusCode {
@@ -32,4 +33,21 @@ message Metadata{
 message UploadImageResponse {
     string message = 1;
     UploadStatusCode code = 2;
+}
+
+message OneStreamUploadImageRequest{
+    oneof test_oneof {
+        Metadata meta = 2;
+        ImageChunk chunk = 1;
+    }
+}
+
+message OneStreamUploadImageResponse {
+    string message = 1;
+    UploadStatusCode code = 2;
+}
+
+message ImageChunk {
+  string file_id = 1;
+  bytes data = 2;
 }

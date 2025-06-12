@@ -18,4 +18,10 @@ export class GrpcClientController {
     async multipleUpload(@UploadedFiles() files: Express.Multer.File[]) {
         return await this.service.multipleUpload(files);
     }
+
+    // @Post("one-stream-multi-files")
+    // @UseInterceptors(FilesInterceptor('files'))
+    // async oneStreamMultipleUpload(@UploadedFiles() files: Express.Multer.File[]) {
+    //     return await this.service.oneStreamUpload(files);
+    // }
 }
