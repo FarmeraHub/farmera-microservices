@@ -38,9 +38,11 @@ service ProductsService {
   //rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
   //rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
   //rpc GetCategoryTree(GetCategoryTreeRequest) returns (GetCategoryTreeResponse);
-  rpc GetAllCategoryWithSubcategory(AllCategoryRequest) returns (ListCategoriesResponse);
+rpc GetAllCategoryWithSubcategory(GetAllCategoryWithSubcategoryRequest) returns (GetAllCategoryWithSubcategoryResponse);
 
-
+  //Subcategory
+  rpc CreateSubcategory(CreateSubcategoryRequest) returns (CreateSubcategoryResponse);
+  rpc GetSubcategory(GetSubcategoryRequest) returns (GetSubcategoryResponse);
   // Review management
   //rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse);
   //rpc GetReview(GetReviewRequest) returns (GetReviewResponse);
@@ -723,6 +725,29 @@ message GetListProductsRequest{
   repeated ProductRequest products = 1;
 }
 
-message AllCategoryRequest{
+message GetAllCategoryWithSubcategoryRequest{
   
+}
+message GetAllCategoryWithSubcategoryResponse{
+  repeated Category categories = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message CreateSubcategoryRequest {
+  string name = 1;
+  optional string description = 2;
+  int32 category_id = 3;
+}
+
+message CreateSubcategoryResponse{
+  Subcategory subcategory = 1;
+}
+
+message GetSubcategoryResponse{
+  Subcategory subcategory = 1;
+}
+
+message GetSubcategoryRequest {
+  int32 subcategory_id = 1;
+  optional string name = 2;
 }

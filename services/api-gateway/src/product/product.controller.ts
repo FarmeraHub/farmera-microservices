@@ -86,4 +86,23 @@ export class ProductController {
         };
         return this.productClient.GetCategory(requestPayload);
     }
+
+    @Public()
+    @Get('subcategories/get/:subcategoryId')
+    async getSubcategory(
+        @Param('subcategoryId') subcategoryId: string,
+    ) {
+        const requestPayload = {
+            subcategory_id: Number(subcategoryId),
+        };
+        return this.productClient.GetSubcategory(requestPayload);
+    }
+    @Public()
+    @Post('subcategories/create')
+    async createSubcategory(
+        @Body() subcategoryDto: any,
+    ) {
+        this.logger.log('Creating subcategory with data:', subcategoryDto);
+        return this.productClient.CreateSubcategory(subcategoryDto);
+    }
 }

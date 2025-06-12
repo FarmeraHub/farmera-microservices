@@ -7,6 +7,10 @@ import {
     CreateCategoryResponse,
     GetCategoryRequest,
     GetCategoryResponse,
+    CreateSubcategoryRequest,
+    CreateSubcategoryResponse,
+    GetSubcategoryResponse,
+    GetSubcategoryRequest,
 } from "@farmera/grpc-proto/dist/products/products";
 import { ClientGrpc } from "@nestjs/microservices";
 import { firstValueFrom } from "rxjs";
@@ -64,6 +68,28 @@ export class ProductClientService implements OnModuleInit {
             return result;
         } catch (error) {
             this.logger.error('Error fetching category:', error);
+            throw error;
+        }
+    }
+    async GetSubcategory(request: GetSubcategoryRequest): Promise<GetSubcategoryResponse> {
+        this.logger.log('Fetching subcategory with request:', request);
+        try {
+            const result = await firstValueFrom(this.productsServiceGrpcClient.getSubcategory(request));
+            this.logger.log('Successfully fetched subcategory:', result);
+            return result;
+        } catch (error) {
+            this.logger.error('Error fetching subcategory:', error);
+            throw error;
+        }
+    }
+    async CreateSubcategory(request: CreateSubcategoryRequest): Promise<CreateSubcategoryResponse> {
+        this.logger.log('Creating subcategory with request:', request);
+        try {
+            const result = await firstValueFrom(this.productsServiceGrpcClient.createSubcategory(request));
+            this.logger.log('Successfully created subcategory:', result);
+            return result;
+        } catch (error) {
+            this.logger.error('Error creating subcategory:', error);
             throw error;
         }
     }

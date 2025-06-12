@@ -28,22 +28,33 @@ export class CategoriesService {
         private readonly dataSource: DataSource, // Inject DataSource for transaction management
     ) { }
     async getCategoriesWithSubcategories() {
-        const categories = await this.categoriesRepository.find();
-
-        const result = await Promise.all(
-            categories.map(async (category) => {
-                const subcategories = await this.subcategoriesRepository.find({
-                    where: { category: { category_id: category.category_id } },
-                });
-
-                return {
-                    ...category,
-                    subcategories,
-                };
-            }),
+        const categories = await this.categoriesRepository.find(
+            {
+                relations: ['subcategories'],
+                order: { created: 'DESC' }, 
+            }
         );
 
-        return result;
+        if (!categories || categories.length === 0) {
+            this.logger.warn('Không tìm thấy danh mục nào.');
+            return [];
+        }
+        
+
+        return categories;
+    }
+
+    async getCategoryById(categoryId: number): Promise<Category> {
+        const category = await this.categoriesRepository.findOne({
+            where: { category_id: categoryId },
+        });
+
+        if (!category) {
+            throw new NotFoundException(`Không tìm thấy danh mục với ID ${categoryId}`);
+        }
+
+        this.logger.log(`(getCategoryById) Lấy danh mục thành công: ${JSON.stringify(category, null, 2)}`);
+        return category;
     }
 
 
@@ -114,9 +125,19 @@ export class CategoriesService {
         return this.subcategoriesRepository.save(subcategory);
     }
 
-    async getSubcategoryById(id: number): Promise<Boolean> {
+    async checkSubcategoryById(id: number): Promise<Boolean> {
         const subcategory = await this.subcategoriesRepository.findOne({ where: { subcategory_id: id } });
         return !!subcategory; // Returns true if subcategory exists, otherwise false
+    }
+    async getSubcategoryById(id: number): Promise<Subcategory> {
+        const subcategory = await this.subcategoriesRepository.findOne({
+            where: { subcategory_id: id },
+            relations: ['category'], // Lấy thông tin category liên quan
+        });
+        if (!subcategory) {
+            throw new NotFoundException(`Không tìm thấy danh mục con với ID ${id}`);
+        }
+        return subcategory;
     }
 
     async findProductSubcategoryDetailsByProductIds(productIds: number[]): Promise<ProductSubcategoryDetail[]> {

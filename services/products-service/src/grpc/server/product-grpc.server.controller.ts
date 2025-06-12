@@ -15,18 +15,25 @@ import {
     Farm as GrpcFarm,
     GetProductRequest,
     GetProductResponse,
-    AllCategoryRequest,
+    GetAllCategoryWithSubcategoryResponse,
     ListCategoriesResponse,
+    GetAllCategoryWithSubcategoryRequest,
     CreateCategoryRequest,
     CreateCategoryResponse,
     GetCategoryRequest,
     GetCategoryResponse,
+    CreateSubcategoryRequest,
+    GetSubcategoryRequest,
+    GetSubcategoryResponse,
+    CreateSubcategoryResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, of, throwError, map, catchError, tap, from } from 'rxjs';
 
 
 import { ProductMapper } from './mappers/product.mapper';
+import { CreateSubcategoryDto } from 'src/categories/dto/request/create-subcategories.dto';
+import { Subcategory } from 'src/categories/entities/subcategory.entity';
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -135,14 +142,14 @@ export class ProductGrpcServerController implements ProductsServiceController {
             throw new RpcException(`Error processing GetListProducts request: ${error.message}`);
         }
     }
-    async getAllCategoryWithSubcategory(request: AllCategoryRequest): Promise<ListCategoriesResponse> {
+    async getAllCategoryWithSubcategory(request: GetAllCategoryWithSubcategoryRequest): Promise<GetAllCategoryWithSubcategoryResponse> {
         const categories = await this.categoriesService.getCategoriesWithSubcategories();
         if (!categories || categories.length === 0) {
             this.logger.warn('[gRPC Logic - GetAllCategoryWithSubcategory] No categories found.');
             return { categories: [], pagination: undefined };
         }
         this.logger.log(`[gRPC Logic - GetAllCategoryWithSubcategory] Successfully fetched ${categories.length} categories with subcategories.`);
-        const result = ProductMapper.toGrpcListCategoriesResponse(categories);
+        const result = ProductMapper.toGrpcGetAllCategoryWithSubcategoryResponse(categories);
         this.logger.log(`[gRPC Out - GetAllCategoryWithSubcategory] Returning ${result.categories.length} categories.`);
         return result;
 
@@ -159,18 +166,64 @@ export class ProductGrpcServerController implements ProductsServiceController {
         return categoryData;
     }
     async getCategory(request: GetCategoryRequest): Promise<GetCategoryResponse> {
-        const category: any = await this.categoriesService.getSubcategoryById(request.category_id);
+        const category: any = await this.categoriesService.getCategoryById(request.category_id);
         if (!category) {
             this.logger.warn(`[gRPC Logic - GetCategory] No category found for ID: ${request.category_id}`);
             throw new RpcException(`No category found for ID: ${request.category_id}`);
         }
         this.logger.log(`[gRPC Logic - GetCategory] Successfully fetched category: ${category.category_id}`);
-        const result: GetCategoryResponse = {
-            ...category,
+        const result = ProductMapper.toGrpcGetCategoryResponse(category);
+        if (!result) {
+            this.logger.warn('[gRPC Logic - GetCategory] No category found after fetching.');
+            throw new RpcException('No category found after fetching.');
         }
         this.logger.log(`[gRPC Out - GetCategory] Returning category: ${JSON.stringify(result)}`);
         return result;
     }
+    async createSubcategory(request: CreateSubcategoryRequest): Promise<CreateSubcategoryResponse> {
+        this.logger.log(`[gRPC In - CreateSubcategory] Received request to create subcategory: ${JSON.stringify(request)}`);
+        if (!request || !request.name || !request.category_id) {
+            this.logger.error('[gRPC In - CreateSubcategory] Invalid request: name and category_id are required.');
+            throw new RpcException('Invalid request: name and category_id are required.');
+        }
+        const req: CreateSubcategoryDto = {
+            name: request.name,
+            description: request.description || '',
+            category_id: request.category_id,
+        }
+        const subcategory = await this.categoriesService.createSubcategory(req);
+        if (!subcategory) {
+            this.logger.warn('[gRPC Logic - CreateSubcategory] Failed to create subcategory.');
+            throw new RpcException('Failed to create subcategory.');
+        }
+        this.logger.log(`[gRPC Logic - CreateSubcategory] Successfully created subcategory: ${subcategory.subcategory_id}`);
+        const result = ProductMapper.toGrpcCreateSubcategoryResponse(subcategory);
+        if (!result) {
+            this.logger.warn('[gRPC Logic - CreateSubcategory] No subcategory found after creation.');
+            throw new RpcException('No subcategory found after creation.');
+        }
+        return result;
+    }
 
+    async getSubcategory(request: GetSubcategoryRequest): Promise<GetSubcategoryResponse> {
+        this.logger.log(`[gRPC In - GetSubcategory] Received request for subcategory_id: ${request.subcategory_id}`);
+        if (!request || !request.subcategory_id) {
+            this.logger.error('[gRPC In - GetSubcategory] Invalid request: subcategory_id is required.');
+            throw new RpcException('Invalid request: subcategory_id is required.');
+        }
+        const subcategory = await this.categoriesService.getSubcategoryById(request.subcategory_id);
+        if (!subcategory) {
+            this.logger.warn(`[gRPC Logic - GetSubcategory] No subcategory found for ID: ${request.subcategory_id}`);
+            throw new RpcException(`No subcategory found for ID: ${request.subcategory_id}`);
+        }
+        this.logger.log(`[gRPC Logic - GetSubcategory] Successfully fetched subcategory: ${subcategory.subcategory_id}`);
+        const result = ProductMapper.toGrpcGetSubcategoryResponse(subcategory);
+        this.logger.log(`[gRPC Out - GetSubcategory] Returning subcategory: ${JSON.stringify(result)}`);
+        if (!result) {
+            this.logger.warn('[gRPC Logic - GetSubcategory] No subcategory found after fetching.');
+            throw new RpcException('No subcategory found after fetching.');
+        }
+        return result;
+    }
 
 }

@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Subcategory } from "./subcategory.entity";
 
 @Entity('category')
 export class Category {
@@ -12,4 +13,6 @@ export class Category {
     image_url: string;
     @CreateDateColumn()
     created: Date;
+    @OneToMany(() => Subcategory, (sub) => sub.category)
+    subcategories: Category[];
 }

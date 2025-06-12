@@ -23,10 +23,16 @@ import {
   Identification as GrpcIdentification,
   GetProductResponse,
   ListCategoriesResponse as GrpcListCategoriesResponse,
+  CreateSubcategoryResponse as GrpcCreateSubcategoryResponse,
+  GetSubcategoryResponse as GrpcGetSubcategoryResponse,
+  GetCategoryResponse as GrpcGetCategoryResponse,
+  GetAllCategoryWithSubcategoryResponse, 
+
 } from '@farmera/grpc-proto/dist/products/products';
 import { CommonMapper } from "./common.mapper";
 import { Subcategory } from 'src/categories/entities/subcategory.entity';
 import { Category } from 'src/categories/entities/category.entity';
+import { t } from 'pinata/dist/index-CQFQEo3K';
 export class ProductMapper {
 
 
@@ -209,7 +215,7 @@ export class ProductMapper {
       console.warn("Invalid ProductSubcategoryDetailEntity, missing subcategory_id:", entity);
       return undefined;
     }
-    
+
     return {
       id: entity.id,
       product_id: productId, // Sử dụng productId được truyền vào
@@ -291,5 +297,53 @@ export class ProductMapper {
       },
 
     };
+  }
+
+  static toGrpcGetAllCategoryWithSubcategoryResponse(categories: Category[]): GetAllCategoryWithSubcategoryResponse {
+    const grpcCategories = categories
+      .map(category => this.toGrpcCategory(category))
+      .filter((category): category is GrpcCategory => category !== undefined);
+
+    return {
+      categories: grpcCategories,
+      pagination: {
+        current_page: 1, // Giả sử trang hiện tại là 1
+        page_size: grpcCategories.length, // Số lượng mục trên trang
+        total_items: grpcCategories.length, // Tổng số mục
+        total_pages: 1, // Giả sử chỉ có một trang
+        has_next_page: false, // Không có trang tiếp theo
+        has_previous_page: false, // Không có trang trước
+        next_cursor: '',
+        previous_cursor: '',
+      },
+    }
+  }
+  static toGrpcGetCategoryResponse(category: Category): GrpcGetCategoryResponse | undefined {
+    const grpcCategory: GrpcCategory | undefined = this.toGrpcCategory(category);
+    if (!grpcCategory) {
+      throw new BadGatewayException('Invalid category data');
+    }
+    return {
+      category: grpcCategory,
+    }
+  }
+  static toGrpcCreateSubcategoryResponse(subcategory: Subcategory): GrpcCreateSubcategoryResponse | undefined {
+    const grpcSubcategory: GrpcSubcategory | undefined = this.toGrpcSubcategory(subcategory);
+    if (!grpcSubcategory) {
+      throw new BadGatewayException('Invalid subcategory data');
+    }
+    return {
+      subcategory: grpcSubcategory,
+    }
+  }
+  static toGrpcGetSubcategoryResponse(subcategory: Subcategory): GrpcGetSubcategoryResponse | undefined {
+
+    const grpcSubcategory: GrpcSubcategory | undefined = this.toGrpcSubcategory(subcategory);
+    if (!grpcSubcategory) {
+      throw new BadGatewayException('Invalid subcategory data');
+    }
+    return {
+      subcategory: grpcSubcategory,
+    }
   }
 }

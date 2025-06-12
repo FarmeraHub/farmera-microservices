@@ -78,7 +78,7 @@ export class ProductsService {
             if (createProductDto.subcategory_ids && createProductDto.subcategory_ids.length > 0) {
                 const notFoundSubID: number[] = [];
                 for (const subId of createProductDto.subcategory_ids) {
-                    const subcategory = await this.categoriesService.getSubcategoryById(subId);
+                    const subcategory = await this.categoriesService.checkSubcategoryById(subId);
                     if (!subcategory) {
                         notFoundSubID.push(subId);
                     }
@@ -273,7 +273,7 @@ export class ProductsService {
                         const notFoundSubcategoryIds: number[] = [];
                         for (const subId of subcategoryIdsToAdd) {
                             // Gọi hàm tìm subcategory theo ID (đảm bảo hàm này tồn tại trong CategoriesService)
-                            const subcategoryExists = await this.categoriesService.getSubcategoryById(subId);
+                            const subcategoryExists = await this.categoriesService.checkSubcategoryById(subId);
 
                             if (subcategoryExists) {
                                 // Nếu subcategory tồn tại, tạo bản ghi ProductSubcategoryDetail để chuẩn bị lưu
