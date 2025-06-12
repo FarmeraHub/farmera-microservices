@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Post, UploadedFile, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { GrpcClientService } from './grpc-client.service';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
@@ -9,19 +9,19 @@ export class GrpcClientController {
 
     @Post()
     @UseInterceptors(FileInterceptor('file'))
-    async upload(@UploadedFile() file: Express.Multer.File) {
-        return await this.service.upload(file);
+    upload(@UploadedFile() file: Express.Multer.File) {
+        return this.service.upload(file);
     }
 
     @Post("multi-files")
     @UseInterceptors(FilesInterceptor('files'))
-    async multipleUpload(@UploadedFiles() files: Express.Multer.File[]) {
-        return await this.service.multipleUpload(files);
+    multipleUpload(@UploadedFiles() files: Express.Multer.File[]) {
+        return this.service.multipleUpload(files);
     }
 
-    // @Post("one-stream-multi-files")
-    // @UseInterceptors(FilesInterceptor('files'))
-    // async oneStreamMultipleUpload(@UploadedFiles() files: Express.Multer.File[]) {
-    //     return await this.service.oneStreamUpload(files);
-    // }
+    @Post("one-stream-multi-files")
+    @UseInterceptors(FilesInterceptor('files'))
+    oneStreamMultipleUpload(@UploadedFiles() files: Express.Multer.File[]) {
+        return this.service.oneStreamUpload(files);
+    }
 }

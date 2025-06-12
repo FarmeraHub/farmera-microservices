@@ -2,7 +2,7 @@ import { FileServiceClient, OneStreamUploadImageRequest, OneStreamUploadImageRes
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { randomUUID } from 'crypto';
-import { firstValueFrom, Observable, Subject } from 'rxjs';
+import { firstValueFrom, forkJoin, Observable, ReplaySubject, Subject } from 'rxjs';
 
 @Injectable()
 export class GrpcClientService implements OnModuleInit {
@@ -15,14 +15,53 @@ export class GrpcClientService implements OnModuleInit {
         this.grpcFileService = this.client.getService<FileServiceClient>('FileService');
     }
 
-    async upload(file: Express.Multer.File): Promise<UploadImageResponse> {
+    upload(file: Express.Multer.File): Observable<UploadImageResponse> {
         // send file content (chunk)
         const CHUNK_SIZE = 64 * 1024; // 64 KB
         console.log("buffer total size: ", file.buffer.length);
 
-        const request$ = new Observable<UploadImageRequest>(subscriber => {
+        const request$ = new ReplaySubject<UploadImageRequest>();
+
+        // send metadata
+        request$.next({
+            meta: {
+                file_name: file.originalname,
+                file_type: file.mimetype,
+                total_size: file.buffer.length,
+                file_id: randomUUID(),
+            },
+        });
+
+        // send chunks
+        let offset = 0;
+        while (offset < file.buffer.length) {
+            const end = Math.min(offset + CHUNK_SIZE, file.buffer.length);
+            const chunk = file.buffer.subarray(offset, end);
+
+            request$.next({ image: chunk });
+
+            offset = end;
+
+            console.log("sent: ", offset);
+        }
+
+        // close stream
+        request$.complete();
+
+        console.log("completed");
+
+        return this.grpcFileService.uploadImage(request$);
+    }
+
+    multipleUpload(files: Express.Multer.File[]): Observable<UploadImageResponse[]> {
+        const CHUNK_SIZE = 64 * 1024; // 64 KB
+
+        const uploadPromises = files.map(file => {
+
+            const request$ = new ReplaySubject<UploadImageRequest>();
+
             // send metadata
-            subscriber.next({
+            request$.next({
                 meta: {
                     file_name: file.originalname,
                     file_type: file.mimetype,
@@ -31,13 +70,15 @@ export class GrpcClientService implements OnModuleInit {
                 },
             });
 
+            console.log("buffer total size: ", file.buffer.length);
+
             // send chunks
             let offset = 0;
             while (offset < file.buffer.length) {
                 const end = Math.min(offset + CHUNK_SIZE, file.buffer.length);
                 const chunk = file.buffer.subarray(offset, end);
 
-                subscriber.next({ image: chunk });
+                request$.next({ image: chunk });
 
                 offset = end;
 
@@ -45,52 +86,12 @@ export class GrpcClientService implements OnModuleInit {
             }
 
             // close stream
-            subscriber.complete();
-            console.log("complete");
+            request$.complete();
+
+            return this.grpcFileService.uploadImage(request$);
         });
 
-        return firstValueFrom(this.grpcFileService.uploadImage(request$));
-    }
-
-    async multipleUpload(files: Express.Multer.File[]): Promise<UploadImageResponse[]> {
-        const CHUNK_SIZE = 64 * 1024; // 64 KB
-
-        const uploadPromises = files.map(file => {
-            const request$ = new Observable<UploadImageRequest>(subscriber => {
-                // send metadata
-                subscriber.next({
-                    meta: {
-                        file_name: file.originalname,
-                        file_type: file.mimetype,
-                        total_size: file.buffer.length,
-                        file_id: randomUUID(),
-                    },
-                });
-
-                console.log("buffer total size: ", file.buffer.length);
-
-                // send chunks
-                let offset = 0;
-                while (offset < file.buffer.length) {
-                    const end = Math.min(offset + CHUNK_SIZE, file.buffer.length);
-                    const chunk = file.buffer.subarray(offset, end);
-
-                    subscriber.next({ image: chunk });
-
-                    offset = end;
-
-                    console.log("sent: ", offset);
-                }
-
-                // close stream
-                subscriber.complete();
-            });
-
-            return firstValueFrom(this.grpcFileService.uploadImage(request$));
-        });
-
-        // Đợi tất cả upload hoàn thành
-        return Promise.all(uploadPromises);
+        return forkJoin(uploadPromises);
     }
 
     async oneStreamUpload(files: Express.Multer.File[]): Promise<OneStreamUploadImageResponse> {
