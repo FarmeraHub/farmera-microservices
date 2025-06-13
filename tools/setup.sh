@@ -22,6 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT_DIR_NODEJS="$SCRIPT_DIR/../shared/generated/nodejs"
 OUT_DIR_RUST="$SCRIPT_DIR/../shared/generated/rust"
 RUST_TEMPLATE_DIR="$SCRIPT_DIR/../shared/grpc-templates/rust"
+NODEJS_TEMPLATE_DIR="$SCRIPT_DIR/../shared/grpc-templates/nodejs"
 
 
 # Function to print colored output
@@ -78,17 +79,11 @@ check_dependencies() {
 }
 
 # Generate gRPC code for Node.js services
-generate_nodejs_code() {
+generate_nestjs_code() {
     print_status "Generating gRPC code for Node.js services..."
-    
-    # Create output directories
-    mkdir -p $OUT_DIR_NODEJS/common
-    mkdir -p $OUT_DIR_NODEJS/users
-    mkdir -p $OUT_DIR_NODEJS/products
-    mkdir -p $OUT_DIR_NODEJS/payment
-    mkdir -p $OUT_DIR_NODEJS/notification
-    mkdir -p $OUT_DIR_NODEJS/communication
-    
+
+    cd "$SCRIPT_DIR/../shared/grpc-protos/"
+
     # Generate using buf
     buf generate --template buf.gen.nodejs.yaml
     
@@ -99,8 +94,7 @@ generate_nodejs_code() {
 generate_rust_code() {
     print_status "Generating gRPC code for Rust services..."
     
-    # Create output directories
-    mkdir -p $OUT_DIR_RUST/src
+    cd "$SCRIPT_DIR/../shared/grpc-protos/"
     
     # Generate using buf
     buf generate --template buf.gen.rust.yaml
@@ -143,33 +137,16 @@ validate_protos() {
 
 
 # Install Node.js dependencies for generated code
-setup_nodejs_deps() {
+setup_nestjs_deps() {
     print_status "Setting up Node.js dependencies..."
 
-    print_status "Creating output directory: $OUT_DIR_NODEJS"
-    
-    # Create package.json for generated code
-    cat > $OUT_DIR_NODEJS/package.json << EOF
-{
-  "name": "@farmera/grpc-client",
-  "version": "1.0.0",
-  "description": "Generated gRPC client code for Farmera microservices",
-  "main": "index.js",
-  "types": "index.d.ts",
-  "dependencies": {
-    "@grpc/grpc-js": "^1.13.4",
-    "@grpc/proto-loader": "^0.7.15",
-    "google-protobuf": "^3.21.4"
-  },
-  "devDependencies": {
-    "@types/google-protobuf": "^3.15.12",
-    "typescript": "^5.8.03"
-  }
-}
-EOF
+    mkdir -p "$OUT_DIR_NODEJS/nestjs"
+
+    # Copy templates
+    cp -r "$NODEJS_TEMPLATE_DIR/nestjs" "$OUT_DIR_NODEJS"
 
     # Install dependencies
-    cd $OUT_DIR_NODEJS && npm install
+    cd $OUT_DIR_NODEJS/nestjs && npm install
     
     print_success "Node.js dependencies installed"
 }
@@ -230,9 +207,9 @@ main() {
     # Run setup steps
     check_dependencies
     validate_protos
-    generate_nodejs_code
+    generate_nestjs_code
     generate_rust_code
-    setup_nodejs_deps
+    setup_nestjs_deps
     setup_rust_deps
     create_dev_scripts
     
