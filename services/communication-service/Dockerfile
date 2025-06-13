@@ -22,7 +22,7 @@ RUN PROTOC_INCLUDE=/usr/include cargo build --release
 
 FROM alpine:latest
 
-COPY --from=builder /app/services/communication-service/target/x86_64-unknown-linux-musl/release/communication-service /usr/local/bin
+COPY --from=builder /app/services/communication-service/target/x86_64-unknown-linux-musl/release/grpc-server /usr/local/bin
 COPY --from=builder /app/services/communication-service/migrations ./migrations
 
-ENTRYPOINT ["/usr/local/bin/communication-service"]
+ENTRYPOINT ["/usr/local/bin/grpc-server"]

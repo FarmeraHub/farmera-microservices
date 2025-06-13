@@ -6,6 +6,7 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import compression from 'compression';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -37,6 +38,8 @@ async function bootstrap() {
     }),
   );
 
+  app.use(cookieParser());
+
   // Global response transform interceptor
   app.useGlobalInterceptors(new TransformInterceptor(reflector));
 
@@ -61,11 +64,13 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
+  const addr = configService.get<string>("HOST", "http://localhost");
   const port = configService.get<number>('PORT', 3000);
+
   await app.listen(port);
 
-  console.log(`🚀 API Gateway is running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  console.log(`🚀 API Gateway is running on: ${addr}:${port}`);
+  console.log(`📚 API Documentation: : ${addr}:${port}/api/docs`);
 }
 
 bootstrap();

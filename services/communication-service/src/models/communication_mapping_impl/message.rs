@@ -31,6 +31,7 @@ impl TryFrom<ConversationMessage> for Message {
             content: value.content,
             sent_at: sent_at,
             r#type: msg_type,
+            is_read: value.is_read,
         })
     }
 }
@@ -44,6 +45,7 @@ impl From<Message> for ConversationMessage {
             content: value.content,
             sent_at: Some(datetime_to_grpc_timestamp(value.sent_at)),
             r#type: MessageType::from(value.r#type) as i32,
+            is_read: value.is_read,
         }
     }
 }

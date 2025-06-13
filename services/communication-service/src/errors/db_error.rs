@@ -10,4 +10,7 @@ pub enum DBError {
 
     #[error("Not found: {}", _0)]
     NotFound(String),
+
+    #[error("Transaction error: {}", _0)]
+    TransactionError(String),
 }

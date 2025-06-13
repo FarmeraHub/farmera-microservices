@@ -35,6 +35,9 @@ impl ResponseError for Error {
             }
             Error::Db(DBError::QueryFailed(e)) => json_error(StatusCode::INTERNAL_SERVER_ERROR, e),
             Error::Db(DBError::NotFound(e)) => json_error(StatusCode::NOT_FOUND, e),
+            Error::Db(DBError::TransactionError(e)) => {
+                json_error(StatusCode::INTERNAL_SERVER_ERROR, e)
+            }
 
             Error::File(FileError::Forbidden) => {
                 json_error(StatusCode::FORBIDDEN, "Access to file is forbidden")
