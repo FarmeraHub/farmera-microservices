@@ -1,14 +1,31 @@
 import { UserRole } from 'src/enums/roles.enum';
 import { UserStatus } from 'src/enums/status.enum';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryColumn,
+  BeforeInsert,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Generated,
+} from 'typeorm';
 import { Location } from './location.entity';
 import { PaymentMethod } from './payment_method.entity';
 import { Exclude } from 'class-transformer';
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity({ name: 'users' })
 export class User {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('uuid')
   id: string;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
 
   @Column({ unique: true, nullable: false })
   email: string;
@@ -55,9 +72,9 @@ export class User {
   })
   payment_methods: PaymentMethod[];
 
-  @Column({ nullable: true })
+  @CreateDateColumn()
   created_at: Date;
 
-  @Column({ nullable: true })
+  @UpdateDateColumn()
   updated_at: Date;
 }
