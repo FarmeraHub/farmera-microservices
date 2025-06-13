@@ -45,6 +45,7 @@
     "@react-native-async-storage/async-storage": "^2.1.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/multer": "^1.4.12",
+    "@types/uuid": "^10.0.0",
     "bcrypt": "^5.1.1",
     "cache-manager": "^6.4.2",
     "class-transformer": "^0.5.1",
@@ -65,6 +66,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.22",
+    "uuid": "^11.1.0",
     "xss": "^1.0.15"
   },
   "devDependencies": {
