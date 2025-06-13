@@ -1,7 +1,7 @@
 use farmera_grpc_proto::communication::{
     ConversationDto, ConversationMessage, CreateConversationRequest, CreateConversationResponse,
-    GetConversationMessagesRequest, GetConversationMessagesResponse, GetConversationResponse,
-    ListConversationsResponse,
+    CreatePrivateConversationResponse, GetConversationMessagesRequest,
+    GetConversationMessagesResponse, GetConversationResponse, ListConversationsResponse,
 };
 
 use crate::models::{
@@ -16,13 +16,11 @@ impl TryFrom<CreateConversationRequest> for NewConversation {
     type Error = &'static str;
 
     fn try_from(value: CreateConversationRequest) -> Result<Self, Self::Error> {
-        if value.titile.is_empty() {
+        if value.title.is_empty() {
             return Err("Title cannot be empty");
         }
 
-        Ok(NewConversation {
-            title: value.titile,
-        })
+        Ok(NewConversation { title: value.title })
     }
 }
 
@@ -67,7 +65,7 @@ impl TryFrom<GetConversationMessagesRequest> for MessageParams {
         let limit = if value.limit.is_some() {
             Some(value.limit.unwrap())
         } else {
-            None
+            Some(10)
         };
 
         Ok(MessageParams { before, limit })
@@ -99,6 +97,7 @@ impl From<GetConversationDTO> for ConversationDto {
             sent_at: value.sent_at.map(|v| datetime_to_grpc_timestamp(v)),
             is_read: value.is_read,
             r#type: value.r#type.map(|v| v as i32),
+            message_id: value.message_id,
         }
     }
 }
@@ -113,5 +112,16 @@ impl From<ConversationList> for ListConversationsResponse {
             .collect::<Vec<ConversationDto>>();
 
         ListConversationsResponse { conversations }
+    }
+}
+
+impl From<Conversation> for CreatePrivateConversationResponse {
+    fn from(value: Conversation) -> Self {
+        CreatePrivateConversationResponse {
+            conversation_id: value.conversation_id,
+            title: value.title,
+            latest_message: value.latest_message,
+            created_at: Some(datetime_to_grpc_timestamp(value.created_at)),
+        }
     }
 }

@@ -1,0 +1,5 @@
+export enum MessageType {
+    MESSAGE_TYPE_UNSPECIFIED = 'MESSAGE_TYPE_UNSPECIFIED',
+    MESSAGE = 'MESSAGE',
+    MEDIA = 'MEDIA',
+}

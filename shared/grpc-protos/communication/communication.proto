@@ -10,6 +10,7 @@ option go_package = "github.com/farmera/grpc-protos/communication";
 service CommunicationService {
   // Conversation management
   rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
+  rpc CreatePrivateConversation(CreatePrivateConversationRequest) returns (CreatePrivateConversationResponse);
   rpc GetConversation(GetConversationRequest) returns (GetConversationResponse);
   rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
   // rpc JoinConversation(JoinConversationRequest) returns (JoinConversationResponse);
@@ -40,6 +41,9 @@ service CommunicationService {
   // Message search and filtering
   // rpc SearchMessages(SearchMessagesRequest) returns (SearchMessagesResponse);
   // rpc SearchConversations(SearchConversationsRequest) returns (SearchConversationsResponse);
+
+  // Users
+  rpc CheckOnlineUser(CheckOnlineUserRequest) returns (CheckOnlineUserResponse);
 }
 
 // Common
@@ -57,17 +61,19 @@ message ConversationMessage {
   optional string content = 4;
   farmera.common.Timestamp sent_at = 5;
   farmera.common.MessageType type = 6;
+  bool is_read = 7;
 }
 
 message ConversationDTO {
   int64 id = 1;
   int32 conversation_id = 2;
   string title = 3;
-  optional string sender_id = 4;
-  optional string content = 5;
-  optional farmera.common.Timestamp sent_at = 6;
-  optional bool is_read = 7;
-  optional farmera.common.MessageType type = 8;
+  optional int64 message_id = 4;
+  optional string sender_id = 5;
+  optional string content = 6;
+  optional farmera.common.Timestamp sent_at = 7;
+  optional bool is_read = 8;
+  optional farmera.common.MessageType type = 9;
 }
 
 // Conversation
@@ -77,6 +83,20 @@ message CreateConversationRequest {
 }
 
 message CreateConversationResponse {
+  int32 conversation_id = 1;
+  string title = 2;
+  optional int64 latest_message = 3;
+  farmera.common.Timestamp created_at = 4;
+}
+
+// Create private conversation
+message CreatePrivateConversationRequest {
+  string title = 1;
+  string user_a = 2;
+  string user_b = 3;
+}
+
+message CreatePrivateConversationResponse {
   int32 conversation_id = 1;
   string title = 2;
   optional int64 latest_message = 3;
@@ -117,6 +137,7 @@ message DeleteConversationResponse {
 // Get participants
 message GetConversationParticipantsRequest {
   int32 conversation_id = 1;
+  string user_id = 2;
 }
 
 message GetConversationParticipantsResponse {
@@ -126,8 +147,9 @@ message GetConversationParticipantsResponse {
 // Get conversation messages
 message GetConversationMessagesRequest {
   int32 conversation_id = 1;
-  optional farmera.common.Timestamp before = 2;
-  optional int32 limit = 3;
+  string user_id = 2;
+  optional farmera.common.Timestamp before = 3;
+  optional int32 limit = 4;
 }
 
 message GetConversationMessagesResponse {
@@ -152,6 +174,7 @@ message GetMessageResponse {
 // Delete message
 message DeleteMessageRequest {
   int64 message_id = 1;
+  string user_id = 2;
 }
 
 message DeleteMessageResponse {
@@ -159,3 +182,12 @@ message DeleteMessageResponse {
 }
 
 // Attachment
+
+// Users
+message CheckOnlineUserRequest {
+  string user_id = 1;
+}
+
+message CheckOnlineUserResponse {
+  bool is_online = 1;
+}

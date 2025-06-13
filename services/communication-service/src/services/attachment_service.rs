@@ -9,6 +9,7 @@ use crate::{
     models::{
         attachment::{Attachment, MediaContent},
         upload_form::UploadForm,
+        MessageType,
     },
     repositories::{attachment_repo::AttachmentRepo, message_repo::MessageRepo},
 };
@@ -86,7 +87,7 @@ impl AttachmentService {
                     conversation_id,
                     sender_id,
                     None,
-                    "media".to_string(),
+                    MessageType::Media,
                     timestamp,
                     false,
                 )

@@ -7,6 +7,7 @@ pub mod grpc;
 pub mod middlewares;
 pub mod models;
 pub mod openapi;
+pub mod redis_repositories;
 pub mod repositories;
 pub mod services;
 pub mod ws;

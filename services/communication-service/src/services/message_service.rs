@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use uuid::Uuid;
+
 use crate::{
     errors::db_error::DBError,
     models::message::Message,
@@ -23,8 +25,11 @@ impl MessageService {
         self.message_repo.find_message_by_id(message_id).await
     }
 
-    pub async fn delete_message(&self, message_id: i64) -> Result<(), DBError> {
-        let _ = self.message_repo.delete_message(message_id).await?;
+    pub async fn delete_message(&self, user_id: Uuid, message_id: i64) -> Result<(), DBError> {
+        let _ = self
+            .message_repo
+            .delete_message(user_id, message_id)
+            .await?;
         let _ = self
             .attachment_repo
             .delete_attachment_by_message_id(message_id)

@@ -25,6 +25,7 @@ use crate::{
         attachment::{MediaContent, SentMedia},
         message::{MessageContent, SentMessage},
         notification_models::push::{PushMessage, PushMessageType},
+        MessageType,
     },
     repositories::{conversation_repo::ConversationRepo, message_repo::MessageRepo},
 };
@@ -104,7 +105,7 @@ impl ChatServer {
                     res_tx,
                 } => {
                     if let Err(e) = self
-                        .join_conversation(user_id, conn_id, conversation_id)
+                        .join_conversation(user_id, conn_id, conversation_id, false)
                         .await
                     {
                         log::error!(
@@ -171,6 +172,11 @@ impl ChatServer {
             .hset::<&str, &str, &str, ()>(&format!("user:{user_id}"), "status", "online")
             .await?;
 
+        // add user id to online set
+        redis_conn
+            .sadd::<&str, &str, ()>("online_users", &user_id.to_string())
+            .await?;
+
         // initialize user's session
         redis_conn
             .hset::<&str, &str, &str, ()>(
@@ -204,6 +210,11 @@ impl ChatServer {
             .hdel::<&str, &str, ()>(&format!("user:{user_id}:sessions"), &conn_id.to_string())
             .await?;
 
+        // remove the current user from online set
+        redis_conn
+            .srem::<&str, &str, ()>("online_users", &user_id.to_string())
+            .await?;
+
         // set user's status to offline if all sessions are removed
         let session_count = redis_conn
             .hlen::<&str, i64>(&format!("user:{user_id}:sessions"))
@@ -227,6 +238,7 @@ impl ChatServer {
         user_id: UserId,
         conn_id: ConnId,
         conversation_id: ConversationId,
+        is_public_room: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut redis_conn = self.redis_pool.get().await?;
         // ensure user in database conversation
@@ -235,12 +247,17 @@ impl ChatServer {
             .check_user_in_conversation(conversation_id, user_id)
             .await?;
 
-        // add user to database conversation if they are not in it
-        // !TODO: remove insert !!!!!!
         if existed.is_none() {
-            self.conversation_repo
-                .insert_conversation_user(conversation_id, user_id)
-                .await?;
+            if is_public_room {
+                // add user to database conversation if they are not in it
+                self.conversation_repo
+                    .insert_conversation_user(conversation_id, user_id)
+                    .await?;
+            } else {
+                return Err(Box::new(ChatError::JoinError(
+                    "User is not allowed to join".to_string(),
+                )));
+            }
         }
 
         // join user to redis's room
@@ -696,7 +713,7 @@ impl ChatServer {
                     }
                     Err(e) => {
                         log::error!(
-                            "Cannot get device tokons of user {} - error: {}",
+                            "Cannot get device tokens of user {} - error: {}",
                             user_id.clone(),
                             e
                         );
@@ -710,7 +727,7 @@ impl ChatServer {
                     conversation_id,
                     sender_id,
                     Some(content_clone),
-                    "message".to_string(),
+                    MessageType::Message,
                     sent_at,
                     is_read,
                 )

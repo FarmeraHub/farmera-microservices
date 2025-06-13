@@ -11,7 +11,7 @@ WHERE
         OR us.deleted_at IS NULL
         OR us.deleted_at < m.sent_at
     )
-ORDER BY m.sent_at DESC
+ORDER BY m.sent_at DESC NULLS LAST
 LIMIT $2
 OFFSET
     $3;
