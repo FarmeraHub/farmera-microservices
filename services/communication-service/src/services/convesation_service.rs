@@ -52,15 +52,28 @@ impl ConversationService {
         Ok(Participants { participants })
     }
 
+    pub async fn get_user_conversation_participants(
+        &self,
+        user_id: Uuid,
+        conversation_id: i32,
+    ) -> Result<Participants, DBError> {
+        let participants = self
+            .conversation_repo
+            .find_participants_by_conversation_id(user_id, conversation_id)
+            .await?;
+        Ok(Participants { participants })
+    }
+
     pub async fn get_conversation_messages(
         &self,
+        user_id: Uuid,
         conversation_id: i32,
         limit: Option<i32>,
         before: Option<DateTime<Utc>>,
     ) -> Result<ConversationMessages, DBError> {
         let messages = self
             .conversation_repo
-            .get_messages_by_conversation_id(conversation_id, limit, before)
+            .get_messages_by_conversation_id(user_id, conversation_id, limit, before)
             .await?;
         Ok(ConversationMessages { messages })
     }
@@ -78,5 +91,16 @@ impl ConversationService {
             .get_conversation_by_user_id(user_id, limit, offset)
             .await?;
         Ok(ConversationList { conversations })
+    }
+
+    pub async fn create_private_conversation(
+        &self,
+        title: &str,
+        user_a: Uuid,
+        user_b: Uuid,
+    ) -> Result<Conversation, DBError> {
+        self.conversation_repo
+            .insert_private_conversation(&title, user_a, user_b)
+            .await
     }
 }

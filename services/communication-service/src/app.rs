@@ -5,13 +5,14 @@ use sqlx::migrate;
 use crate::{
     config::{pg_db::create_pg_pool, redis::create_redis_pool},
     grpc::noti_client::NotificationGrpcClient,
+    redis_repositories::user_redis_repo::UserRedisRepo,
     repositories::{
         attachment_repo::AttachmentRepo, conversation_repo::ConversationRepo,
         message_repo::MessageRepo,
     },
     services::{
         attachment_service::AttachmentService, convesation_service::ConversationService,
-        message_service::MessageService,
+        message_service::MessageService, user_service::UserService,
     },
     ws::{chat_server::ChatServer, chat_server_handler::ChatServerHandler},
 };
@@ -27,6 +28,7 @@ pub struct AppServices {
     pub attachment_service: Arc<AttachmentService>,
     pub conversation_service: Arc<ConversationService>,
     pub messages_service: Arc<MessageService>,
+    pub user_service: Arc<UserService>,
 }
 
 pub struct AppProcessors {
@@ -68,6 +70,7 @@ impl AppState {
         let conversation_repository = Arc::new(ConversationRepo::new(pg_pool.clone()));
         let message_repository = Arc::new(MessageRepo::new(pg_pool.clone()));
         let attachment_repository = Arc::new(AttachmentRepo::new(pg_pool.clone()));
+        let user_redis_repo = Arc::new(UserRedisRepo::new(redis_pool.clone()));
 
         // init services
         let conversation_service =
@@ -80,6 +83,7 @@ impl AppState {
             attachment_repository.clone(),
             message_repository.clone(),
         ));
+        let user_service = Arc::new(UserService::new(user_redis_repo.clone()));
 
         // init redis client
         let redis_client = Arc::new(
@@ -100,6 +104,7 @@ impl AppState {
             attachment_service,
             conversation_service,
             messages_service,
+            user_service,
         };
 
         let app_processors = AppProcessors { chat_server };

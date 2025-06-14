@@ -6,6 +6,7 @@ import {
   Res,
   HttpException,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
@@ -15,9 +16,11 @@ import { Public } from '../common/decorators/public.decorator';
 @ApiTags('Proxy')
 @Controller()
 export class ProxyController {
-  constructor(private readonly proxyService: ProxyService) {}
+  constructor(private readonly proxyService: ProxyService) { }
 
-  @All(':service(users|products|payment|notification|communication)/*')
+  // !TODO: handle extract path 
+  // @All(':service(users|products|payment|notification|communication)/*')
+  @All('proxy/:service/:path')
   @ApiOperation({ summary: 'Proxy requests to microservices' })
   @ApiParam({
     name: 'service',
@@ -25,6 +28,7 @@ export class ProxyController {
   })
   async proxyRequest(
     @Param('service') service: string,
+    @Param('path') path: string,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -77,7 +81,7 @@ export class ProxyController {
       console.error('[Gateway] Proxy error:', error);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Gateway internal error',
+        message: error.message || 'Gateway internal error',
         timestamp: new Date().toISOString(),
       });
     }

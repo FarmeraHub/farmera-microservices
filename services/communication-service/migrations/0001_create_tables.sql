@@ -10,7 +10,8 @@ CREATE TABLE users_conversations (
     id BIGSERIAL PRIMARY KEY,
     conversation_id INT NOT NULL,
     user_id UUID NOT NULL,
-    deleted_at TIMESTAMPTZ
+    deleted_at TIMESTAMPTZ,
+    UNIQUE (user_id, conversation_id)
 );
 
 CREATE TABLE conversations (

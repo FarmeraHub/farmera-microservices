@@ -19,9 +19,14 @@ impl WSController {
     ) -> Result<HttpResponse, Error> {
         let (res, session, msg_stream) = actix_ws::handle(&req, stream)?;
 
-        // !TODO: get user id from req
-        let user_id = Uuid::parse_str("c8dd591b-4105-4608-869b-1dfb96f313b3").unwrap();
-        // let user_id = Uuid::new_v4();
+        // get user id from req
+        let user_id = match req.headers().get("X-user-id").and_then(|v| v.to_str().ok()) {
+            Some(id_str) => match Uuid::parse_str(id_str) {
+                Ok(uuid) => uuid,
+                Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
+            },
+            None => return Ok(HttpResponse::Unauthorized().finish()),
+        };
 
         // spawn websocket handler service
         spawn_local(ws_handler::WSHandler::handle_ws(

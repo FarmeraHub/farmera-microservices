@@ -1,4 +1,4 @@
-use crate::models::{conversation::{Conversation, ConversationList, ConversationMessages, NewConversation}, response_wrapper::{ResponseWrapper, UnitStruct}, user_conversation::UserConversation};
+use crate::models::{conversation::{Conversation, ConversationList, ConversationMessages, NewConversation, NewPrivateConversation}, response_wrapper::{ResponseWrapper, UnitStruct}, user_conversation::UserConversation};
 
 #[utoipa::path(
     get,
@@ -136,3 +136,23 @@ pub async fn get_conversation_messages() {}
 )]
 #[allow(dead_code)]
 pub async fn get_user_conversations() {}
+
+#[utoipa::path(
+    post,
+    path = "/api/conversation/private",
+    request_body = NewPrivateConversation,
+    tag = "Conversation",
+    responses(
+        (
+            status = 201, 
+            description = "Created",
+            body = ResponseWrapper<Conversation>,
+        ),
+        (
+            status = 500, 
+            description = "Create failed", 
+        )
+    )
+)]
+#[allow(dead_code)]
+pub async fn create_private_conversation() {}

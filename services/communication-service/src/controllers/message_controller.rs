@@ -1,4 +1,5 @@
-use actix_web::{http::StatusCode, web, HttpResponse, Responder};
+use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse, Responder};
+use uuid::Uuid;
 
 use crate::{app::AppServices, errors::Error, models::response_wrapper::ResponseWrapper};
 
@@ -38,14 +39,24 @@ impl MessageController {
     }
 
     pub async fn delete_message(
+        req: HttpRequest,
         services: web::Data<AppServices>,
         path: web::Path<i64>,
     ) -> impl Responder {
         let message_id = path.into_inner();
 
+        // get user id from req
+        let user_id = match req.headers().get("X-user-id").and_then(|v| v.to_str().ok()) {
+            Some(id_str) => match Uuid::parse_str(id_str) {
+                Ok(uuid) => uuid,
+                Err(_) => return HttpResponse::Unauthorized().finish(),
+            },
+            None => return HttpResponse::Unauthorized().finish(),
+        };
+
         match services
             .messages_service
-            .delete_message(message_id)
+            .delete_message(user_id, message_id)
             .await
             .map_err(|e| Error::Db(e))
         {

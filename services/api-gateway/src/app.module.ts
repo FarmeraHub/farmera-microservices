@@ -13,6 +13,8 @@ import { HealthModule } from './health/health.module';
 import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ProductModule } from './product/product.module';
+import { CommunicationModule } from './communication/communication.module';
+import { CommunicationGateway } from './communication/communication.gateway';
 
 @Module({
   imports: [
@@ -63,6 +65,7 @@ import { ProductModule } from './product/product.module';
     MediaModule,
     ProxyModule,
     ProductModule,
+    CommunicationModule,
   ],
   controllers: [AppController],
   providers: [
@@ -73,4 +76,4 @@ import { ProductModule } from './product/product.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

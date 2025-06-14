@@ -5,7 +5,7 @@ use communication_service::{
     controllers::{
         attachment_controller::AttachmentController,
         conversation_controller::ConversationController, message_controller::MessageController,
-        ws_controller::WSController,
+        user_controller::UserController, ws_controller::WSController,
     },
     openapi::ApiDoc,
 };
@@ -51,7 +51,8 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api")
                     .configure(ConversationController::routes)
                     .configure(MessageController::routes)
-                    .configure(AttachmentController::routes),
+                    .configure(AttachmentController::routes)
+                    .configure(UserController::routes),
             )
             // swagger
             .service(

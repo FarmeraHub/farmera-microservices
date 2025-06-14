@@ -2,8 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   // Create the main HTTP application
@@ -11,7 +12,7 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: true,
     credentials: true,
   });
 
@@ -23,6 +24,16 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.setGlobalPrefix('api');
+
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+    prefix: 'v',
+  });
+
+  app.use(cookieParser());
 
   // Swagger documentation
   const config = new DocumentBuilder()
@@ -54,11 +65,11 @@ async function bootstrap() {
 
   // Start both servers
   await app.startAllMicroservices();
-  await app.listen(3002);
+  await app.listen(3001);
 
   console.log('🚀 Users Service is running in hybrid mode:');
-  console.log('📡 REST API: http://localhost:3002');
-  console.log('📡 Swagger UI: http://localhost:3002/api');
+  console.log('📡 REST API: http://localhost:3001');
+  console.log('📡 Swagger UI: http://localhost:3001/api');
   console.log('⚡ gRPC Service: localhost:50051');
 }
 
