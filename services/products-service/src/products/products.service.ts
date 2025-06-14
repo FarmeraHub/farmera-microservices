@@ -863,6 +863,24 @@ export class ProductsService {
         return products;
     }
 
+    async findProductsByFarmId(farmId: string):Promise<Product[]> {
+        if (!farmId) {
+            this.logger.warn(`(findProductsByFarmId) farmId không được cung cấp.`);
+            return [];
+        }
+        this.logger.log(`(findProductsByFarmId) Đang tìm sản phẩm cho farm ID: ${farmId}`);
+        const products = await this.productsRepository.find({
+            where: { farm: { farm_id: farmId } },
+            relations: ['farm', 'productSubcategoryDetails', 'productSubcategoryDetails.subcategory', 'productSubcategoryDetails.subcategory.category'],
+        });
+        if (products.length === 0) {
+            this.logger.warn(`(findProductsByFarmId) Không tìm thấy sản phẩm nào cho farm ID: ${farmId}`);
+        } else {
+            this.logger.log(`(findProductsByFarmId) Đã tìm thấy ${products.length} sản phẩm cho farm ID: ${farmId}`);
+            this.logger.log(`(findProductsByFarmId) Product details: ${JSON.stringify(products, null, 2)}`);
+        }
+        return products;
+    }
 
    
 

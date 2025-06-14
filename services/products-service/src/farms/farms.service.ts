@@ -15,7 +15,7 @@ import { FptIdrCccdFrontData, FptIdrCardFrontData } from 'src/biometrics/interfa
 import { SavedFileResult } from 'src/file-storage/storage.strategy.interface';
 import { ResponseFarmDto } from './dto/response-farm.dto';
 import { AddressGHN } from './entities/address-ghn.entity';
-
+import { validate as isUUID } from 'uuid';
 @Injectable()
 export class FarmsService {
   private readonly logger = new Logger(FarmsService.name);
@@ -270,6 +270,7 @@ export class FarmsService {
   async findByUserID(userId: string): Promise<Farm> {
     const farm = await this.farmsRepository.findOne({
       where: { user_id: userId },
+      relations: ['address', 'address.address_ghn', 'identification'],
     });
 
     if (!farm) {
@@ -283,15 +284,19 @@ export class FarmsService {
   }
 
   async findFarmById(farmId: string): Promise<Farm> {
+    if (!isUUID(farmId)) {
+      this.logger.warn(`Invalid Farm ID format: ${farmId}`);
+      throw new BadRequestException(`ID trang trại không hợp lệ.`);
+    }
     const farm = await this.farmsRepository.findOne({
       where: { farm_id: farmId },
-      relations: ['address'],
+      relations: ['address', 'address.address_ghn', 'identification'],
     });
 
     if (!farm) {
       throw new NotFoundException(`Không tìm thấy trang trại với ID ${farmId}`);
     }
-
+    this.logger.log(`Farm found: ${JSON.stringify(farm, null, 2)}`);
     return farm;
   }
   async findFarmsByIds(farmIds: string[]): Promise<Farm[]> { // Hoặc number[]

@@ -105,4 +105,29 @@ export class ProductController {
         this.logger.log('Creating subcategory with data:', subcategoryDto);
         return this.productClient.CreateSubcategory(subcategoryDto);
     }
+
+    @Public()
+    @Get('farms/get/:farmId')
+    async getFarm(
+        @Param('farmId') farmId: string,
+    ) {
+        const requestPayload = {
+            farm_id: farmId,
+            include_products: true,
+        };
+        return this.productClient.GetFarm(requestPayload);
+    }
+
+    //API test
+    @Public()
+    @Get('farms/get-by-user/:userId')
+    async getFarmByUser(
+        @Param('userId') userId: string,
+    ) {
+        const requestPayload = {
+            user_id: userId,
+            include_products: true,
+        };
+        return this.productClient.GetFarmByUser(requestPayload);
+    }
 }

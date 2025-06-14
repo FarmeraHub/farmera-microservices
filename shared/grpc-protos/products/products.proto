@@ -24,13 +24,15 @@ service ProductsService {
   
   // Farm management
   //rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
-  //rpc GetFarm(GetFarmRequest) returns (GetFarmResponse);
+  rpc GetFarm(GetFarmRequest) returns (GetFarmResponse);
   //rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
   //rpc DeleteFarm(DeleteFarmRequest) returns (DeleteFarmResponse);
   //rpc ListFarms(ListFarmsRequest) returns (ListFarmsResponse);
   //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
   //rpc VerifyFarm(VerifyFarmRequest) returns (VerifyFarmResponse);
-  
+  rpc GetFarmByUser(GetFarmByUserRequest) returns (GetFarmByUserResponse);
+  rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
+
   // Category management
   rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
   rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse);
@@ -373,7 +375,6 @@ message CreateFarmResponse {
 message GetFarmRequest {
   string farm_id = 1;
   bool include_products = 2;
-  bool include_statistics = 3;
 }
 
 message GetFarmResponse {
@@ -750,4 +751,24 @@ message GetSubcategoryResponse{
 message GetSubcategoryRequest {
   int32 subcategory_id = 1;
   optional string name = 2;
+}
+message GetFarmByUserRequest{
+  string user_id = 1;
+  bool include_products = 2;
+}
+
+message GetFarmByUserResponse {
+  Farm farm = 1;
+  repeated Product products = 2;
+}
+
+message UpdateFarmStatusRequest{
+  string farm_id = 1;
+  string user_id = 2;
+  string status = 3;
+  optional string reason = 4;
+ }
+
+message UpdateFarmStatusResponse{
+  Farm farm = 1;
 }

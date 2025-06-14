@@ -1,3 +1,4 @@
+import { FarmAdminService } from './../../admin/farm/farm-admin.service';
 import { Product as ProductEntity } from './../../products/entities/product.entity';
 import { Controller, Logger } from "@nestjs/common";
 import { GrpcMethod, RpcException } from "@nestjs/microservices";
@@ -26,6 +27,11 @@ import {
     GetSubcategoryRequest,
     GetSubcategoryResponse,
     CreateSubcategoryResponse,
+    GetFarmRequest,
+    GetFarmResponse,
+    GetFarmByUserRequest,
+    UpdateFarmStatusRequest,
+    UpdateFarmStatusResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, of, throwError, map, catchError, tap, from } from 'rxjs';
@@ -34,6 +40,9 @@ import { Observable, of, throwError, map, catchError, tap, from } from 'rxjs';
 import { ProductMapper } from './mappers/product.mapper';
 import { CreateSubcategoryDto } from 'src/categories/dto/request/create-subcategories.dto';
 import { Subcategory } from 'src/categories/entities/subcategory.entity';
+import { r } from 'pinata/dist/index-CQFQEo3K';
+import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
+import { FarmStatus } from 'src/common/enums/farm-status.enum';
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -44,6 +53,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
         private readonly productsService: ProductsService,
         private readonly farmsService: FarmsService,
         private readonly categoriesService: CategoriesService,
+        private readonly farmAdminService: FarmAdminService,
     ) { }
     async getProduct(
         request: GetProductRequest,
@@ -226,4 +236,97 @@ export class ProductGrpcServerController implements ProductsServiceController {
         return result;
     }
 
+
+    //farm
+    async getFarm(request: GetFarmRequest): Promise<GetFarmResponse> {
+        this.logger.log(`[gRPC In - GetFarm] Received request for farm_id: ${request.farm_id}`);
+
+        if (!request || !request.farm_id) {
+            this.logger.error('[gRPC In - GetFarm] Invalid request: farm_id is required.');
+            throw new RpcException('Invalid request: farm_id is required.');
+        }
+
+        const farmEntity = await this.farmsService.findFarmById(request.farm_id);
+
+        if (!farmEntity) {
+            this.logger.warn(`[gRPC Logic - GetFarm] No farm found for ID: ${request.farm_id}`);
+            throw new RpcException(`No farm found for ID: ${request.farm_id}`);
+        }
+
+        let productEntities: ProductEntity[] = [];
+        if (request.include_products) {
+            this.logger.log(`[gRPC Logic - GetFarm] Including products for farm_id: ${request.farm_id}`);
+            productEntities = await this.productsService.findProductsByFarmId(request.farm_id);
+            this.logger.log(`[gRPC Logic - GetFarm] Found ${productEntities.length} products for farm_id: ${request.farm_id}`);
+        }
+        this.logger.log(`[gRPC Logic - GetFarm] Successfully fetched farm: ${farmEntity.farm_id}`);
+        const response = ProductMapper.toGrpcGetFarmResponse(farmEntity, productEntities);
+
+        if (!response) {
+            this.logger.warn('[gRPC Logic - GetFarm] Failed to map farm entity to gRPC response.');
+            throw new RpcException('Failed to map farm entity to gRPC response.');
+        }
+
+        return response;
+    }
+
+    async getFarmByUser(request: GetFarmByUserRequest): Promise<GetFarmResponse> {
+        this.logger.log(`[gRPC In - GetFarm] Received request for user_id: ${request.user_id}`);
+
+        if (!request || !request.user_id) {
+            this.logger.error('[gRPC In - GetFarm] Invalid request: farm_id is required.');
+            throw new RpcException('Invalid request: farm_id is required.');
+        }
+
+        const farmEntity = await this.farmsService.findByUserID(request.user_id);
+
+        if (!farmEntity) {
+            this.logger.warn(`[gRPC Logic - GetFarm] No farm found for user id: ${request.user_id}`);
+            throw new RpcException(`No farm found for User ID: ${request.user_id}`);
+        }
+
+        let productEntities: ProductEntity[] = [];
+        if (request.include_products) {
+            this.logger.log(`[gRPC Logic - GetFarm] Including products for farm_id: ${farmEntity.farm_id}`);
+            productEntities = await this.productsService.findProductsByFarmId(farmEntity.farm_id);
+            this.logger.log(`[gRPC Logic - GetFarm] Found ${productEntities.length} products for farm_id: ${farmEntity.farm_id}`);
+        }
+        this.logger.log(`[gRPC Logic - GetFarm] Successfully fetched farm: ${farmEntity.farm_id}`);
+        const response = ProductMapper.toGrpcGetFarmByUserResponse(farmEntity, productEntities);
+
+        if (!response) {
+            this.logger.warn('[gRPC Logic - GetFarm] Failed to map farm entity to gRPC response.');
+            throw new RpcException('Failed to map farm entity to gRPC response.');
+        }
+
+        return response;
+    }
+
+    async updateFarmStatus(request: UpdateFarmStatusRequest): Promise<UpdateFarmStatusResponse> {
+        this.logger.log(`[gRPC In - UpdateFarmStatus] Received request to update farm status: ${JSON.stringify(request)}`);
+
+        if (!request || !request.farm_id || !request.status) {
+            this.logger.error('[gRPC In - UpdateFarmStatus] Invalid request: farm_id and status are required.');
+            throw new RpcException('Invalid request: farm_id and status are required.');
+        }
+
+        try {
+            this.logger.log(`[gRPC Logic - UpdateFarmStatus] Updating farm status for farm_id: ${request.farm_id} to status: ${request.status}`);
+            const updateDto: UpdateFarmStatusDto = {
+                status: FarmStatus[request.status],
+                reason: request.reason || '',
+            };
+            const updatedFarm = await this.farmAdminService.updateFarmStatus(request.farm_id, updateDto, request.user_id);
+            this.logger.log(`[gRPC Logic - UpdateFarmStatus] Successfully updated farm status for farm_id: ${updatedFarm.farm_id}`);
+            const farm = ProductMapper.toGrpcUpdateFarmStatusStatusResponse(updatedFarm);
+            if (!farm) {
+                this.logger.warn('[gRPC Logic - UpdateFarmStatus] Failed to map updated farm entity to gRPC response.');
+                throw new RpcException('Failed to map updated farm entity to gRPC response.');
+            }
+            return farm;
+        } catch (error) {
+            this.logger.error(`[gRPC Logic - UpdateFarmStatus] Error updating farm status for farm_id ${request.farm_id}: ${error.message}`, error.stack);
+            throw new RpcException(`Error processing UpdateFarmStatus request: ${error.message}`);
+        }
+    }
 }

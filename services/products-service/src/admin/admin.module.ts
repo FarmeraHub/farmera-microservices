@@ -12,5 +12,6 @@ import { ApproveDetail } from './farm/entities/approve-detail.entity';
   ],
   controllers: [FarmAdminController],
   providers: [FarmAdminService],
+  exports: [FarmAdminService],
 })
 export class AdminModule {}

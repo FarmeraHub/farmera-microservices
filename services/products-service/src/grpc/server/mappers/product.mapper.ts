@@ -26,7 +26,11 @@ import {
   CreateSubcategoryResponse as GrpcCreateSubcategoryResponse,
   GetSubcategoryResponse as GrpcGetSubcategoryResponse,
   GetCategoryResponse as GrpcGetCategoryResponse,
-  GetAllCategoryWithSubcategoryResponse, 
+  GetAllCategoryWithSubcategoryResponse,
+  GetFarmResponse as GrpcGetFarmResponse,
+  GetFarmByUserResponse as GrpcGetFarmByUserResponse,
+  UpdateFarmStatusResponse as GrpcUpdateFarmStatusResponse,
+
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { CommonMapper } from "./common.mapper";
@@ -345,5 +349,52 @@ export class ProductMapper {
     return {
       subcategory: grpcSubcategory,
     }
+  }
+  static toGrpcGetFarmResponse(farm: Farm, products?: Product[]): GrpcGetFarmResponse | undefined {
+    if (!farm) {
+      throw new BadGatewayException('Invalid farm data');
+    }
+    const grpcFarm: GrpcFarm | undefined = this.toGrpcFarm(farm);
+    if (!grpcFarm) {
+      throw new BadGatewayException('Invalid farm data');
+    }
+    const grpcProducts: GrpcProduct[] = products
+      ? products.map(product => this.toGrpcProduct(product)).filter((product): product is GrpcProduct => product !== undefined)
+      : [];
+    return {
+      farm: grpcFarm,
+      products: grpcProducts,
+    };
+  }
+
+
+  static toGrpcGetFarmByUserResponse(farm: Farm, products?: Product[]): GrpcGetFarmByUserResponse | undefined {
+    if (!farm) {
+      throw new BadGatewayException('Invalid farm data');
+    }
+    const grpcFarm: GrpcFarm | undefined = this.toGrpcFarm(farm);
+    if (!grpcFarm) {
+      throw new BadGatewayException('Invalid farm data');
+    }
+    const grpcProducts: GrpcProduct[] = products
+      ? products.map(product => this.toGrpcProduct(product)).filter((product): product is GrpcProduct => product !== undefined)
+      : [];
+    return {
+      farm: grpcFarm,
+      products: grpcProducts,
+    };
+  }
+
+  static toGrpcUpdateFarmStatusStatusResponse(farm: Farm): GrpcUpdateFarmStatusResponse | undefined {
+    if (!farm) {
+      throw new BadGatewayException('Invalid farm data');
+    }
+    const grpcFarm: GrpcFarm | undefined = this.toGrpcFarm(farm);
+    if (!grpcFarm) {
+      throw new BadGatewayException('Invalid farm data');
+    }
+    return {
+      farm: grpcFarm,
+    };
   }
 }
