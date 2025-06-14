@@ -4,28 +4,29 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmAsyncConfig } from './config/typeorm.config';
-import { Or } from 'typeorm';
 import { OrdersModule } from './orders/orders.module';
 import productServiceConfig from './config/product-service.config';
 import { PaymentModule } from './payments/payment.module';
 import { DiscountModule } from './discounts/discount.module';
 import { DeliveryModule } from './delivery/delivery.module';
+import { NotificationModule } from './clients/notification/notification.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, 
+      isGlobal: true,
       envFilePath: '.env',
-      load:[productServiceConfig],
+      load: [productServiceConfig],
     }),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
-    OrdersModule, 
+    OrdersModule,
     PaymentModule,
     DiscountModule,
-    DeliveryModule
+    DeliveryModule,
+    NotificationModule
 
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
