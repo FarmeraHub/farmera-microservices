@@ -2,7 +2,7 @@ import { Type } from "class-transformer";
 import { ArrayNotEmpty, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString } from "class-validator";
 import { ProductStatus } from "src/common/enums/product-status.enum";
 
-export class UpdateProductDto{
+export class UpdateProductDto {
 
     @IsOptional()
     @IsString()
@@ -29,8 +29,14 @@ export class UpdateProductDto{
     stock_quantity: number;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @IsPositive()
+    weight: number;
+
+    @IsOptional()
     @IsEnum(ProductStatus)
-    status: ProductStatus;  
+    status: ProductStatus;
 
     @IsOptional()
     @ArrayNotEmpty()

@@ -1,10 +1,10 @@
 import { Body, Get, Controller, Post, UploadedFile, UseGuards, UseInterceptors, Request, UnauthorizedException } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
-import { CreateCategoriesDto } from './dto/create-categories.dto';
+import { CreateCategoriesDto } from './dto/request/create-categories.dto';
 
 import { Role } from 'src/common/enums/role.enum';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
-import { CreateSubcategoryDto } from './dto/create-subcategories.dto';
+import { CreateSubcategoryDto } from './dto/request/create-subcategories.dto';
 
 
 @Controller('categories')
@@ -21,7 +21,7 @@ export class CategoriesController {
 
   ) {
     const userId = req.headers['x-user-id'];
-      const role = req.headers['x-user-role'];
+    const role = req.headers['x-user-role'];
     if (!(role == Role.ADMIN)) {
       throw new UnauthorizedException('Không có quyền tạo danh mục con');
     }
@@ -35,16 +35,16 @@ export class CategoriesController {
     return this.categoriesService.getCategoriesWithSubcategories();
   }
 
-  
+
   @Post('sub/create')
   async createSubcategory(
     @Request() req: Request,
     @Body() createSubcategoryDto: CreateSubcategoryDto) {
-      const userId = req.headers['x-user-id'];
-      const role = req.headers['x-user-role'];
-      if (!(role == Role.ADMIN)) {
-        throw new UnauthorizedException('Không có quyền tạo danh mục con');
-      }
+    const userId = req.headers['x-user-id'];
+    const role = req.headers['x-user-role'];
+    if (!(role == Role.ADMIN)) {
+      throw new UnauthorizedException('Không có quyền tạo danh mục con');
+    }
     return this.categoriesService.createSubcategory(createSubcategoryDto);
   }
 }

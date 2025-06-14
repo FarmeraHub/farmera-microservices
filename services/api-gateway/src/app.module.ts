@@ -12,6 +12,7 @@ import { GuardsModule } from './guards/guards.module';
 import { HealthModule } from './health/health.module';
 import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ProductModule } from './product/product.module';
 import { CommunicationModule } from './communication/communication.module';
 import { CommunicationGateway } from './communication/communication.gateway';
 
@@ -63,6 +64,7 @@ import { CommunicationGateway } from './communication/communication.gateway';
     HealthModule,
     MediaModule,
     ProxyModule,
+    ProductModule,
     CommunicationModule,
   ],
   controllers: [AppController],

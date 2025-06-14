@@ -6,116 +6,141 @@ import "common/types.proto";
 import "common/enums.proto";
 import "common/pagination.proto";
 import "common/errors.proto";
-
 option go_package = "github.com/farmera/grpc-protos/products";
 
 // Products service definition
 service ProductsService {
   // Product management
-  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+  //rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
   rpc GetProduct(GetProductRequest) returns (GetProductResponse);
-  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
-  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
-  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
-  rpc SearchProducts(SearchProductsRequest) returns (SearchProductsResponse);
-  rpc GetProductsByFarm(GetProductsByFarmRequest) returns (GetProductsByFarmResponse);
-  rpc GetProductsByCategory(GetProductsByCategoryRequest) returns (GetProductsByCategoryResponse);
-  rpc UpdateProductStatus(UpdateProductStatusRequest) returns (UpdateProductStatusResponse);
+  rpc GetListProducts(GetListProductsRequest) returns (GetListProductsResponse);
+  //rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
+  //rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
+  //rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  //rpc SearchProducts(SearchProductsRequest) returns (SearchProductsResponse);
+  //rpc GetProductsByFarm(GetProductsByFarmRequest) returns (GetProductsByFarmResponse);
+  //rpc GetProductsByCategory(GetProductsByCategoryRequest) returns (GetProductsByCategoryResponse);
+  //rpc UpdateProductStatus(UpdateProductStatusRequest) returns (UpdateProductStatusResponse);
   
   // Farm management
-  rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
+  //rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
   rpc GetFarm(GetFarmRequest) returns (GetFarmResponse);
-  rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
-  rpc DeleteFarm(DeleteFarmRequest) returns (DeleteFarmResponse);
-  rpc ListFarms(ListFarmsRequest) returns (ListFarmsResponse);
-  rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
-  rpc VerifyFarm(VerifyFarmRequest) returns (VerifyFarmResponse);
-  
+  //rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
+  //rpc DeleteFarm(DeleteFarmRequest) returns (DeleteFarmResponse);
+  //rpc ListFarms(ListFarmsRequest) returns (ListFarmsResponse);
+  //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
+  //rpc VerifyFarm(VerifyFarmRequest) returns (VerifyFarmResponse);
+  rpc GetFarmByUser(GetFarmByUserRequest) returns (GetFarmByUserResponse);
+  rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
+
   // Category management
   rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
   rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse);
-  rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse);
-  rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
-  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
-  rpc GetCategoryTree(GetCategoryTreeRequest) returns (GetCategoryTreeResponse);
-  
+  //rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse);
+  //rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
+  //rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+  //rpc GetCategoryTree(GetCategoryTreeRequest) returns (GetCategoryTreeResponse);
+rpc GetAllCategoryWithSubcategory(GetAllCategoryWithSubcategoryRequest) returns (GetAllCategoryWithSubcategoryResponse);
+
+  //Subcategory
+  rpc CreateSubcategory(CreateSubcategoryRequest) returns (CreateSubcategoryResponse);
+  rpc GetSubcategory(GetSubcategoryRequest) returns (GetSubcategoryResponse);
   // Review management
-  rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse);
-  rpc GetReview(GetReviewRequest) returns (GetReviewResponse);
-  rpc UpdateReview(UpdateReviewRequest) returns (UpdateReviewResponse);
-  rpc DeleteReview(DeleteReviewRequest) returns (DeleteReviewResponse);
-  rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse);
-  rpc GetProductReviews(GetProductReviewsRequest) returns (GetProductReviewsResponse);
-  rpc ApproveReview(ApproveReviewRequest) returns (ApproveReviewResponse);
+  //rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse);
+  //rpc GetReview(GetReviewRequest) returns (GetReviewResponse);
+  //rpc UpdateReview(UpdateReviewRequest) returns (UpdateReviewResponse);
+  //rpc DeleteReview(DeleteReviewRequest) returns (DeleteReviewResponse);
+  //rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse);
+  //rpc GetProductReviews(GetProductReviewsRequest) returns (GetProductReviewsResponse);
+  //rpc ApproveReview(ApproveReviewRequest) returns (ApproveReviewResponse);
   
   // Process tracking
-  rpc CreateProcess(CreateProcessRequest) returns (CreateProcessResponse);
-  rpc GetProcess(GetProcessRequest) returns (GetProcessResponse);
-  rpc UpdateProcess(UpdateProcessRequest) returns (UpdateProcessResponse);
-  rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);
-  rpc GetProductProcesses(GetProductProcessesRequest) returns (GetProductProcessesResponse);
-  rpc VerifyProcess(VerifyProcessRequest) returns (VerifyProcessResponse);
+  //rpc CreateProcess(CreateProcessRequest) returns (CreateProcessResponse);
+  //rpc GetProcess(GetProcessRequest) returns (GetProcessResponse);
+  //rpc UpdateProcess(UpdateProcessRequest) returns (UpdateProcessResponse);
+  //rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);
+  //rpc GetProductProcesses(GetProductProcessesRequest) returns (GetProductProcessesResponse);
+  //rpc VerifyProcess(VerifyProcessRequest) returns (VerifyProcessResponse);
   
-  // Biometrics
-  rpc CreateBiometric(CreateBiometricRequest) returns (CreateBiometricResponse);
-  rpc GetBiometric(GetBiometricRequest) returns (GetBiometricResponse);
-  rpc ListBiometrics(ListBiometricsRequest) returns (ListBiometricsResponse);
-  rpc GetProductBiometrics(GetProductBiometricsRequest) returns (GetProductBiometricsResponse);
-  
+
   // File management
-  rpc UploadProductImage(UploadProductImageRequest) returns (UploadProductImageResponse);
-  rpc UploadProductVideo(UploadProductVideoRequest) returns (UploadProductVideoResponse);
-  rpc DeleteProductMedia(DeleteProductMediaRequest) returns (DeleteProductMediaResponse);
+  //rpc UploadProductImage(UploadProductImageRequest) returns (UploadProductImageResponse);
+  //rpc UploadProductVideo(UploadProductVideoRequest) returns (UploadProductVideoResponse);
+  //rpc DeleteProductMedia(DeleteProductMediaRequest) returns (DeleteProductMediaResponse);
 }
 
 // Product message definition
 message Product {
   int32 product_id = 1;
-  int32 farm_id = 2;
-  string product_name = 3;
-  string description = 4;
-  farmera.common.Money price_per_unit = 5;
-  farmera.common.Unit unit = 6;
-  int32 stock_quantity = 7;
-  repeated farmera.common.Image images = 8;
-  repeated farmera.common.Video videos = 9;
+  string product_name = 2;
+  string description = 3;
+  int32 price_per_unit = 4;
+  string unit = 5;
+  int32 stock_quantity = 6;
+  double weight = 7;
+  repeated string image_urls = 8;
+  repeated string video_urls = 9;
   farmera.common.ProductStatus status = 10;
-  farmera.common.Timestamp created_at = 11;
-  farmera.common.Timestamp updated_at = 12;
+  farmera.common.Timestamp created = 11;
+  farmera.common.Timestamp updated = 12;
   repeated ProductSubcategoryDetail subcategory_details = 13;
-  farmera.common.Rating rating = 14;
-  Farm farm = 15; // Farm details
-  repeated ProductProcess processes = 16;
-  repeated ProductBiometric biometrics = 17;
-  bool is_organic = 18;
-  bool is_seasonal = 19;
-  farmera.common.Timestamp harvest_date = 20;
-  farmera.common.Timestamp expiry_date = 21;
-  string sku = 22;
-  repeated string tags = 23;
-  ProductInventory inventory = 24;
+  double average_rating = 14;
+  int32 total_sold = 15;
+  string farm_id = 16;
+  //bool is_organic = 18;
+  //bool is_seasonal = 19;
+  //farmera.common.Timestamp harvest_date = 20;
+  //farmera.common.Timestamp expiry_date = 21;
+  //string sku = 22;
+  //repeated string tags = 23;
+  //ProductInventory inventory = 24;
 }
 
 // Farm message definition
 message Farm {
-  int32 farm_id = 1;
+  string farm_id = 1;
   string farm_name = 2;
   string description = 3;
-  string owner_id = 4; // User ID of the farm owner
-  farmera.common.Location location = 5;
-  farmera.common.ContactInfo contact_info = 6;
-  repeated farmera.common.CertificationType certifications = 7;
-  repeated farmera.common.OperatingHours operating_hours = 8;
-  bool is_verified = 9;
-  bool is_active = 10;
-  farmera.common.Timestamp established_date = 11;
-  farmera.common.Timestamp created_at = 12;
-  farmera.common.Timestamp updated_at = 13;
-  repeated farmera.common.Image images = 14;
-  FarmStatistics statistics = 15;
-  string license_number = 16;
-  double farm_size_hectares = 17;
-  repeated string farming_methods = 18; // "organic", "hydroponic", etc.
+  string user_id = 4; // User ID of the farm owner
+  string email = 5;
+  string phone = 6;
+  string avatar_url = 7;
+  repeated string profile_image_urls = 8;
+  repeated string certificate_img_urls = 9 ;
+  string tax_number = 10;
+  farmera.common.FarmStatus status = 11;
+  farmera.common.Timestamp created = 12;
+  farmera.common.Timestamp updated = 13;
+  Address address = 14;
+  Identification identification = 15;
+}
+
+message Identification {
+  string id = 1;
+  farmera.common.IdentificationStatus status = 2;
+  farmera.common.IdentificationMethod method = 3;
+  string nationality = 4;
+  string id_number = 5;
+  string full_name = 6;
+}
+
+message AddressGHN {
+ int32 id = 1;
+ int32 province_id = 2;
+ int32 district_id = 3;
+ string ward_code = 4;
+}
+
+message Address {
+  int32 address_id = 1;
+  string city = 2;
+  string district = 3;
+  string ward = 4;
+  string street = 5;
+  string coordinate = 6;
+  farmera.common.Timestamp created = 7;
+  string farm_id = 8; 
+  optional AddressGHN address_ghn = 9;
 }
 
 // Category message definition
@@ -123,23 +148,22 @@ message Category {
   int32 category_id = 1;
   string name = 2;
   string description = 3;
-  int32 parent_category_id = 4; // For hierarchical categories
-  string icon_url = 5;
-  string banner_url = 6;
-  bool is_active = 7;
-  int32 sort_order = 8;
-  farmera.common.Timestamp created_at = 9;
-  farmera.common.Timestamp updated_at = 10;
-  repeated Category subcategories = 11;
-  int32 product_count = 12;
+  string image_url = 4;
+  farmera.common.Timestamp created = 5;
 }
 
+message Subcategory {
+  int32 subcategory_id = 1;
+  string name = 2;
+  string description = 3;
+  farmera.common.Timestamp created = 4;
+  Category category = 5;
+}
 // Product subcategory detail
 message ProductSubcategoryDetail {
   int32 id = 1;
   int32 product_id = 2;
-  int32 subcategory_id = 3;
-  Category subcategory = 4;
+  Subcategory subcategory = 3;
 }
 
 // Review message definition
@@ -148,27 +172,22 @@ message Review {
   int32 product_id = 2;
   string user_id = 3;
   int32 rating = 4; // 1-5 stars
-  string title = 5;
-  string comment = 6;
-  repeated farmera.common.Image images = 7;
-  farmera.common.ReviewStatus status = 8;
-  farmera.common.Timestamp created_at = 9;
-  farmera.common.Timestamp updated_at = 10;
-  bool is_verified_purchase = 11;
-  repeated ReviewReply replies = 12;
-  int32 helpful_count = 13;
-  int32 unhelpful_count = 14;
-  string order_id = 15; // Reference to purchase order
+  string comment = 5;
+  repeated string images_urls = 6;
+  repeated string video_urls = 7;
+  bool seller_approved = 8;
+  farmera.common.Timestamp created = 9;
+  bool is_deleted = 10;
+  int32 order_detail_id = 11; // Reference to purchase order
 }
 
 // Review reply
 message ReviewReply {
-  int32 reply_id = 1;
-  int32 review_id = 2;
-  string user_id = 3;
-  string comment = 4;
-  farmera.common.Timestamp created_at = 5;
-  bool is_farmer_reply = 6;
+  int32 id = 1;
+  string user_id = 2;
+  string reply = 3;
+  farmera.common.Timestamp created = 4;
+  int32 review_id = 5;  
 }
 
 // Product process tracking
@@ -188,21 +207,7 @@ message ProductProcess {
   string blockchain_hash = 13; // For blockchain verification
 }
 
-// Product biometric data
-message ProductBiometric {
-  int32 biometric_id = 1;
-  int32 product_id = 2;
-  string metric_name = 3;
-  double value = 4;
-  string unit = 5;
-  farmera.common.Timestamp measured_at = 6;
-  string measured_by = 7;
-  bool is_verified = 8;
-  string device_info = 9;
-  double min_acceptable_value = 10;
-  double max_acceptable_value = 11;
-  bool is_within_range = 12;
-}
+
 
 // Product inventory tracking
 message ProductInventory {
@@ -228,7 +233,7 @@ message FarmStatistics {
 
 // Product management requests/responses
 message CreateProductRequest {
-  int32 farm_id = 1;
+  string farm_id = 1;
   string product_name = 2;
   string description = 3;
   farmera.common.Money price_per_unit = 4;
@@ -251,10 +256,7 @@ message CreateProductResponse {
 
 message GetProductRequest {
   int32 product_id = 1;
-  bool include_farm = 2;
-  bool include_reviews = 3;
-  bool include_processes = 4;
-  bool include_biometrics = 5;
+  optional bool include_farm = 2;
 }
 
 message GetProductResponse {
@@ -291,7 +293,7 @@ message ListProductsRequest {
   farmera.common.PaginationRequest pagination = 1;
   repeated farmera.common.SortOption sort = 2;
   optional farmera.common.ProductStatus status_filter = 3;
-  optional int32 farm_id_filter = 4;
+  optional string farm_id_filter = 4;
   optional int32 category_id_filter = 5;
   optional string search_query = 6;
   optional farmera.common.GeoLocation location_filter = 7;
@@ -319,7 +321,7 @@ message SearchProductsResponse {
 }
 
 message GetProductsByFarmRequest {
-  int32 farm_id = 1;
+  string farm_id = 1;
   farmera.common.PaginationRequest pagination = 2;
   optional farmera.common.ProductStatus status_filter = 3;
 }
@@ -371,9 +373,8 @@ message CreateFarmResponse {
 }
 
 message GetFarmRequest {
-  int32 farm_id = 1;
+  string farm_id = 1;
   bool include_products = 2;
-  bool include_statistics = 3;
 }
 
 message GetFarmResponse {
@@ -382,7 +383,7 @@ message GetFarmResponse {
 }
 
 message UpdateFarmRequest {
-  int32 farm_id = 1;
+  string farm_id = 1;
   optional string farm_name = 2;
   optional string description = 3;
   optional farmera.common.ContactInfo contact_info = 4;
@@ -396,7 +397,7 @@ message UpdateFarmResponse {
 }
 
 message DeleteFarmRequest {
-  int32 farm_id = 1;
+  string farm_id = 1;
   string reason = 2;
 }
 
@@ -430,7 +431,7 @@ message GetFarmsByLocationResponse {
 }
 
 message VerifyFarmRequest {
-  int32 farm_id = 1;
+  string farm_id = 1;
   bool is_verified = 2;
   string verified_by = 3;
   string verification_notes = 4;
@@ -443,11 +444,11 @@ message VerifyFarmResponse {
 // Category management requests/responses
 message CreateCategoryRequest {
   string name = 1;
-  string description = 2;
-  int32 parent_category_id = 3;
-  string icon_url = 4;
-  string banner_url = 5;
-  int32 sort_order = 6;
+  optional string description = 2;
+  bytes category_icon_data = 3;
+  optional string icon_filename = 4;
+  optional string icon_mime_type = 5;
+
 }
 
 message CreateCategoryResponse {
@@ -667,54 +668,7 @@ message VerifyProcessResponse {
   ProductProcess process = 1;
 }
 
-// Biometric requests/responses
-message CreateBiometricRequest {
-  int32 product_id = 1;
-  string metric_name = 2;
-  double value = 3;
-  string unit = 4;
-  farmera.common.Timestamp measured_at = 5;
-  string measured_by = 6;
-  string device_info = 7;
-  double min_acceptable_value = 8;
-  double max_acceptable_value = 9;
-}
 
-message CreateBiometricResponse {
-  ProductBiometric biometric = 1;
-}
-
-message GetBiometricRequest {
-  int32 biometric_id = 1;
-}
-
-message GetBiometricResponse {
-  ProductBiometric biometric = 1;
-}
-
-message ListBiometricsRequest {
-  farmera.common.PaginationRequest pagination = 1;
-  optional int32 product_id_filter = 2;
-  optional string metric_name_filter = 3;
-  optional farmera.common.TimeRange date_range = 4;
-  optional bool verified_only = 5;
-}
-
-message ListBiometricsResponse {
-  repeated ProductBiometric biometrics = 1;
-  farmera.common.PaginationResponse pagination = 2;
-}
-
-message GetProductBiometricsRequest {
-  int32 product_id = 1;
-  farmera.common.PaginationRequest pagination = 2;
-  optional string metric_name_filter = 3;
-}
-
-message GetProductBiometricsResponse {
-  repeated ProductBiometric biometrics = 1;
-  farmera.common.PaginationResponse pagination = 2;
-}
 
 // File management requests/responses
 message UploadProductImageRequest {
@@ -750,3 +704,71 @@ message DeleteProductMediaRequest {
 message DeleteProductMediaResponse {
   bool success = 1;
 } 
+
+message ProductRequest{
+  int32 product_id = 1;
+  optional string product_name = 2;
+  optional string farm_id = 3;
+}
+
+message ProductResponse {
+  Product product = 1;
+  Farm farm = 2;
+
+}
+
+message GetListProductsResponse{
+  repeated ProductResponse products_found = 1; 
+}
+
+
+message GetListProductsRequest{
+  repeated ProductRequest products = 1;
+}
+
+message GetAllCategoryWithSubcategoryRequest{
+  
+}
+message GetAllCategoryWithSubcategoryResponse{
+  repeated Category categories = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message CreateSubcategoryRequest {
+  string name = 1;
+  optional string description = 2;
+  int32 category_id = 3;
+}
+
+message CreateSubcategoryResponse{
+  Subcategory subcategory = 1;
+}
+
+message GetSubcategoryResponse{
+  Subcategory subcategory = 1;
+}
+
+message GetSubcategoryRequest {
+  int32 subcategory_id = 1;
+  optional string name = 2;
+}
+message GetFarmByUserRequest{
+  string user_id = 1;
+  bool include_products = 2;
+}
+
+message GetFarmByUserResponse {
+  Farm farm = 1;
+  repeated Product products = 2;
+}
+
+message UpdateFarmStatusRequest{
+  string farm_id = 1;
+  string user_id = 2;
+  string status = 3;
+  optional string reason = 4;
+ }
+
+message UpdateFarmStatusResponse{
+  Farm farm = 1;
+}

@@ -11,7 +11,7 @@ async function bootstrap() {
             transport: Transport.GRPC,
             options: {
                 package: 'farmera.products',
-                protoPath: '../../../shared/grpc-protos/products/products.proto',
+                protoPath: join(__dirname, '../../../shared/grpc-protos/products/products.proto'),
                 url: 'localhost:50052',
                 loader: {
                     keepCase: true,
@@ -20,7 +20,6 @@ async function bootstrap() {
                     defaults: true,
                     oneofs: true,
                     includeDirs: [
-                        join(__dirname, '../../../shared/grpc-protos/include'),
                         join(__dirname, '../../../shared/grpc-protos')
                     ],
                 },

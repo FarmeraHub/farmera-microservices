@@ -7,10 +7,11 @@ import { Subcategory } from './entities/subcategory.entity';
 import { MulterModule } from '@nestjs/platform-express';
 import { multerAsyncConfig } from 'src/config/multer.config';
 import { FileStorageModule } from 'src/file-storage/file-storage.module';
+import { ProductSubcategoryDetail } from 'src/products/entities/product-subcategory-detail.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Category,Subcategory]),
+    TypeOrmModule.forFeature([Category,Subcategory,ProductSubcategoryDetail]),
     MulterModule.registerAsync(multerAsyncConfig),
     FileStorageModule,
     

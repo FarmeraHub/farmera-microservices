@@ -1,4 +1,4 @@
-import { Entity,Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
 import { Category } from "./category.entity";
 
 @Entity('subcategory')
@@ -10,8 +10,8 @@ export class Subcategory {
     @Column({ type: 'text', nullable: true })
     description: string;
     @CreateDateColumn()
-    createdAt: Date;
-    @ManyToOne(()=>Category,{nullable:false})
-    @JoinColumn({name:'category_id'})
+    created: Date;
+    @ManyToOne(() => Category, { nullable: false })
+    @JoinColumn({ name: 'category_id' })
     category: Category;
 }
