@@ -1,17 +1,74 @@
-import { AddPaymentMethodRequest, AddPaymentMethodResponse, AddUserLocationRequest, AddUserLocationResponse, CreateUserRequest, CreateUserResponse, DeletePaymentMethodRequest, DeletePaymentMethodResponse, DeleteUserLocationRequest, DeleteUserLocationResponse, DeleteUserRequest, DeleteUserResponse, ForgotPasswordRequest, ForgotPasswordResponse, GetPaymentMethodsRequest, GetPaymentMethodsResponse, GetUserLocationsRequest, GetUserLocationsResponse, GetUserProfileRequest, GetUserProfileResponse, GetUserRequest, GetUserResponse, GetUsersByRoleRequest, GetUsersByRoleResponse, GetUserStatsRequest, GetUserStatsResponse, ListUsersRequest, ListUsersResponse, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse, SendVerificationEmailRequest, SendVerificationEmailResponse, UpdatePasswordRequest, UpdatePasswordResponse, UpdatePaymentMethodRequest, UpdatePaymentMethodResponse, UpdateUserLocationRequest, UpdateUserLocationResponse, UpdateUserProfileRequest, UpdateUserProfileResponse, UpdateUserRequest, UpdateUserResponse, UpdateUserStatusRequest, UpdateUserStatusResponse, UsersServiceController, UsersServiceControllerMethods, VerifyEmailRequest, VerifyEmailResponse } from "@farmera/grpc-proto/dist/users/users"
-import { status } from "@grpc/grpc-js";
-import { Controller, Logger } from "@nestjs/common";
-import { RpcException } from "@nestjs/microservices";
-import { AuthService } from "src/auth/auth.service";
-import { Public } from "src/decorators/public.decorator";
-import { UsersService } from "src/users/users.service";
-import { VerificationService } from "src/verification/verification.service";
-import { UserMapper } from "./mappers/users/user.mapper";
-import { TypesMapper } from "./mappers/common/types.mapper";
-import { PaginationMapper } from "./mappers/common/pagination.mapper";
-import { LocationMapper } from "./mappers/users/location.mapper";
-import { EnumsMapper } from "./mappers/common/enums.mapper";
-import { PaymentMapper } from "./mappers/users/payment.mapper";
+import {
+  AddPaymentMethodRequest,
+  AddPaymentMethodResponse,
+  AddUserLocationRequest,
+  AddUserLocationResponse,
+  CreateUserRequest,
+  CreateUserResponse,
+  DeletePaymentMethodRequest,
+  DeletePaymentMethodResponse,
+  DeleteUserLocationRequest,
+  DeleteUserLocationResponse,
+  DeleteUserRequest,
+  DeleteUserResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  GetPaymentMethodsRequest,
+  GetPaymentMethodsResponse,
+  GetUserLocationsRequest,
+  GetUserLocationsResponse,
+  GetUserProfileRequest,
+  GetUserProfileResponse,
+  GetUserRequest,
+  GetUserResponse,
+  GetUsersByRoleRequest,
+  GetUsersByRoleResponse,
+  GetUserStatsRequest,
+  GetUserStatsResponse,
+  ListUsersRequest,
+  ListUsersResponse,
+  LoginRequest,
+  LoginResponse,
+  LogoutRequest,
+  LogoutResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  SendVerificationEmailRequest,
+  SendVerificationEmailResponse,
+  SendVerificationPhoneRequest,
+  SendVerificationPhoneResponse,
+  UpdatePasswordRequest,
+  UpdatePasswordResponse,
+  UpdatePaymentMethodRequest,
+  UpdatePaymentMethodResponse,
+  UpdateUserLocationRequest,
+  UpdateUserLocationResponse,
+  UpdateUserProfileRequest,
+  UpdateUserProfileResponse,
+  UpdateUserRequest,
+  UpdateUserResponse,
+  UpdateUserStatusRequest,
+  UpdateUserStatusResponse,
+  UsersServiceController,
+  UsersServiceControllerMethods,
+  VerifyEmailRequest,
+  VerifyEmailResponse,
+  VerifyPhoneRequest,
+  VerifyPhoneResponse,
+} from '@farmera/grpc-proto/dist/users/users';
+import { status } from '@grpc/grpc-js';
+import { Controller, Logger } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { AuthService } from 'src/auth/auth.service';
+import { Public } from 'src/decorators/public.decorator';
+import { UsersService } from 'src/users/users.service';
+import { VerificationService } from 'src/verification/verification.service';
+import { UserMapper } from './mappers/users/user.mapper';
+import { TypesMapper } from './mappers/common/types.mapper';
+import { PaginationMapper } from './mappers/common/pagination.mapper';
+import { LocationMapper } from './mappers/users/location.mapper';
+import { EnumsMapper } from './mappers/common/enums.mapper';
+import { PaymentMapper } from './mappers/users/payment.mapper';
 
 @Controller()
 @UsersServiceControllerMethods()
@@ -22,12 +79,14 @@ export class UsersGrpcController implements UsersServiceController {
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
     private readonly verificationService: VerificationService,
-  ) { }
+  ) {}
 
   @Public()
   async login(request: LoginRequest): Promise<LoginResponse> {
     try {
-      this.logger.log(`gRPC Login request for email: ${JSON.stringify(request.email)}`);
+      this.logger.log(
+        `gRPC Login request for email: ${JSON.stringify(request.email)}`,
+      );
 
       const result = await this.authService.login(
         { email: request.email, password: request.password },
@@ -61,7 +120,9 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse> {
+  async refreshToken(
+    request: RefreshTokenRequest,
+  ): Promise<RefreshTokenResponse> {
     try {
       this.logger.log('gRPC RefreshToken request');
 
@@ -108,9 +169,13 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async forgotPassword(request: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
+  async forgotPassword(
+    request: ForgotPasswordRequest,
+  ): Promise<ForgotPasswordResponse> {
     try {
-      this.logger.log(`gRPC ForgotPassword request for email: ${request.email}`);
+      this.logger.log(
+        `gRPC ForgotPassword request for email: ${request.email}`,
+      );
 
       await this.authService.forgotPassword({
         email: request.email,
@@ -130,7 +195,9 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async updatePassword(request: UpdatePasswordRequest): Promise<UpdatePasswordResponse> {
+  async updatePassword(
+    request: UpdatePasswordRequest,
+  ): Promise<UpdatePasswordResponse> {
     try {
       this.logger.log(`gRPC UpdatePassword request for user: ${request.email}`);
 
@@ -171,7 +238,7 @@ export class UsersGrpcController implements UsersServiceController {
       const user = await this.usersService.createUserSignUp(createUserDto);
 
       return {
-        user: UserMapper.anyToGrpcUser(user as any)
+        user: UserMapper.anyToGrpcUser(user as any),
       };
     } catch (error) {
       this.logger.error(`CreateUser error: ${error.message}`);
@@ -185,8 +252,12 @@ export class UsersGrpcController implements UsersServiceController {
   @Public()
   async getUser(request: GetUserRequest): Promise<GetUserResponse> {
     try {
-      this.logger.log(`gRPC GetUser request for user: ${JSON.stringify(request)}`);
-      this.logger.log(`gRPC GetUser request for user: ${JSON.stringify(request.user_id)}`);
+      this.logger.log(
+        `gRPC GetUser request for user: ${JSON.stringify(request)}`,
+      );
+      this.logger.log(
+        `gRPC GetUser request for user: ${JSON.stringify(request.user_id)}`,
+      );
 
       const user = await this.usersService.getUserById(request.user_id);
 
@@ -218,7 +289,10 @@ export class UsersGrpcController implements UsersServiceController {
       if (request.birthday)
         updateData.birthday = TypesMapper.fromGrpcTimestamp(request.birthday);
 
-      const user = await this.usersService.updateUser(request.user_id, updateData);
+      const user = await this.usersService.updateUser(
+        request.user_id,
+        updateData,
+      );
 
       return { user: UserMapper.userToGrpcUser(user) };
     } catch (error) {
@@ -266,7 +340,9 @@ export class UsersGrpcController implements UsersServiceController {
       if (request.created_date_range) {
         filters.created_date_range = {
           start_time: request.created_date_range.start_time
-            ? TypesMapper.fromGrpcTimestamp(request.created_date_range.start_time)
+            ? TypesMapper.fromGrpcTimestamp(
+                request.created_date_range.start_time,
+              )
             : undefined,
           end_time: request.created_date_range.end_time
             ? TypesMapper.fromGrpcTimestamp(request.created_date_range.end_time)
@@ -281,8 +357,8 @@ export class UsersGrpcController implements UsersServiceController {
         pagination: PaginationMapper.toPaginationResponse(
           result.pagination.total_items,
           result.pagination.current_page,
-          result.pagination.page_size
-        )
+          result.pagination.page_size,
+        ),
       };
     } catch (error) {
       this.logger.error(`ListUsers error: ${error.message}`);
@@ -294,7 +370,9 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async sendVerificationEmail(request: SendVerificationEmailRequest): Promise<SendVerificationEmailResponse> {
+  async sendVerificationEmail(
+    request: SendVerificationEmailRequest,
+  ): Promise<SendVerificationEmailResponse> {
     try {
       this.logger.log(`gRPC SendVerificationEmail request`);
 
@@ -333,7 +411,9 @@ export class UsersGrpcController implements UsersServiceController {
         });
 
         // Clean up verification
-        await this.verificationService.deleteVerification(request.email as string);
+        await this.verificationService.deleteVerification(
+          request.email as string,
+        );
       }
 
       return {
@@ -349,9 +429,73 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async getUserProfile(request: GetUserProfileRequest): Promise<GetUserProfileResponse> {
+  async sendVerificationPhone(
+    request: SendVerificationPhoneRequest,
+  ): Promise<SendVerificationPhoneResponse> {
     try {
-      this.logger.log(`gRPC GetUserProfile request for user: ${request.user_id}`);
+      this.logger.log(`gRPC SendVerificationPhone request`);
+
+      if (!request.phone) {
+        throw new RpcException({
+          code: status.INVALID_ARGUMENT,
+          message: 'Phone number is required',
+        });
+      }
+
+      await this.verificationService.createPhoneVerification({
+        phone: request.phone,
+      });
+
+      return {
+        success: true,
+        message: 'Verification SMS sent',
+      };
+    } catch (error) {
+      this.logger.error(`SendVerificationPhone error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to send verification SMS',
+      });
+    }
+  }
+
+  @Public()
+  async verifyPhone(request: VerifyPhoneRequest): Promise<VerifyPhoneResponse> {
+    try {
+      this.logger.log(`gRPC VerifyPhone request`);
+
+      if (request.verification_code) {
+        await this.verificationService.verifyPhoneCode({
+          phone: request.phone as string,
+          code: request.verification_code,
+        });
+
+        // Clean up verification
+        await this.verificationService.deletePhoneVerification(
+          request.phone as string,
+        );
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      this.logger.error(`VerifyPhone error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to verify phone',
+      });
+    }
+  }
+
+  @Public()
+  async getUserProfile(
+    request: GetUserProfileRequest,
+  ): Promise<GetUserProfileResponse> {
+    try {
+      this.logger.log(
+        `gRPC GetUserProfile request for user: ${request.user_id}`,
+      );
 
       const result = await this.usersService.getUserProfile(request.user_id);
 
@@ -369,7 +513,9 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async updateUserProfile(request: UpdateUserProfileRequest): Promise<UpdateUserProfileResponse> {
+  async updateUserProfile(
+    request: UpdateUserProfileRequest,
+  ): Promise<UpdateUserProfileResponse> {
     try {
       this.logger.log(
         `gRPC UpdateUserProfile request for user: ${request.user_id}`,
@@ -400,23 +546,30 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async addUserLocation(request: AddUserLocationRequest): Promise<AddUserLocationResponse> {
+  async addUserLocation(
+    request: AddUserLocationRequest,
+  ): Promise<AddUserLocationResponse> {
     try {
-      this.logger.log(`gRPC AddUserLocation request for user: ${request.user_id}`);
+      this.logger.log(
+        `gRPC AddUserLocation request for user: ${request.user_id}`,
+      );
 
-      const location = await this.usersService.addUserLocation(request.user_id, {
-        address_line: request.location?.address_line || '',
-        city: request.location?.city || '',
-        state: request.location?.state || '',
-        postal_code: request.location?.postal_code || '',
-        country: request.location?.country || '',
-        latitude: request.location?.latitude || 0,
-        longitude: request.location?.longitude || 0,
-        is_default: request.location?.is_default || false,
-      });
+      const location = await this.usersService.addUserLocation(
+        request.user_id,
+        {
+          address_line: request.location?.address_line || '',
+          city: request.location?.city || '',
+          state: request.location?.state || '',
+          postal_code: request.location?.postal_code || '',
+          country: request.location?.country || '',
+          latitude: request.location?.latitude || 0,
+          longitude: request.location?.longitude || 0,
+          is_default: request.location?.is_default || false,
+        },
+      );
 
       return {
-        location: LocationMapper.toGrpcLocation(location)
+        location: LocationMapper.toGrpcLocation(location),
       };
     } catch (error) {
       this.logger.error(`AddUserLocation error: ${error.message}`);
@@ -428,20 +581,24 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async addPaymentMethod(request: AddPaymentMethodRequest): Promise<AddPaymentMethodResponse> {
+  async addPaymentMethod(
+    request: AddPaymentMethodRequest,
+  ): Promise<AddPaymentMethodResponse> {
     try {
       this.logger.log(
         `gRPC AddPaymentMethod request for user: ${request.user_id}`,
       );
 
       if (!request.payment_method) {
-        throw new Error("Invalid payment method");
+        throw new Error('Invalid payment method');
       }
 
       const paymentMethod = await this.usersService.addPaymentMethod(
         request.user_id,
         {
-          type: EnumsMapper.fromGrpcPaymentMethodType(request.payment_method.type),
+          type: EnumsMapper.fromGrpcPaymentMethodType(
+            request.payment_method.type,
+          ),
           display_name: request.payment_method.display_name,
           last_four_digits: request.payment_method.last_four_digits,
           provider: request.payment_method.provider,
@@ -454,7 +611,7 @@ export class UsersGrpcController implements UsersServiceController {
       );
 
       return {
-        payment_method: PaymentMapper.toGrpcPaymentMethod(paymentMethod)
+        payment_method: PaymentMapper.toGrpcPaymentMethod(paymentMethod),
       };
     } catch (error) {
       this.logger.error(`AddPaymentMethod error: ${error.message}`);
@@ -466,7 +623,9 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async getUsersByRole(request: GetUsersByRoleRequest): Promise<GetUsersByRoleResponse> {
+  async getUsersByRole(
+    request: GetUsersByRoleRequest,
+  ): Promise<GetUsersByRoleResponse> {
     try {
       this.logger.log(`gRPC GetUsersByRole request for role: ${request.role}`);
 
@@ -480,8 +639,8 @@ export class UsersGrpcController implements UsersServiceController {
         pagination: PaginationMapper.toPaginationResponse(
           result.pagination.total_items,
           result.pagination.current_page,
-          result.pagination.page_size
-        )
+          result.pagination.page_size,
+        ),
       };
     } catch (error) {
       this.logger.error(`GetUsersByRole error: ${error.message}`);
@@ -493,7 +652,9 @@ export class UsersGrpcController implements UsersServiceController {
   }
 
   @Public()
-  async updateUserStatus(request: UpdateUserStatusRequest): Promise<UpdateUserStatusResponse> {
+  async updateUserStatus(
+    request: UpdateUserStatusRequest,
+  ): Promise<UpdateUserStatusResponse> {
     try {
       this.logger.log(
         `gRPC UpdateUserStatus request for user: ${request.user_id}`,
@@ -516,7 +677,9 @@ export class UsersGrpcController implements UsersServiceController {
     }
   }
 
-  async getUserStats(request: GetUserStatsRequest): Promise<GetUserStatsResponse> {
+  async getUserStats(
+    request: GetUserStatsRequest,
+  ): Promise<GetUserStatsResponse> {
     try {
       this.logger.log(`gRPC GetUserStats request ${request}`);
 
@@ -543,6 +706,111 @@ export class UsersGrpcController implements UsersServiceController {
       throw new RpcException({
         code: status.INTERNAL,
         message: error.message || 'Failed to get user stats',
+      });
+    }
+  }
+
+  @Public()
+  async updateUserLocation(
+    request: UpdateUserLocationRequest,
+  ): Promise<UpdateUserLocationResponse> {
+    try {
+      this.logger.log(
+        `gRPC UpdateUserLocation request for user: ${request.user_id}, location: ${request.location_id}`,
+      );
+
+      if (!request.location) {
+        throw new RpcException({
+          code: status.INVALID_ARGUMENT,
+          message: 'Location data is required',
+        });
+      }
+
+      const locationData = {
+        city: request.location.city,
+        district: request.location.state, // Map state to district for our entity
+        address_line: request.location.address_line,
+        street: request.location.address_line, // Use address_line as street
+        is_primary: request.location.is_default, // Map is_default to is_primary
+        latitude: request.location.latitude,
+        longitude: request.location.longitude,
+        country: request.location.country,
+        postal_code: request.location.postal_code,
+        state: request.location.state,
+      };
+
+      const location = await this.usersService.updateUserLocation(
+        request.location_id,
+        locationData,
+      );
+
+      if (!location) {
+        throw new RpcException({
+          code: status.NOT_FOUND,
+          message: 'Location not found',
+        });
+      }
+
+      return {
+        location: LocationMapper.toGrpcLocation(location),
+      };
+    } catch (error) {
+      this.logger.error(`UpdateUserLocation error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to update user location',
+      });
+    }
+  }
+
+  @Public()
+  async deleteUserLocation(
+    request: DeleteUserLocationRequest,
+  ): Promise<DeleteUserLocationResponse> {
+    try {
+      this.logger.log(
+        `gRPC DeleteUserLocation request for user: ${request.user_id}, location: ${request.location_id}`,
+      );
+
+      const result = await this.usersService.deleteUserLocation(
+        request.location_id,
+      );
+
+      return {
+        success: result.success,
+      };
+    } catch (error) {
+      this.logger.error(`DeleteUserLocation error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to delete user location',
+      });
+    }
+  }
+
+  @Public()
+  async getUserLocations(
+    request: GetUserLocationsRequest,
+  ): Promise<GetUserLocationsResponse> {
+    try {
+      this.logger.log(
+        `gRPC GetUserLocations request for user: ${request.user_id}`,
+      );
+
+      const locations = await this.usersService.getUserLocations(
+        request.user_id,
+      );
+
+      return {
+        locations: locations.map((location) =>
+          LocationMapper.toGrpcLocation(location),
+        ),
+      };
+    } catch (error) {
+      this.logger.error(`GetUserLocations error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to get user locations',
       });
     }
   }

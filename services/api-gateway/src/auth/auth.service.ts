@@ -20,6 +20,8 @@ import {
   RegisterDto,
   SendVerificationEmailDto,
   VerifyEmailDto,
+  SendVerificationPhoneDto,
+  VerifyPhoneDto,
 } from './dto';
 import { ClientGrpc } from '@nestjs/microservices';
 import { HashService } from '../services/hash.service';
@@ -76,14 +78,14 @@ interface VerifyEmailResponse {
   user: any;
 }
 
-interface GetUserProfileResponse {
-  user: any;
-  stats: {
-    total_orders: number;
-    total_reviews: number;
-    loyalty_points: number;
-    member_since: any;
-  };
+interface SendVerificationPhoneResponse {
+  success: boolean;
+  message: string;
+}
+
+interface VerifyPhoneResponse {
+  success: boolean;
+  user?: any;
 }
 
 // gRPC service interface
@@ -96,7 +98,8 @@ interface UsersGrpcService {
   createUser(data: any): Observable<CreateUserResponse>;
   sendVerificationEmail(data: any): Observable<SendVerificationEmailResponse>;
   verifyEmail(data: any): Observable<VerifyEmailResponse>;
-  getUserProfile(data: any): Observable<GetUserProfileResponse>;
+  sendVerificationPhone(data: any): Observable<SendVerificationPhoneResponse>;
+  verifyPhone(data: any): Observable<VerifyPhoneResponse>;
 }
 
 @Injectable()
@@ -360,10 +363,6 @@ export class AuthService implements OnModuleInit {
         `Processing send verification email request for: ${req.email}`,
       );
 
-      if (!req.email) {
-        throw new BadRequestException('Email is required');
-      }
-
       const result = await firstValueFrom(
         this.usersGrpcService.sendVerificationEmail({
           email: req.email,
@@ -426,42 +425,70 @@ export class AuthService implements OnModuleInit {
     }
   }
 
-  async getUserProfile(userId: string) {
+  async sendVerificationPhone(req: SendVerificationPhoneDto) {
     try {
-      if (!userId) {
-        throw new UnauthorizedException('User not authenticated');
-      }
-
-      this.logger.log(`Getting user profile for user: ${userId}`);
+      this.logger.log(
+        `Processing send verification phone request for: ${req.phone}`,
+      );
 
       const result = await firstValueFrom(
-        this.usersGrpcService.getUserProfile({
-          user_id: userId,
+        this.usersGrpcService.sendVerificationPhone({
+          phone: req.phone,
         }),
       );
 
-      if (result.user) {
-        this.logger.log('User profile retrieved successfully');
+      if (result.success) {
+        this.logger.log('Verification SMS sent successfully');
         return {
-          user: result.user,
-          stats: result.stats,
+          success: true,
+          message: result.message || 'Verification SMS sent',
         };
       }
 
-      throw new Error('Failed to get user profile');
+      throw new Error('Failed to send verification SMS');
     } catch (error) {
-      this.logger.error(`Get user profile failed: ${error.message}`);
-
-      // Check if it's an authentication error
-      if (error.message?.includes('authenticated') || error.code === 16) {
-        throw new UnauthorizedException(
-          error.details || 'User not authenticated',
-        );
-      }
+      this.logger.error(`Send verification SMS failed: ${error.message}`);
 
       // Use error.details if available, otherwise provide a generic message
       throw new BadRequestException(
-        error.details || 'Failed to get user profile',
+        error.details || 'Failed to send verification SMS',
+      );
+    }
+  }
+
+  async verifyPhone(req: VerifyPhoneDto) {
+    try {
+      this.logger.log(`Processing phone verification for: ${req.phone}`);
+
+      if (!req.phone) {
+        throw new BadRequestException('Phone number is required');
+      }
+
+      if (!req.verification_code) {
+        throw new BadRequestException('Verification code is required');
+      }
+
+      const result = await firstValueFrom(
+        this.usersGrpcService.verifyPhone({
+          phone: req.phone,
+          verification_code: req.verification_code,
+        }),
+      );
+
+      if (result.success) {
+        this.logger.log('Phone verified successfully');
+        return {
+          success: true,
+        };
+      }
+
+      throw new Error('Failed to verify phone');
+    } catch (error) {
+      this.logger.error(`Phone verification failed: ${error.message}`);
+
+      // Use error.details if available, otherwise provide a generic message
+      throw new BadRequestException(
+        error.details || 'Phone verification failed',
       );
     }
   }
