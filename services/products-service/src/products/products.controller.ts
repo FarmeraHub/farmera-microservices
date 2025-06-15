@@ -141,21 +141,21 @@ export class ProductsController {
   }
 
 
-  @Post('by-ids')
-  async getMultipleProductsByIds(
-    @Body() getProductsDto: GetProductsByIdsRequestDto,
-  ): Promise<ResponseProductDto[]> {
-    this.logger.log(`[HTTP Test - GetMultipleProductsByIds] Received request for product IDs: ${JSON.stringify(getProductsDto.product_ids)}`);
+  // @Post('by-ids')
+  // async getMultipleProductsByIds(
+  //   @Body() getProductsDto: GetProductsByIdsRequestDto,
+  // ): Promise<ResponseProductDto[]> {
+  //   this.logger.log(`[HTTP Test - GetMultipleProductsByIds] Received request for product IDs: ${JSON.stringify(getProductsDto.product_ids)}`);
 
-    try {
-      const products = await this.productsService.getProductsByIds(getProductsDto.product_ids);
-      this.logger.log(`[HTTP Test - GetMultipleProductsByIds] Found ${products.length} products.`);
-      return products;
-    } catch (error) {
-      this.logger.error(`[HTTP Test - GetMultipleProductsByIds] Error: ${error.message}`, error.stack);
-      // NestJS sẽ tự động xử lý các exception chuẩn như BadRequestException, NotFoundException
-      // Bạn có thể ném lại lỗi để NestJS xử lý hoặc custom response nếu cần
-      throw error;
-    }
-  }
+  //   try {
+  //     const products = await this.productsService.getProductsByIds(getProductsDto.product_ids);
+  //     this.logger.log(`[HTTP Test - GetMultipleProductsByIds] Found ${products.length} products.`);
+  //     return products;
+  //   } catch (error) {
+  //     this.logger.error(`[HTTP Test - GetMultipleProductsByIds] Error: ${error.message}`, error.stack);
+  //     // NestJS sẽ tự động xử lý các exception chuẩn như BadRequestException, NotFoundException
+  //     // Bạn có thể ném lại lỗi để NestJS xử lý hoặc custom response nếu cần
+  //     throw error;
+  //   }
+  // }
 }

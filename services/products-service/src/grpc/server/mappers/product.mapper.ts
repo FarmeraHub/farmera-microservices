@@ -41,6 +41,7 @@ import { FarmRegistrationDto } from 'src/farms/dto/farm-registration.dto';
 import { EnumsMapper } from './common/enums.mapper';
 import { TypesMapper } from './common/types.mapper';
 import { FarmMapper } from './product/farm.mapper';
+import { CategoryMapper } from './product/category.mapper';
 export class ProductMapper {
 
 
@@ -169,23 +170,10 @@ export class ProductMapper {
       subcategory_id: subcategory.subcategory_id,
       name: subcategory.name,
       description: subcategory.description,
-      category: subcategory.category ? this.toGrpcCategory(subcategory.category) : undefined,
+      category: subcategory.category ? CategoryMapper.toGrpcCategory(subcategory.category) : undefined,
       created: TypesMapper.toGrpcTimestamp(subcategory.created),
     };
   }
-  static toGrpcCategory(category: Category): GrpcCategory | undefined {
-    if (!category) {
-      return undefined;
-    }
-    return {
-      category_id: category.category_id,
-      name: category.name,
-      description: category.description,
-      created: TypesMapper.toGrpcTimestamp(category.created),
-      image_url: category.image_url,
-    };
-  }
-
 
   static toGrpcProductResponse(product: Product, Farm?: Farm): GrpcProductResponse {
     const grpcProduct = this.toGrpcProduct(product);
@@ -239,7 +227,7 @@ export class ProductMapper {
 
   static toGrpcGetAllCategoryWithSubcategoryResponse(categories: Category[]): GetAllCategoryWithSubcategoryResponse {
     const grpcCategories = categories
-      .map(category => this.toGrpcCategory(category))
+      .map(category => CategoryMapper.toGrpcCategory(category))
       .filter((category): category is GrpcCategory => category !== undefined);
 
     return {
@@ -254,34 +242,6 @@ export class ProductMapper {
         next_cursor: '',
         previous_cursor: '',
       },
-    }
-  }
-  static toGrpcGetCategoryResponse(category: Category): GrpcGetCategoryResponse | undefined {
-    const grpcCategory: GrpcCategory | undefined = this.toGrpcCategory(category);
-    if (!grpcCategory) {
-      throw new BadGatewayException('Invalid category data');
-    }
-    return {
-      category: grpcCategory,
-    }
-  }
-  static toGrpcCreateSubcategoryResponse(subcategory: Subcategory): GrpcCreateSubcategoryResponse | undefined {
-    const grpcSubcategory: GrpcSubcategory | undefined = this.toGrpcSubcategory(subcategory);
-    if (!grpcSubcategory) {
-      throw new BadGatewayException('Invalid subcategory data');
-    }
-    return {
-      subcategory: grpcSubcategory,
-    }
-  }
-  static toGrpcGetSubcategoryResponse(subcategory: Subcategory): GrpcGetSubcategoryResponse | undefined {
-
-    const grpcSubcategory: GrpcSubcategory | undefined = this.toGrpcSubcategory(subcategory);
-    if (!grpcSubcategory) {
-      throw new BadGatewayException('Invalid subcategory data');
-    }
-    return {
-      subcategory: grpcSubcategory,
     }
   }
 }

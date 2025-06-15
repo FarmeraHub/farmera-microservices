@@ -9,7 +9,7 @@ export class Subcategory {
     name: string;
     @Column({ type: 'text', nullable: true })
     description: string;
-    @CreateDateColumn()
+    @CreateDateColumn({ type: "timestamptz" })
     created: Date;
     @ManyToOne(() => Category, { nullable: false })
     @JoinColumn({ name: 'category_id' })

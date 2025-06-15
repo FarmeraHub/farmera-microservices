@@ -560,72 +560,72 @@ export class ProductsService {
     }
 
 
-    async getProductsByIds(ids: string[]): Promise<any[]> {
-        const productIds = ids.map(id => Number(id)).filter(id => !isNaN(id));
-        if (productIds.length === 0) {
-            return [];
-        }
+    // async getProductsByIds(ids: string[]): Promise<any[]> {
+    //     const productIds = ids.map(id => Number(id)).filter(id => !isNaN(id));
+    //     if (productIds.length === 0) {
+    //         return [];
+    //     }
 
-        const productEntities = await this.productsRepository.find({
-            where: { product_id: In(productIds) },
-            relations: ['farm'],
-        });
+    //     const productEntities = await this.productsRepository.find({
+    //         where: { product_id: In(productIds) },
+    //         relations: ['farm'],
+    //     });
 
-        if (productEntities.length === 0) {
-            return []; // Trả về mảng rỗng
-        }
-        const productEntityMap = new Map(productEntities.map(p => [p.product_id, p]));
+    //     if (productEntities.length === 0) {
+    //         return []; // Trả về mảng rỗng
+    //     }
+    //     const productEntityMap = new Map(productEntities.map(p => [p.product_id, p]));
 
-        const farmIdsFromProducts = productEntities
-            .map(p => p.farm?.farm_id)
-            .filter(id => id !== undefined && id !== null) as string[];
-        let farmsMap = new Map<string | number, Farm>();
-        if (farmIdsFromProducts.length > 0) {
-            const farmEntitiesFromService = await this.farmsService.findFarmsByIds(farmIdsFromProducts);
-            farmsMap = new Map(farmEntitiesFromService.map(f => [f.farm_id, f]));
-        }
+    //     const farmIdsFromProducts = productEntities
+    //         .map(p => p.farm?.farm_id)
+    //         .filter(id => id !== undefined && id !== null) as string[];
+    //     let farmsMap = new Map<string | number, Farm>();
+    //     if (farmIdsFromProducts.length > 0) {
+    //         const farmEntitiesFromService = await this.farmsService.findFarmsByIds(farmIdsFromProducts);
+    //         farmsMap = new Map(farmEntitiesFromService.map(f => [f.farm_id, f]));
+    //     }
 
-        const foundProductIds = productEntities.map(p => p.product_id);
-        // Giả sử categoriesService trả về ProductSubcategoryDetail[]
-        const allSubcategoryDetails: ProductSubcategoryDetail[] = await this.categoriesService.findProductSubcategoryDetailsByProductIds(foundProductIds);
+    //     const foundProductIds = productEntities.map(p => p.product_id);
+    //     // Giả sử categoriesService trả về ProductSubcategoryDetail[]
+    //     const allSubcategoryDetails: ProductSubcategoryDetail[] = await this.categoriesService.findProductSubcategoryDetailsByProductIds(foundProductIds);
 
-        const subcategoryDetailsByProductId = new Map<number, ProductSubcategoryDetail[]>();
-        for (const detail of allSubcategoryDetails) {
-            const detailProductId = detail.product?.product_id;
-            if (detailProductId === undefined) continue;
-            if (!subcategoryDetailsByProductId.has(detailProductId)) {
-                subcategoryDetailsByProductId.set(detailProductId, []);
-            }
-            subcategoryDetailsByProductId.get(detailProductId)!.push(detail);
-        }
+    //     const subcategoryDetailsByProductId = new Map<number, ProductSubcategoryDetail[]>();
+    //     for (const detail of allSubcategoryDetails) {
+    //         const detailProductId = detail.product?.product_id;
+    //         if (detailProductId === undefined) continue;
+    //         if (!subcategoryDetailsByProductId.has(detailProductId)) {
+    //             subcategoryDetailsByProductId.set(detailProductId, []);
+    //         }
+    //         subcategoryDetailsByProductId.get(detailProductId)!.push(detail);
+    //     }
 
-        // Khởi tạo mảng để chứa các ResponseProductDto
-        const results: Product[] = []; // Đặt tên là 'results' hoặc 'responseProductDtos'
+    //     // Khởi tạo mảng để chứa các ResponseProductDto
+    //     const results: Product[] = []; // Đặt tên là 'results' hoặc 'responseProductDtos'
 
-        for (const originalProductId of productIds) {
-            const productEntity = productEntityMap.get(originalProductId);
-            if (!productEntity) continue;
+    //     for (const originalProductId of productIds) {
+    //         const productEntity = productEntityMap.get(originalProductId);
+    //         if (!productEntity) continue;
 
-            const farmEntity = productEntity.farm ? farmsMap.get(productEntity.farm.farm_id) : undefined;
-            const responseFarm: Farm | undefined = farmEntity ? farmEntity : undefined;
+    //         const farmEntity = productEntity.farm ? farmsMap.get(productEntity.farm.farm_id) : undefined;
+    //         const responseFarm: Farm | undefined = farmEntity ? farmEntity : undefined;
 
-            const productSpecificSubcategories = subcategoryDetailsByProductId.get(productEntity.product_id) || [];
-            const categories = this.categoriesService.mapProductSubcategoryDetailsToCategoryDtos(productSpecificSubcategories);
+    //         const productSpecificSubcategories = subcategoryDetailsByProductId.get(productEntity.product_id) || [];
+    //         const categories = this.categoriesService.mapProductSubcategoryDetailsToCategoryDtos(productSpecificSubcategories);
 
-            results.push(new Product());
-        }
-        this.logger.log(`(getProductsByIds) PRE-STRINGIFY: Found ${results.length} products.`);
-        try {
-            this.logger.log(`(getProductsByIds) STRINGIFYING: results content: ${JSON.stringify(results, null, 2)}`);
-        } catch (e) {
-            this.logger.error(`(getProductsByIds) ERROR DURING JSON.stringify: ${e.message}`);
-            // Log một phần nhỏ hơn, an toàn hơn để xem cấu trúc
-            if (results && results.length > 0) {
-                this.logger.log(`(getProductsByIds) First result keys: ${Object.keys(results[0]).join(', ')}`);
-            }
-        }
-        return results;
-    }
+    //         results.push(new Product());
+    //     }
+    //     this.logger.log(`(getProductsByIds) PRE-STRINGIFY: Found ${results.length} products.`);
+    //     try {
+    //         this.logger.log(`(getProductsByIds) STRINGIFYING: results content: ${JSON.stringify(results, null, 2)}`);
+    //     } catch (e) {
+    //         this.logger.error(`(getProductsByIds) ERROR DURING JSON.stringify: ${e.message}`);
+    //         // Log một phần nhỏ hơn, an toàn hơn để xem cấu trúc
+    //         if (results && results.length > 0) {
+    //             this.logger.log(`(getProductsByIds) First result keys: ${Object.keys(results[0]).join(', ')}`);
+    //         }
+    //     }
+    //     return results;
+    // }
 
     async findProductById(
         productId: number,
@@ -863,7 +863,7 @@ export class ProductsService {
         return products;
     }
 
-    async findProductsByFarmId(farmId: string):Promise<Product[]> {
+    async findProductsByFarmId(farmId: string): Promise<Product[]> {
         if (!farmId) {
             this.logger.warn(`(findProductsByFarmId) farmId không được cung cấp.`);
             return [];
@@ -882,7 +882,7 @@ export class ProductsService {
         return products;
     }
 
-   
+
 
 
 }//

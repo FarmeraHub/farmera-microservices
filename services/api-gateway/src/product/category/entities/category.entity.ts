@@ -6,5 +6,5 @@ export class Category {
     description: string;
     image_url: string;
     created: Date;
-    subcategories: Subcategory[];
+    subcategories?: Subcategory[];
 }

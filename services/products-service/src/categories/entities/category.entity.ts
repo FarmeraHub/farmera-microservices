@@ -11,8 +11,8 @@ export class Category {
     description: string;
     @Column()
     image_url: string;
-    @CreateDateColumn()
+    @CreateDateColumn({ type: "timestamptz" })
     created: Date;
     @OneToMany(() => Subcategory, (sub) => sub.category)
-    subcategories: Category[];
+    subcategories: Subcategory[];
 }

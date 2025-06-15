@@ -7,6 +7,8 @@ import { FarmController } from './farm/farm.controller';
 import { FarmService } from './farm/farm.service';
 import { ProductController } from './product/product.controller';
 import { ProductService } from './product/product.service';
+import { CategoryController } from './category/category.controller';
+import { CategoryService } from './category/category.service';
 
 @Module({
     imports: [
@@ -36,8 +38,8 @@ import { ProductService } from './product/product.service';
         ]),
 
     ],
-    controllers: [ProductController, FarmController],
-    providers: [ProductService, ProductClientService, FarmService],
+    controllers: [ProductController, FarmController, CategoryController],
+    providers: [ProductService, ProductClientService, FarmService, CategoryService],
     exports: [ProductService],
 })
 export class ProductModule { }

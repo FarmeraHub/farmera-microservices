@@ -26,11 +26,10 @@ service ProductsService {
   rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
   rpc VerifyFarm(stream VerifyFarmRequest) returns (VerifyFarmResponse);
   rpc GetFarm(GetFarmRequest) returns (GetFarmResponse);
-  rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
+  //rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
   //rpc DeleteFarm(DeleteFarmRequest) returns (DeleteFarmResponse);
   //rpc ListFarms(ListFarmsRequest) returns (ListFarmsResponse);
   //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
-  //rpc VerifyFarm(VerifyFarmRequest) returns (VerifyFarmResponse);
   rpc GetFarmByUser(GetFarmByUserRequest) returns (GetFarmByUserResponse);
   rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
 
@@ -40,12 +39,14 @@ service ProductsService {
   //rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse);
   //rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
   //rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
-  //rpc GetCategoryTree(GetCategoryTreeRequest) returns (GetCategoryTreeResponse);
-rpc GetAllCategoryWithSubcategory(GetAllCategoryWithSubcategoryRequest) returns (GetAllCategoryWithSubcategoryResponse);
+  rpc GetCategoryTree(GetCategoryTreeRequest) returns (GetCategoryTreeResponse);
+  rpc GetAllCategoryWithSubcategory(GetAllCategoryWithSubcategoryRequest) returns (GetAllCategoryWithSubcategoryResponse);
 
   //Subcategory
   rpc CreateSubcategory(CreateSubcategoryRequest) returns (CreateSubcategoryResponse);
   rpc GetSubcategory(GetSubcategoryRequest) returns (GetSubcategoryResponse);
+
+  
   // Review management
   //rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse);
   //rpc GetReview(GetReviewRequest) returns (GetReviewResponse);
@@ -148,7 +149,7 @@ message Address {
 message Category {
   int32 category_id = 1;
   string name = 2;
-  string description = 3;
+  optional string description = 3;
   string image_url = 4;
   farmera.common.Timestamp created = 5;
 }
@@ -156,10 +157,18 @@ message Category {
 message Subcategory {
   int32 subcategory_id = 1;
   string name = 2;
-  string description = 3;
+  optional string description = 3;
   farmera.common.Timestamp created = 4;
   Category category = 5;
 }
+
+message SubcategoryLite  {
+  int32 subcategory_id = 1;
+  string name = 2;
+  string description = 3;
+  farmera.common.Timestamp created = 4;
+}
+
 // Product subcategory detail
 message ProductSubcategoryDetail {
   int32 id = 1;
@@ -457,10 +466,7 @@ message GetFarmsByLocationResponse {
 message CreateCategoryRequest {
   string name = 1;
   optional string description = 2;
-  bytes category_icon_data = 3;
-  optional string icon_filename = 4;
-  optional string icon_mime_type = 5;
-
+  optional string category_icon_url = 3;
 }
 
 message CreateCategoryResponse {
@@ -469,8 +475,6 @@ message CreateCategoryResponse {
 
 message GetCategoryRequest {
   int32 category_id = 1;
-  bool include_subcategories = 2;
-  bool include_product_count = 3;
 }
 
 message GetCategoryResponse {
@@ -514,13 +518,12 @@ message ListCategoriesResponse {
 }
 
 message GetCategoryTreeRequest {
-  optional int32 root_category_id = 1; // If not provided, returns full tree
-  int32 max_depth = 2;
-  bool include_product_count = 3;
+  int32 category_id = 1;
 }
 
 message GetCategoryTreeResponse {
-  repeated Category categories = 1;
+  Category category = 1;
+  repeated SubcategoryLite sublist = 2;
 }
 
 // Review management requests/responses
@@ -762,8 +765,8 @@ message GetSubcategoryResponse{
 
 message GetSubcategoryRequest {
   int32 subcategory_id = 1;
-  optional string name = 2;
 }
+
 message GetFarmByUserRequest{
   string user_id = 1;
 }

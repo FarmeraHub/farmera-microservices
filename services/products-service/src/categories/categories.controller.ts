@@ -1,4 +1,4 @@
-import { Body, Get, Controller, Post, UploadedFile, UseGuards, UseInterceptors, Request, UnauthorizedException } from '@nestjs/common';
+import { Body, Get, Controller, Post, UploadedFile, UseGuards, UseInterceptors, Request, UnauthorizedException, Param } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoriesDto } from './dto/request/create-categories.dto';
 
@@ -11,24 +11,18 @@ import { CreateSubcategoryDto } from './dto/request/create-subcategories.dto';
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) { }
 
-
   @Post('create')
-  @UseInterceptors(FileInterceptor('category_icon'))
   async create(
     @Body() categoriesDto: CreateCategoriesDto,
     @Request() req: Request,
-    @UploadedFile() file?: Express.Multer.File,
-
   ) {
     const userId = req.headers['x-user-id'];
     const role = req.headers['x-user-role'];
     if (!(role == Role.ADMIN)) {
       throw new UnauthorizedException('Không có quyền tạo danh mục con');
     }
-    console.log('createCategoriesDto: ', categoriesDto);
-    console.log('files: ', file);
     // @Body() createCategoryDto: CreateCategoriesDto
-    return this.categoriesService.createCategory(categoriesDto, file);
+    return this.categoriesService.createCategory(categoriesDto);
   }
   @Get('getall')
   async getAllCategories() {
