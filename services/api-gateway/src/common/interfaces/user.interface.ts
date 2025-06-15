@@ -1,3 +1,16 @@
+// Import the UserRole and UserStatus enums from users service
+export enum UserRole {
+  BUYER = 'buyer',
+  FARMER = 'farmer',
+  ADMIN = 'admin',
+}
+
+export enum UserStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  BANNED = 'banned',
+}
+
 /**
  * Interface representing a user from the JWT payload
  */
@@ -7,8 +20,8 @@ export interface User {
   first_name: string;
   last_name: string;
   phone?: string;
-  role: string;
-  status: string;
+  role: UserRole;
+  status: UserStatus;
   avatar?: string;
   sub?: string; // JWT subject field
   iat?: number; // JWT issued at timestamp
