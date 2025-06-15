@@ -5,7 +5,7 @@ package farmera.products;
 import "common/types.proto";
 import "common/enums.proto";
 import "common/pagination.proto";
-import "common/errors.proto";
+// import "common/errors.proto";
 option go_package = "github.com/farmera/grpc-protos/products";
 
 // Products service definition
@@ -23,9 +23,10 @@ service ProductsService {
   //rpc UpdateProductStatus(UpdateProductStatusRequest) returns (UpdateProductStatusResponse);
   
   // Farm management
-  //rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
+  rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
+  rpc VerifyFarm(stream VerifyFarmRequest) returns (VerifyFarmResponse);
   rpc GetFarm(GetFarmRequest) returns (GetFarmResponse);
-  //rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
+  rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
   //rpc DeleteFarm(DeleteFarmRequest) returns (DeleteFarmResponse);
   //rpc ListFarms(ListFarmsRequest) returns (ListFarmsResponse);
   //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
@@ -111,8 +112,8 @@ message Farm {
   farmera.common.FarmStatus status = 11;
   farmera.common.Timestamp created = 12;
   farmera.common.Timestamp updated = 13;
-  Address address = 14;
-  Identification identification = 15;
+  optional Address address = 14;
+  optional Identification identification = 15;
 }
 
 message Identification {
@@ -357,39 +358,61 @@ message UpdateProductStatusResponse {
 message CreateFarmRequest {
   string farm_name = 1;
   string description = 2;
-  string owner_id = 3;
-  farmera.common.Location location = 4;
-  farmera.common.ContactInfo contact_info = 5;
-  repeated farmera.common.CertificationType certifications = 6;
-  repeated farmera.common.OperatingHours operating_hours = 7;
-  farmera.common.Timestamp established_date = 8;
-  string license_number = 9;
-  double farm_size_hectares = 10;
-  repeated string farming_methods = 11;
+  string email = 3;
+  string phone = 4;
+  string tax_number = 5;
+  string city = 6;
+  string district = 7;
+  string ward = 8;
+  string street = 9;
+  string coordinate = 10;
+  string user_id = 11;
 }
 
 message CreateFarmResponse {
   Farm farm = 1;
 }
 
+message VerifyFileMetadata{
+  string file_name = 1;
+  string file_type = 2;
+  int64 total_size = 3;
+  string file_id = 4;
+  string farm_id = 5; 
+  string mime_type = 6;
+  string user_id = 7;
+}
+
+message VerifyFarmRequest {
+  oneof test_oneof {
+    VerifyFileMetadata meta = 2;
+    ImageChunk chunk = 1;
+  }
+}
+
+message ImageChunk {
+  string file_id = 1;
+  bytes data = 2;
+}
+
+message VerifyFarmResponse {
+  Farm farm = 1;
+  farmera.common.VerifyStatusCode status = 2;
+  optional string message = 3;
+}
+
 message GetFarmRequest {
   string farm_id = 1;
-  bool include_products = 2;
 }
 
 message GetFarmResponse {
   Farm farm = 1;
-  repeated Product products = 2; // If include_products is true
 }
 
 message UpdateFarmRequest {
   string farm_id = 1;
   optional string farm_name = 2;
   optional string description = 3;
-  optional farmera.common.ContactInfo contact_info = 4;
-  repeated farmera.common.OperatingHours operating_hours = 5;
-  repeated string farming_methods = 6;
-  repeated string image_urls = 7;
 }
 
 message UpdateFarmResponse {
@@ -428,17 +451,6 @@ message GetFarmsByLocationRequest {
 message GetFarmsByLocationResponse {
   repeated Farm farms = 1;
   farmera.common.PaginationResponse pagination = 2;
-}
-
-message VerifyFarmRequest {
-  string farm_id = 1;
-  bool is_verified = 2;
-  string verified_by = 3;
-  string verification_notes = 4;
-}
-
-message VerifyFarmResponse {
-  Farm farm = 1;
 }
 
 // Category management requests/responses
@@ -754,12 +766,10 @@ message GetSubcategoryRequest {
 }
 message GetFarmByUserRequest{
   string user_id = 1;
-  bool include_products = 2;
 }
 
 message GetFarmByUserResponse {
   Farm farm = 1;
-  repeated Product products = 2;
 }
 
 message UpdateFarmStatusRequest{

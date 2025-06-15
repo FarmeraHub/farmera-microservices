@@ -70,14 +70,6 @@ message Video {
   string format = 5;
 }
 
-// Contact information
-message ContactInfo {
-  string email = 1;
-  string phone = 2;
-  string website = 3;
-  repeated string social_media = 4;
-}
-
 // Audit trail
 message AuditInfo {
   string created_by = 1;

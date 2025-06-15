@@ -1,7 +1,6 @@
 import { FarmAdminService } from './../../admin/farm/farm-admin.service';
 import { Product as ProductEntity } from './../../products/entities/product.entity';
 import { Controller, Logger } from "@nestjs/common";
-import { GrpcMethod, RpcException } from "@nestjs/microservices";
 import { CategoriesService } from "src/categories/categories.service";
 import { FarmsService } from "src/farms/farms.service";
 import { ProductsService } from "src/products/products.service";
@@ -10,14 +9,9 @@ import {
     ProductsServiceController,
     GetListProductsRequest,
     GetListProductsResponse,
-    ProductRequest,
-    ProductResponse,
-    Product as GrpcProduct,
-    Farm as GrpcFarm,
     GetProductRequest,
     GetProductResponse,
     GetAllCategoryWithSubcategoryResponse,
-    ListCategoriesResponse,
     GetAllCategoryWithSubcategoryRequest,
     CreateCategoryRequest,
     CreateCategoryResponse,
@@ -32,17 +26,24 @@ import {
     GetFarmByUserRequest,
     UpdateFarmStatusRequest,
     UpdateFarmStatusResponse,
+    CreateFarmRequest,
+    CreateFarmResponse,
+    VerifyFarmRequest,
+    VerifyFarmResponse,
+    VerifyFileMetadata,
+    GetFarmByUserResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
-import { Observable, of, throwError, map, catchError, tap, from } from 'rxjs';
-
-
+import { Observable, Subject } from 'rxjs';
 import { ProductMapper } from './mappers/product.mapper';
 import { CreateSubcategoryDto } from 'src/categories/dto/request/create-subcategories.dto';
-import { Subcategory } from 'src/categories/entities/subcategory.entity';
-import { r } from 'pinata/dist/index-CQFQEo3K';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
 import { FarmStatus } from 'src/common/enums/farm-status.enum';
+import { GrpcStreamMethod, RpcException } from '@nestjs/microservices';
+import { FarmMapper } from './mappers/product/farm.mapper';
+import { VerifyStatusCode } from '@farmera/grpc-proto/dist/common/enums';
+import { Readable } from 'stream';
+import { randomUUID } from 'crypto';
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -55,6 +56,239 @@ export class ProductGrpcServerController implements ProductsServiceController {
         private readonly categoriesService: CategoriesService,
         private readonly farmAdminService: FarmAdminService,
     ) { }
+
+    // Farm methods
+    async createFarm(request: CreateFarmRequest): Promise<CreateFarmResponse> {
+        try {
+            const result = await this.farmsService.farmRegister(FarmMapper.fromGrpcCreateFarmRequest(request), request.user_id);
+            return {
+                farm: FarmMapper.toGrpcFarm(result)
+            }
+        }
+        catch (err) {
+            throw new RpcException(`Internal Server Error: ${err}`);
+        }
+    }
+
+    @GrpcStreamMethod()
+    verifyFarm(request: Observable<VerifyFarmRequest>): Observable<VerifyFarmResponse> {
+        const subject = new Subject<VerifyFarmResponse>();
+
+        const fileRecords: Record<string, {
+            chunks_buffer: Buffer[];
+            receivedSize: number;
+            totalSize: number;
+            meta: VerifyFileMetadata;
+            type: string;
+        }> = {};
+
+        const onNext = (data: VerifyFarmRequest) => {
+            try {
+                // get metadata
+                if (data.meta) {
+
+                    const file_id = data.meta.file_id;
+
+                    if (!file_id) {
+                        subject.next({
+                            status: VerifyStatusCode.FAILED,
+                            farm: undefined,
+                            message: "ID không xác định",
+                        });
+                        subject.complete();
+                    }
+
+                    this.logger.debug('Received metadata:', data.meta);
+
+                    if (data.meta.total_size == 0) {
+                        subject.next({
+                            status: VerifyStatusCode.FAILED,
+                            farm: undefined,
+                            message: "File rỗng",
+                        });
+                        subject.complete();
+                    };
+
+                    fileRecords[file_id] = {
+                        chunks_buffer: [],
+                        receivedSize: 0,
+                        totalSize: data.meta.total_size,
+                        meta: data.meta,
+                        type: data.meta.file_type,
+                    }
+                }
+                // continue to get image chunks
+                else if (data.chunk) {
+                    const { file_id, data: chunkData } = data.chunk;
+                    const fileRecord = fileRecords[file_id];
+
+                    if (!fileRecord) {
+                        this.logger.warn(`Received chunk for unknown file_id: ${file_id}`);
+                        return;
+                    }
+
+                    fileRecord.receivedSize += chunkData.length;
+
+                    fileRecords[data.chunk.file_id].chunks_buffer.push(Buffer.from(data.chunk.data));
+
+                } else {
+                    this.logger.warn('Unexpected request: ', data);
+                }
+            } catch (err) {
+                this.logger.error('Error processing chunk:', err);
+                subject.error({
+                    message: 'Error processing chunk: ' + err.message,
+                    code: VerifyStatusCode.FAILED,
+                });
+            }
+        }
+
+        const onError = (err) => {
+            subject.error({
+                message: 'Failed to verify: ' + err.message,
+                code: VerifyStatusCode.FAILED,
+            });
+        }
+
+        const onComplete = async () => {
+            try {
+                const ssnRecord = Object.values(fileRecords).find(record => record.type == "ssn_image");
+                const bioRecord = Object.values(fileRecords).find(record => record.type == "biometric_video");
+
+                if (!ssnRecord || !bioRecord) {
+                    return subject.error({
+                        message: 'Thiếu ảnh CCCD hoặc video sinh trắc học',
+                        code: VerifyStatusCode.FAILED,
+                    });
+                }
+
+                const ssnBuffer = Buffer.concat(ssnRecord.chunks_buffer);
+
+                const ssnFile: Express.Multer.File = {
+                    fieldname: 'ssn',
+                    originalname: ssnRecord.meta.file_name,
+                    encoding: '7bit',
+                    mimetype: ssnRecord.meta.mime_type,
+                    buffer: ssnBuffer,
+                    size: ssnBuffer.length,
+                    stream: Readable.from(ssnBuffer),
+                    destination: '',
+                    path: '',
+                    filename: ssnRecord.meta.file_name,
+                };
+
+                const bioVideoBuffer = Buffer.concat(bioRecord.chunks_buffer);
+
+                const videoFile: Express.Multer.File = {
+                    fieldname: 'biometric_video',
+                    originalname: bioRecord.meta.file_name,
+                    encoding: '7bit',
+                    mimetype: bioRecord.meta.mime_type,
+                    buffer: bioVideoBuffer,
+                    size: bioVideoBuffer.length,
+                    stream: Readable.from(bioVideoBuffer),
+                    destination: '',
+                    filename: bioRecord.meta.file_name,
+                    path: ''
+                };
+
+                const farm = await this.farmsService.verifyBiometric(ssnFile, videoFile, ssnRecord.meta.farm_id, ssnRecord.meta.user_id);
+
+                subject.next({
+                    farm: FarmMapper.toGrpcFarm(farm),
+                    status: VerifyStatusCode.OK
+                });
+                subject.complete();
+
+            } catch (err) {
+                console.error('Verification error:', err);
+                subject.error({
+                    message: 'Xử lý verify thất bại: ' + err.message,
+                    code: VerifyStatusCode.FAILED,
+                });
+            }
+        }
+
+        request.subscribe({
+            next: onNext,
+            error: onError,
+            complete: onComplete,
+        });
+
+        return subject.asObservable();
+    }
+
+    async getFarm(request: GetFarmRequest): Promise<GetFarmResponse> {
+        // this.logger.log(`[gRPC In - GetFarm] Received request for farm_id: ${request.farm_id}`);
+
+        if (!request || !request.farm_id) {
+            this.logger.error('[gRPC In - GetFarm] Invalid request: farm_id is required.');
+            throw new RpcException('Invalid request: farm_id is required.');
+        }
+
+        const farmEntity = await this.farmsService.findFarmById(request.farm_id);
+
+        if (!farmEntity) {
+            this.logger.warn(`[gRPC Logic - GetFarm] No farm found for ID: ${request.farm_id}`);
+            throw new RpcException(`No farm found for ID: ${request.farm_id}`);
+        }
+
+        return {
+            farm: FarmMapper.toGrpcFarm(farmEntity)
+        };
+    }
+
+    async getFarmByUser(request: GetFarmByUserRequest): Promise<GetFarmByUserResponse> {
+        this.logger.log(`[gRPC In - GetFarm] Received request for user_id: ${request.user_id}`);
+
+        if (!request || !request.user_id) {
+            this.logger.error('[gRPC In - GetFarm] Invalid request: farm_id is required.');
+            throw new RpcException('Invalid request: farm_id is required.');
+        }
+
+        const farmEntity = await this.farmsService.findByUserID(request.user_id);
+
+        if (!farmEntity) {
+            this.logger.warn(`[gRPC Logic - GetFarm] No farm found for user id: ${request.user_id}`);
+            throw new RpcException(`No farm found for User ID: ${request.user_id}`);
+        }
+
+        return {
+            farm: FarmMapper.toGrpcFarm(farmEntity)
+        };
+    }
+
+    async updateFarmStatus(request: UpdateFarmStatusRequest): Promise<UpdateFarmStatusResponse> {
+        this.logger.debug(`[gRPC In - UpdateFarmStatus] Received request to update farm status: ${JSON.stringify(request)}`);
+
+        if (!request || !request.farm_id || !request.status) {
+            this.logger.error('[gRPC In - UpdateFarmStatus] Invalid request: farm_id and status are required.');
+            throw new RpcException('Invalid request: farm_id and status are required.');
+        }
+
+        try {
+            this.logger.debug(`[gRPC Logic - UpdateFarmStatus] Updating farm status for farm_id: ${request.farm_id} to status: ${request.status}`);
+            const updateDto: UpdateFarmStatusDto = {
+                status: FarmStatus[request.status],
+                reason: request.reason || '',
+            };
+            const updatedFarm = await this.farmAdminService.updateFarmStatus(request.farm_id, updateDto, request.user_id);
+            this.logger.debug(`[gRPC Logic - UpdateFarmStatus] Successfully updated farm status for farm_id: ${updatedFarm.farm_id}`);
+            const farm = FarmMapper.toGrpcFarm(updatedFarm);
+            if (!farm) {
+                this.logger.warn('[gRPC Logic - UpdateFarmStatus] Failed to map updated farm entity to gRPC response.');
+                throw new RpcException('Failed to map updated farm entity to gRPC response.');
+            }
+            return {
+                farm: farm
+            };
+        } catch (error) {
+            this.logger.error(`[gRPC Logic - UpdateFarmStatus] Error updating farm status for farm_id ${request.farm_id}: ${error.message}`, error.stack);
+            throw new RpcException(`Error processing UpdateFarmStatus request: ${error.message}`);
+        }
+    }
+
+    // Product methods
     async getProduct(
         request: GetProductRequest,
     ): Promise<GetProductResponse> {
@@ -234,99 +468,5 @@ export class ProductGrpcServerController implements ProductsServiceController {
             throw new RpcException('No subcategory found after fetching.');
         }
         return result;
-    }
-
-
-    //farm
-    async getFarm(request: GetFarmRequest): Promise<GetFarmResponse> {
-        this.logger.log(`[gRPC In - GetFarm] Received request for farm_id: ${request.farm_id}`);
-
-        if (!request || !request.farm_id) {
-            this.logger.error('[gRPC In - GetFarm] Invalid request: farm_id is required.');
-            throw new RpcException('Invalid request: farm_id is required.');
-        }
-
-        const farmEntity = await this.farmsService.findFarmById(request.farm_id);
-
-        if (!farmEntity) {
-            this.logger.warn(`[gRPC Logic - GetFarm] No farm found for ID: ${request.farm_id}`);
-            throw new RpcException(`No farm found for ID: ${request.farm_id}`);
-        }
-
-        let productEntities: ProductEntity[] = [];
-        if (request.include_products) {
-            this.logger.log(`[gRPC Logic - GetFarm] Including products for farm_id: ${request.farm_id}`);
-            productEntities = await this.productsService.findProductsByFarmId(request.farm_id);
-            this.logger.log(`[gRPC Logic - GetFarm] Found ${productEntities.length} products for farm_id: ${request.farm_id}`);
-        }
-        this.logger.log(`[gRPC Logic - GetFarm] Successfully fetched farm: ${farmEntity.farm_id}`);
-        const response = ProductMapper.toGrpcGetFarmResponse(farmEntity, productEntities);
-
-        if (!response) {
-            this.logger.warn('[gRPC Logic - GetFarm] Failed to map farm entity to gRPC response.');
-            throw new RpcException('Failed to map farm entity to gRPC response.');
-        }
-
-        return response;
-    }
-
-    async getFarmByUser(request: GetFarmByUserRequest): Promise<GetFarmResponse> {
-        this.logger.log(`[gRPC In - GetFarm] Received request for user_id: ${request.user_id}`);
-
-        if (!request || !request.user_id) {
-            this.logger.error('[gRPC In - GetFarm] Invalid request: farm_id is required.');
-            throw new RpcException('Invalid request: farm_id is required.');
-        }
-
-        const farmEntity = await this.farmsService.findByUserID(request.user_id);
-
-        if (!farmEntity) {
-            this.logger.warn(`[gRPC Logic - GetFarm] No farm found for user id: ${request.user_id}`);
-            throw new RpcException(`No farm found for User ID: ${request.user_id}`);
-        }
-
-        let productEntities: ProductEntity[] = [];
-        if (request.include_products) {
-            this.logger.log(`[gRPC Logic - GetFarm] Including products for farm_id: ${farmEntity.farm_id}`);
-            productEntities = await this.productsService.findProductsByFarmId(farmEntity.farm_id);
-            this.logger.log(`[gRPC Logic - GetFarm] Found ${productEntities.length} products for farm_id: ${farmEntity.farm_id}`);
-        }
-        this.logger.log(`[gRPC Logic - GetFarm] Successfully fetched farm: ${farmEntity.farm_id}`);
-        const response = ProductMapper.toGrpcGetFarmByUserResponse(farmEntity, productEntities);
-
-        if (!response) {
-            this.logger.warn('[gRPC Logic - GetFarm] Failed to map farm entity to gRPC response.');
-            throw new RpcException('Failed to map farm entity to gRPC response.');
-        }
-
-        return response;
-    }
-
-    async updateFarmStatus(request: UpdateFarmStatusRequest): Promise<UpdateFarmStatusResponse> {
-        this.logger.log(`[gRPC In - UpdateFarmStatus] Received request to update farm status: ${JSON.stringify(request)}`);
-
-        if (!request || !request.farm_id || !request.status) {
-            this.logger.error('[gRPC In - UpdateFarmStatus] Invalid request: farm_id and status are required.');
-            throw new RpcException('Invalid request: farm_id and status are required.');
-        }
-
-        try {
-            this.logger.log(`[gRPC Logic - UpdateFarmStatus] Updating farm status for farm_id: ${request.farm_id} to status: ${request.status}`);
-            const updateDto: UpdateFarmStatusDto = {
-                status: FarmStatus[request.status],
-                reason: request.reason || '',
-            };
-            const updatedFarm = await this.farmAdminService.updateFarmStatus(request.farm_id, updateDto, request.user_id);
-            this.logger.log(`[gRPC Logic - UpdateFarmStatus] Successfully updated farm status for farm_id: ${updatedFarm.farm_id}`);
-            const farm = ProductMapper.toGrpcUpdateFarmStatusStatusResponse(updatedFarm);
-            if (!farm) {
-                this.logger.warn('[gRPC Logic - UpdateFarmStatus] Failed to map updated farm entity to gRPC response.');
-                throw new RpcException('Failed to map updated farm entity to gRPC response.');
-            }
-            return farm;
-        } catch (error) {
-            this.logger.error(`[gRPC Logic - UpdateFarmStatus] Error updating farm status for farm_id ${request.farm_id}: ${error.message}`, error.stack);
-            throw new RpcException(`Error processing UpdateFarmStatus request: ${error.message}`);
-        }
     }
 }

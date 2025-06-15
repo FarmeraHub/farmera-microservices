@@ -13,9 +13,9 @@ import { ProductsModule } from './products/products.module';
 import { BiometricsModule } from './biometrics/biometrics.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ProcessModule } from './process/process.module';
-import { BlockchainService } from './services/blockchain.service';
 import { ProductGrpcServerModule } from './grpc/server/product-grpc.server.module';
 import { GhnModule } from './ghn/ghn.module';
+import { AzureBlobService } from './services/azure-blob.service';
 
 @Module({
   imports: [
@@ -23,9 +23,7 @@ import { GhnModule } from './ghn/ghn.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-
-    MulterModule.registerAsync(multerAsyncConfig),
-
+    // MulterModule.registerAsync(multerAsyncConfig),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
     BiometricsModule,
     FarmsModule,
@@ -37,5 +35,6 @@ import { GhnModule } from './ghn/ghn.module';
     ProductGrpcServerModule,
     GhnModule,
   ],
+  providers: [AzureBlobService],
 })
 export class AppModule { }

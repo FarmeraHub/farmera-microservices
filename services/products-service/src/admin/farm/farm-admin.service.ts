@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Farm } from 'src/farms/entities/farm.entity';
 import { ApproveDetail } from './entities/approve-detail.entity';
@@ -43,7 +43,7 @@ export class FarmAdminService {
     adminId: string,
   ): Promise<Farm> {
     if (!isUUID(farmId)) {
-      throw new NotFoundException('Farm not found (invalid ID format)');
+      throw new BadRequestException('Invalid UUID format)');
     }
     const farmExists = await this.farmRepository.findOne({ where: { farm_id: farmId } });
     if (!farmExists) {

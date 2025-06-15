@@ -2,8 +2,15 @@ import { NestFactory } from "@nestjs/core";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
 import { AppModule } from "./app.module";
 import { join } from "path";
+import { Logger } from "@nestjs/common";
 
 async function bootstrap() {
+
+    const logger = new Logger('GrpcMain');
+    logger.log('Starting Product gRPC Service...');
+
+    const grpcPort = process.env.GRPC_PORT || '50052';
+    const grpcUrl = `0.0.0.0:${grpcPort}`;
 
     const app = await NestFactory.createMicroservice<MicroserviceOptions>(
         AppModule,
@@ -12,7 +19,7 @@ async function bootstrap() {
             options: {
                 package: 'farmera.products',
                 protoPath: join(__dirname, '../../../shared/grpc-protos/products/products.proto'),
-                url: 'localhost:50052',
+                url: grpcUrl,
                 loader: {
                     keepCase: true,
                     longs: String,
@@ -28,7 +35,7 @@ async function bootstrap() {
     );
 
     await app.listen();
-    console.log('✅ Products gRPC Service is running on localhost:50052');
+    logger.log(`✅ Products gRPC Service is running on ${grpcUrl}`);
 
 }
 bootstrap().catch((error) => {

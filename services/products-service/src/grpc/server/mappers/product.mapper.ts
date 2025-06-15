@@ -30,13 +30,17 @@ import {
   GetFarmResponse as GrpcGetFarmResponse,
   GetFarmByUserResponse as GrpcGetFarmByUserResponse,
   UpdateFarmStatusResponse as GrpcUpdateFarmStatusResponse,
+  CreateFarmRequest,
 
 
 } from '@farmera/grpc-proto/dist/products/products';
-import { CommonMapper } from "./common.mapper";
 import { Subcategory } from 'src/categories/entities/subcategory.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { t } from 'pinata/dist/index-CQFQEo3K';
+import { FarmRegistrationDto } from 'src/farms/dto/farm-registration.dto';
+import { EnumsMapper } from './common/enums.mapper';
+import { TypesMapper } from './common/types.mapper';
+import { FarmMapper } from './product/farm.mapper';
 export class ProductMapper {
 
 
@@ -83,11 +87,11 @@ export class ProductMapper {
       weight: product.weight,
       image_urls: product.image_urls,
       video_urls: product.video_urls,
-      status: CommonMapper.toGrpcProductStatus(product.status),
+      status: EnumsMapper.toGrpcProductStatus(product.status),
       average_rating: product.average_rating,
       total_sold: product.total_sold,
-      created: CommonMapper.toGrpcTimestamp(product.created),
-      updated: CommonMapper.toGrpcTimestamp(product.updated),
+      created: TypesMapper.toGrpcTimestamp(product.created),
+      updated: TypesMapper.toGrpcTimestamp(product.updated),
       subcategory_details: product.productSubcategoryDetails
         ? product.productSubcategoryDetails
           .map(detailEntity =>
@@ -101,81 +105,11 @@ export class ProductMapper {
     return grpcProduct;
   }
 
-  static toGrpcFarm(farm: Farm): GrpcFarm | undefined {
-    if (!farm) {
-      return undefined;
-    }
 
-    return {
-      farm_id: farm.farm_id,
-      farm_name: farm.farm_name,
-      description: farm.description,
-      user_id: farm.user_id,
-      email: farm.email,
-      phone: farm.phone,
-      avatar_url: farm.avatar_url,
-      profile_image_urls: farm.profile_image_urls,
-      certificate_img_urls: farm.certificate_img_urls,
-      tax_number: farm.tax_number,
-      status: CommonMapper.toGrpcFarmStatus(farm.status),
-      created: CommonMapper.toGrpcTimestamp(farm.created),
-      updated: CommonMapper.toGrpcTimestamp(farm.updated),
-      address: this.toGrpcFarmAddress(farm.address),
-      identification: this.toGrpcFarmIdentification(farm.identification),
 
-    }
-  }
 
-  static toGrpcFarmAddress(address: Address): GrpcAddress | undefined {
-    if (!address) {
-      return undefined;
-    }
-    const addressGhnEntity = address.address_ghn as AddressGHN | undefined; // Ép kiểu
-    const addressGhnData = addressGhnEntity
-      ? this.toGrpcFarmAddressGhn(addressGhnEntity)
-      : undefined;
-    return {
-      address_id: address.address_id,
-      city: address.city,
-      district: address.district,
-      ward: address.ward,
-      street: address.street,
-      coordinate: address.coordinate,
-      farm_id: address.farm ? address.farm.farm_id : '',
-      address_ghn: addressGhnData,
-      created: CommonMapper.toGrpcTimestamp(address.created),
-    };
-  }
 
-  static toGrpcFarmAddressGhn(addressGhn: AddressGHN): GrpcAddressGHN {
-    if (!addressGhn) {
-      return {
-        id: 0,
-        province_id: 0,
-        district_id: 0,
-        ward_code: ''
-      };
-    }
-    return {
-      id: addressGhn.id,
-      province_id: addressGhn.province_id,
-      district_id: addressGhn.district_id,
-      ward_code: addressGhn.ward_code
-    };
-  }
-  static toGrpcFarmIdentification(identification: Identification): GrpcIdentification | undefined {
-    if (!identification) {
-      return undefined;
-    }
-    return {
-      id: identification.id,
-      status: CommonMapper.toGrpcIdentificationStatus(identification.status),
-      method: CommonMapper.toGrpcIdentificationMethod(identification.method),
-      nationality: identification.nationality,
-      id_number: identification.id_number,
-      full_name: identification.full_name,
-    };
-  }
+
 
   // static mapProductSubcategoryDetailEntityToGrpc(entity: ProductSubcategoryDetail): GrpcProductSubcategoryDetail | undefined {
   //   if (!entity) return undefined;
@@ -236,7 +170,7 @@ export class ProductMapper {
       name: subcategory.name,
       description: subcategory.description,
       category: subcategory.category ? this.toGrpcCategory(subcategory.category) : undefined,
-      created: CommonMapper.toGrpcTimestamp(subcategory.created),
+      created: TypesMapper.toGrpcTimestamp(subcategory.created),
     };
   }
   static toGrpcCategory(category: Category): GrpcCategory | undefined {
@@ -247,7 +181,7 @@ export class ProductMapper {
       category_id: category.category_id,
       name: category.name,
       description: category.description,
-      created: CommonMapper.toGrpcTimestamp(category.created),
+      created: TypesMapper.toGrpcTimestamp(category.created),
       image_url: category.image_url,
     };
   }
@@ -255,7 +189,7 @@ export class ProductMapper {
 
   static toGrpcProductResponse(product: Product, Farm?: Farm): GrpcProductResponse {
     const grpcProduct = this.toGrpcProduct(product);
-    const grpcFarm = Farm ? this.toGrpcFarm(Farm) : undefined;
+    const grpcFarm = Farm ? FarmMapper.toGrpcFarm(Farm) : undefined;
     return {
       product: grpcProduct,
       farm: grpcFarm,
@@ -282,7 +216,7 @@ export class ProductMapper {
         category_id: category.category_id,
         name: category.name,
         description: category.description,
-        created: CommonMapper.toGrpcTimestamp(category.created),
+        created: TypesMapper.toGrpcTimestamp(category.created),
         image_url: category.image_url,
       };
     });
@@ -349,52 +283,5 @@ export class ProductMapper {
     return {
       subcategory: grpcSubcategory,
     }
-  }
-  static toGrpcGetFarmResponse(farm: Farm, products?: Product[]): GrpcGetFarmResponse | undefined {
-    if (!farm) {
-      throw new BadGatewayException('Invalid farm data');
-    }
-    const grpcFarm: GrpcFarm | undefined = this.toGrpcFarm(farm);
-    if (!grpcFarm) {
-      throw new BadGatewayException('Invalid farm data');
-    }
-    const grpcProducts: GrpcProduct[] = products
-      ? products.map(product => this.toGrpcProduct(product)).filter((product): product is GrpcProduct => product !== undefined)
-      : [];
-    return {
-      farm: grpcFarm,
-      products: grpcProducts,
-    };
-  }
-
-
-  static toGrpcGetFarmByUserResponse(farm: Farm, products?: Product[]): GrpcGetFarmByUserResponse | undefined {
-    if (!farm) {
-      throw new BadGatewayException('Invalid farm data');
-    }
-    const grpcFarm: GrpcFarm | undefined = this.toGrpcFarm(farm);
-    if (!grpcFarm) {
-      throw new BadGatewayException('Invalid farm data');
-    }
-    const grpcProducts: GrpcProduct[] = products
-      ? products.map(product => this.toGrpcProduct(product)).filter((product): product is GrpcProduct => product !== undefined)
-      : [];
-    return {
-      farm: grpcFarm,
-      products: grpcProducts,
-    };
-  }
-
-  static toGrpcUpdateFarmStatusStatusResponse(farm: Farm): GrpcUpdateFarmStatusResponse | undefined {
-    if (!farm) {
-      throw new BadGatewayException('Invalid farm data');
-    }
-    const grpcFarm: GrpcFarm | undefined = this.toGrpcFarm(farm);
-    if (!grpcFarm) {
-      throw new BadGatewayException('Invalid farm data');
-    }
-    return {
-      farm: grpcFarm,
-    };
   }
 }

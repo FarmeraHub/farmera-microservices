@@ -37,10 +37,11 @@ enum ProductStatus {
 // Farm status
 enum FarmStatus {
   FARM_STATUS_UNSPECIFIED = 0; 
-  FARM_STATUS_PENDING = 1;                
-  FARM_STATUS_APPROVED = 2;
-  FARM_STATUS_BLOCKED = 3;
-  FARM_STATUS_REJECTED = 4;
+  FARM_STATUS_PENDING = 1;  
+  FARM_STATUS_VERIFIED = 2;             
+  FARM_STATUS_APPROVED = 3;
+  FARM_STATUS_BLOCKED = 4;
+  FARM_STATUS_REJECTED = 5;
 }
 // Order status lifecycle
 enum OrderStatus {
@@ -192,4 +193,10 @@ enum IdentificationMethod{
   IDENTIFICATION_METHOD_BIOMETRIC = 1;
   IDENTIFICATION_METHOD_ID_CARD = 2;
   IDENTIFICATION_METHOD_PASSPORT = 3;
+}
+
+enum VerifyStatusCode {
+    STATUS_UNSPECIFIED = 0;
+    OK = 1;
+    FAILED = 2;
 }

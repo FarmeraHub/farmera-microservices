@@ -12,7 +12,7 @@ import { CategoryDto } from './dto/response/category.dto.response';
 import { CreateCategoryRequest, CreateCategoryResponse } from '@farmera/grpc-proto/dist/products/products';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
-import { CommonMapper } from 'src/grpc/server/mappers/common.mapper';
+import { TypesMapper } from 'src/grpc/server/mappers/common/types.mapper';
 
 @Injectable()
 export class CategoriesService {
@@ -31,7 +31,7 @@ export class CategoriesService {
         const categories = await this.categoriesRepository.find(
             {
                 relations: ['subcategories'],
-                order: { created: 'DESC' }, 
+                order: { created: 'DESC' },
             }
         );
 
@@ -39,7 +39,7 @@ export class CategoriesService {
             this.logger.warn('Không tìm thấy danh mục nào.');
             return [];
         }
-        
+
 
         return categories;
     }
@@ -245,7 +245,7 @@ export class CategoriesService {
                     name: savedCategoryEntity.name,
                     description: savedCategoryEntity.description || '',
                     image_url: savedCategoryEntity.image_url || '',
-                    created: CommonMapper.toGrpcTimestamp(savedCategoryEntity.created),
+                    created: TypesMapper.toGrpcTimestamp(savedCategoryEntity.created),
                 },
             };
             return grpcCategoryResponse;

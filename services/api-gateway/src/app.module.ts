@@ -14,7 +14,6 @@ import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ProductModule } from './product/product.module';
 import { CommunicationModule } from './communication/communication.module';
-import { CommunicationGateway } from './communication/communication.gateway';
 
 @Module({
   imports: [

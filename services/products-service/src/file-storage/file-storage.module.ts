@@ -7,24 +7,21 @@ import { AzureBlobStorageStrategy } from './azure-blob-storage-strategy';
 
 @Global()
 @Module({
-  imports: [ConfigModule],
-  providers: [
-    {
-      provide: STORAGE_STRATEGY,
-      useFactory: (configService: ConfigService): IStorageStrategy => {
-        const storageType = configService.get<string>('STORAGE_TYPE', 'local');
-        const logger = new Logger('StorageStrategyFactory');
-
-        if (storageType === 'azure_blob') {
-          
-          return new AzureBlobStorageStrategy(configService);
-        }
-        return new LocalStorageStrategy(configService);
-      },
-      inject: [ConfigService],
-    },
-    FileStorageService,
-  ],
-  exports: [FileStorageService],
+    imports: [ConfigModule],
+    providers: [
+        {
+            provide: STORAGE_STRATEGY,
+            useFactory: (configService: ConfigService): IStorageStrategy => {
+                const storageType = configService.get<string>('STORAGE_TYPE', 'azure_blob');
+                if (storageType === 'azure_blob') {
+                    return new AzureBlobStorageStrategy(configService);
+                }
+                return new LocalStorageStrategy(configService);
+            },
+            inject: [ConfigService],
+        },
+        FileStorageService,
+    ],
+    exports: [FileStorageService],
 })
 export class FileStorageModule { }
