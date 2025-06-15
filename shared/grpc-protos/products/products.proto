@@ -48,13 +48,14 @@ service ProductsService {
 
   
   // Review management
-  //rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse);
-  //rpc GetReview(GetReviewRequest) returns (GetReviewResponse);
-  //rpc UpdateReview(UpdateReviewRequest) returns (UpdateReviewResponse);
-  //rpc DeleteReview(DeleteReviewRequest) returns (DeleteReviewResponse);
+  rpc CreateReview(CreateReviewRequest) returns (CreateReviewResponse);
+  rpc CreateReply(CreateReplyRequest) returns (CreateReplyResponse);
+  rpc UpdateReview(UpdateReviewRequest) returns (UpdateReviewResponse);
+  rpc UpdateReply(UpdateReplyRequest) returns (UpdateReplyResponse);
+  rpc DeleteReview(DeleteReviewRequest) returns (DeleteReviewResponse);
+  rpc DeleteReply(DeleteReplyRequest) returns (DeleteReplyResponse);
+  rpc ApproveReview(ApproveReviewRequest) returns (ApproveReviewResponse);
   //rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse);
-  //rpc GetProductReviews(GetProductReviewsRequest) returns (GetProductReviewsResponse);
-  //rpc ApproveReview(ApproveReviewRequest) returns (ApproveReviewResponse);
   
   // Process tracking
   //rpc CreateProcess(CreateProcessRequest) returns (CreateProcessResponse);
@@ -174,30 +175,6 @@ message ProductSubcategoryDetail {
   int32 id = 1;
   int32 product_id = 2;
   Subcategory subcategory = 3;
-}
-
-// Review message definition
-message Review {
-  int32 review_id = 1;
-  int32 product_id = 2;
-  string user_id = 3;
-  int32 rating = 4; // 1-5 stars
-  string comment = 5;
-  repeated string images_urls = 6;
-  repeated string video_urls = 7;
-  bool seller_approved = 8;
-  farmera.common.Timestamp created = 9;
-  bool is_deleted = 10;
-  int32 order_detail_id = 11; // Reference to purchase order
-}
-
-// Review reply
-message ReviewReply {
-  int32 id = 1;
-  string user_id = 2;
-  string reply = 3;
-  farmera.common.Timestamp created = 4;
-  int32 review_id = 5;  
 }
 
 // Product process tracking
@@ -526,67 +503,106 @@ message GetCategoryTreeResponse {
   repeated SubcategoryLite sublist = 2;
 }
 
-// Review management requests/responses
+// Review
+message Review {
+  int32 review_id = 1;
+  int32 product_id = 2;
+  string user_id = 3;
+  int32 rating = 4; // 1-5 stars
+  string comment = 5;
+  optional farmera.common.StringList images_urls = 6;
+  optional farmera.common.StringList video_urls = 7;
+  bool seller_approved = 8;
+  farmera.common.Timestamp created = 9;
+  int32 order_detail_id = 10; // Reference to purchase order
+  optional ReplyList replies = 11;
+}
+
+message ReviewReply {
+  int32 id = 1;
+  string user_id = 2;
+  string reply = 3;
+  farmera.common.Timestamp created = 4;
+}
+
+message ReplyList {
+  repeated ReviewReply replies = 1;
+}
+
 message CreateReviewRequest {
   int32 product_id = 1;
   string user_id = 2;
   int32 rating = 3;
-  string title = 4;
   string comment = 5;
-  repeated string image_urls = 6;
-  string order_id = 7;
+  optional farmera.common.StringList image_urls = 6;
+  optional farmera.common.StringList video_urls = 7;
 }
 
 message CreateReviewResponse {
   Review review = 1;
 }
 
-message GetReviewRequest {
+message CreateReplyRequest {
   int32 review_id = 1;
-  bool include_replies = 2;
+  string reply = 2;
+  string user_id = 3;
 }
 
-message GetReviewResponse {
-  Review review = 1;
+message CreateReplyResponse {
+  ReviewReply reply = 1;
 }
 
 message UpdateReviewRequest {
   int32 review_id = 1;
-  optional int32 rating = 2;
-  optional string title = 3;
-  optional string comment = 4;
-  repeated string image_urls = 5;
+  string user_id = 2;
+  int32 rating = 3;
+  string comment = 4;
+  optional farmera.common.StringList image_urls = 5;
+  optional farmera.common.StringList video_urls = 6;
 }
 
 message UpdateReviewResponse {
   Review review = 1;
 }
 
+message UpdateReplyRequest {
+  int32 reply_id = 1;
+  string user_id = 2;
+  string reply = 3;
+}
+
+message UpdateReplyResponse {
+  ReviewReply reply = 1;
+}
+
 message DeleteReviewRequest {
   int32 review_id = 1;
   string user_id = 2;
-  string reason = 3;
 }
 
 message DeleteReviewResponse {
   bool success = 1;
 }
 
-message ListReviewsRequest {
-  farmera.common.PaginationRequest pagination = 1;
-  repeated farmera.common.SortOption sort = 2;
-  optional int32 product_id_filter = 3;
-  optional string user_id_filter = 4;
-  optional farmera.common.ReviewStatus status_filter = 5;
-  optional int32 min_rating = 6;
-  optional int32 max_rating = 7;
+message DeleteReplyRequest {
+  int32 reply_id = 1;
+  string user_id = 2;
 }
 
-message ListReviewsResponse {
-  repeated Review reviews = 1;
-  farmera.common.PaginationResponse pagination = 2;
+message DeleteReplyResponse {
+  bool success = 1;
 }
 
+message ApproveReviewRequest {
+  int32 review_id = 1;
+  bool approved = 2;
+}
+
+message ApproveReviewResponse {
+  bool success = 1;
+}
+
+// Product
 message GetProductReviewsRequest {
   int32 product_id = 1;
   farmera.common.PaginationRequest pagination = 2;
@@ -598,17 +614,6 @@ message GetProductReviewsResponse {
   repeated Review reviews = 1;
   farmera.common.PaginationResponse pagination = 2;
   farmera.common.Rating rating_summary = 3;
-}
-
-message ApproveReviewRequest {
-  int32 review_id = 1;
-  bool approved = 2;
-  string moderator_id = 3;
-  string notes = 4;
-}
-
-message ApproveReviewResponse {
-  Review review = 1;
 }
 
 // Process tracking requests/responses

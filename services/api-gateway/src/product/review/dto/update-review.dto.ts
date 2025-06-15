@@ -1,12 +1,7 @@
 import { Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsNumber, IsPositive, IsString, Max, Min } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, Max, Min } from "class-validator";
 
-export class CreateReviewDto {
-    @Type(() => Number)
-    @IsNumber()
-    @IsPositive()
-    product_id: number;
-
+export class UpdateReviewDto {
     @Type(() => Number)
     @IsNumber()
     @Min(1)
@@ -19,9 +14,11 @@ export class CreateReviewDto {
 
     @IsArray()
     @IsString({ each: true })
+    @IsOptional()
     image_urls?: string[];
 
     @IsArray()
     @IsString({ each: true })
+    @IsOptional()
     video_urls?: string[];
 }

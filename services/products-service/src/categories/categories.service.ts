@@ -5,14 +5,7 @@ import { Category } from './entities/category.entity';
 import { DataSource, In, Repository } from 'typeorm';
 import { CreateCategoriesDto } from './dto/request/create-categories.dto';
 import { CreateSubcategoryDto } from './dto/request/create-subcategories.dto';
-import { FileStorageService } from 'src/file-storage/file-storage.service';
-import { SavedFileResult } from 'src/file-storage/storage.strategy.interface';
 import { ProductSubcategoryDetail } from 'src/products/entities/product-subcategory-detail.entity';
-import { CategoryDto } from './dto/response/category.dto.response';
-import { CreateCategoryRequest, CreateCategoryResponse } from '@farmera/grpc-proto/dist/products/products';
-import { RpcException } from '@nestjs/microservices';
-import { status } from '@grpc/grpc-js';
-import { TypesMapper } from 'src/grpc/server/mappers/common/types.mapper';
 
 @Injectable()
 export class CategoriesService {

@@ -8,7 +8,7 @@ export class GetReviewsDto {
 
     @IsOptional()
     @IsEnum(['created', 'rating'])
-    sort_by: 'created' | 'rating' = 'created';
+    sortBy: 'created' | 'rating' = 'created';
 
     @IsOptional()
     @IsEnum(['ASC', 'DESC'])

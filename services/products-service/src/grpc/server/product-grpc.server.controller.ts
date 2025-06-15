@@ -34,6 +34,20 @@ import {
     GetFarmByUserResponse,
     GetCategoryTreeResponse,
     GetCategoryTreeRequest,
+    CreateReviewRequest,
+    CreateReviewResponse,
+    UpdateReviewRequest,
+    UpdateReviewResponse,
+    ApproveReviewRequest,
+    ApproveReviewResponse,
+    CreateReplyRequest,
+    CreateReplyResponse,
+    DeleteReplyRequest,
+    DeleteReplyResponse,
+    DeleteReviewRequest,
+    DeleteReviewResponse,
+    UpdateReplyRequest,
+    UpdateReplyResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
@@ -46,6 +60,8 @@ import { FarmMapper } from './mappers/product/farm.mapper';
 import { VerifyStatusCode } from '@farmera/grpc-proto/dist/common/enums';
 import { Readable } from 'stream';
 import { CategoryMapper } from './mappers/product/category.mapper';
+import { ReviewsService } from 'src/reviews/reviews.service';
+import { ReviewMapper } from './mappers/review/review.mapper';
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -57,6 +73,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
         private readonly farmsService: FarmsService,
         private readonly categoriesService: CategoriesService,
         private readonly farmAdminService: FarmAdminService,
+        private readonly reviewService: ReviewsService,
     ) { }
 
     // Farm methods
@@ -509,6 +526,81 @@ export class ProductGrpcServerController implements ProductsServiceController {
         return {
             category: CategoryMapper.toGrpcCategory(result),
             sublist: result.subcategories.map((value) => CategoryMapper.toGrpcSubcategoryLite(value))
+        }
+    }
+
+    // verified
+    // Review methods
+    async createReview(request: CreateReviewRequest): Promise<CreateReviewResponse> {
+        const result = await this.reviewService.createReview(
+            {
+                product_id: request.product_id,
+                rating: request.rating,
+                comment: request.comment,
+                image_urls: request.image_urls?.list,
+                video_urls: request.video_urls?.list,
+            },
+            request.user_id
+        )
+        return {
+            review: ReviewMapper.toGrpcReview(result)
+        }
+    }
+
+    async createReply(request: CreateReplyRequest): Promise<CreateReplyResponse> {
+        const result = await this.reviewService.createReply(
+            {
+                review_id: request.review_id,
+                reply: request.reply
+            },
+            request.user_id
+        )
+        return {
+            reply: ReviewMapper.toGrpcReply(result)
+        }
+    }
+
+    async updateReview(request: UpdateReviewRequest): Promise<UpdateReviewResponse> {
+        const result = await this.reviewService.updateReview(
+            request.review_id,
+            {
+                rating: request.rating,
+                comment: request.comment,
+                image_urls: request.image_urls?.list,
+                video_urls: request.video_urls?.list,
+            },
+            request.user_id
+        )
+        return {
+            review: ReviewMapper.toGrpcReview(result)
+        }
+    }
+
+    async updateReply(request: UpdateReplyRequest): Promise<UpdateReplyResponse> {
+        const result = await this.reviewService.updateReply(request.reply_id, request.reply, request.user_id);
+        return {
+            reply: ReviewMapper.toGrpcReply(result)
+        }
+    }
+
+    async deleteReview(request: DeleteReviewRequest): Promise<DeleteReviewResponse> {
+        const result = await this.reviewService.deleteReview(request.review_id, request.user_id);
+        return {
+            success: result
+        }
+    }
+
+    async deleteReply(request: DeleteReplyRequest): Promise<DeleteReplyResponse> {
+        const result = await this.reviewService.deleteReply(request.reply_id, request.user_id);
+        return {
+            success: result
+        }
+    }
+
+    async approveReview(request: ApproveReviewRequest): Promise<ApproveReviewResponse> {
+        const result = await this.reviewService.approveReview(request.review_id, request.approved);
+        return {
+            success: result
         }
     }
 }

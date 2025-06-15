@@ -144,3 +144,7 @@ message NotificationAttachmentList {
 message StringMap {
   map<string, string> values = 1;
 }
+
+message StringList {
+  repeated string list = 1;
+}
