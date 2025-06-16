@@ -11,13 +11,12 @@ option go_package = "github.com/farmera/grpc-protos/products";
 // Products service definition
 service ProductsService {
   // Product management
-  //rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
   rpc GetProduct(GetProductRequest) returns (GetProductResponse);
   rpc GetListProducts(GetListProductsRequest) returns (GetListProductsResponse);
-  //rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
-  //rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
-  //rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
-  //rpc SearchProducts(SearchProductsRequest) returns (SearchProductsResponse);
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
+  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
+  rpc SearchProducts(SearchProductsRequest) returns (SearchProductsResponse);
   //rpc GetProductsByFarm(GetProductsByFarmRequest) returns (GetProductsByFarmResponse);
   //rpc GetProductsByCategory(GetProductsByCategoryRequest) returns (GetProductsByCategoryResponse);
   //rpc UpdateProductStatus(UpdateProductStatusRequest) returns (UpdateProductStatusResponse);
@@ -26,9 +25,8 @@ service ProductsService {
   rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
   rpc VerifyFarm(stream VerifyFarmRequest) returns (VerifyFarmResponse);
   rpc GetFarm(GetFarmRequest) returns (GetFarmResponse);
-  //rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
-  //rpc DeleteFarm(DeleteFarmRequest) returns (DeleteFarmResponse);
-  //rpc ListFarms(ListFarmsRequest) returns (ListFarmsResponse);
+  rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
+  rpc ListFarms(ListFarmsRequest) returns (ListFarmsResponse);
   //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
   rpc GetFarmByUser(GetFarmByUserRequest) returns (GetFarmByUserResponse);
   rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);

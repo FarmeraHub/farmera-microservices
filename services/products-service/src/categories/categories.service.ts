@@ -5,6 +5,12 @@ import { Category } from './entities/category.entity';
 import { DataSource, In, Repository } from 'typeorm';
 import { CreateCategoriesDto } from './dto/request/create-categories.dto';
 import { CreateSubcategoryDto } from './dto/request/create-subcategories.dto';
+import { CategoryDto } from './dto/response/category.dto.response';
+import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
+import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
+import { PaginationMeta } from 'src/pagination/dto/pagination-meta.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -14,36 +20,77 @@ export class CategoriesService {
         private readonly categoriesRepository: Repository<Category>,
         @InjectRepository(Subcategory)
         private readonly subcategoriesRepository: Repository<Subcategory>,
-        // @InjectRepository(ProductSubcategoryDetail)
-        // private readonly productSubcategoryDetailRepository: Repository<ProductSubcategoryDetail>,
-        private readonly dataSource: DataSource, // Inject DataSource for transaction management
     ) { }
-    async getCategoriesWithSubcategories() {
-        const categories = await this.categoriesRepository.find(
-            {
-                relations: ['subcategories'],
-                order: { created: 'DESC' },
+    async getCategoriesWithSubcategories(
+        paginationOptions?: PaginationOptions,
+    ): Promise<PaginationResult<Category> | Category[]> {
+        // If no pagination options provided, return all categories (for backward compatibility)
+        if (!paginationOptions) {
+            const categories = await this.categoriesRepository.find(
+                {
+                    relations: ['subcategories'],
+                    order: { created: 'DESC' },
+                }
+            );
+            if (!categories || categories.length === 0) {
+                this.logger.warn('Không tìm thấy danh mục nào.');
+                return [];
             }
-        );
-
-        if (!categories || categories.length === 0) {
-            this.logger.warn('Không tìm thấy danh mục nào.');
-            return [];
+            return categories;
         }
 
+        // Use pagination
+        const queryBuilder = this.categoriesRepository
+            .createQueryBuilder('category')
+            .leftJoinAndSelect('category.subcategories', 'subcategories')
+            .orderBy(
+                'category.created',
+                (paginationOptions.order || 'DESC') as 'ASC' | 'DESC',
+            );
 
-        return categories;
+        // Add sorting if specified
+        if (paginationOptions.sort_by) {
+            const order = (paginationOptions.order || 'ASC') as 'ASC' | 'DESC';
+            switch (paginationOptions.sort_by) {
+                case 'name':
+                    queryBuilder.orderBy('category.name', order);
+                    break;
+                case 'created':
+                    queryBuilder.orderBy('category.created', order);
+                    break;
+                default:
+                    queryBuilder.orderBy('category.created', 'DESC');
+            }
+        }
+
+        // If all=true, return all results without pagination
+        if (paginationOptions.all) {
+            const categories = await queryBuilder.getMany();
+            return categories;
+        }
+
+        // Apply pagination
+        const totalItems = await queryBuilder.getCount();
+        const categories = await queryBuilder
+            .skip(paginationOptions.skip)
+            .take(paginationOptions.limit)
+            .getMany();
+
+        const meta = new PaginationMeta({
+            paginationOptions,
+            totalItems,
+        });
+
+        return new PaginationResult(categories, meta);
     }
 
     async getCategoryById(categoryId: number): Promise<Category> {
         const category = await this.categoriesRepository.findOne({
             where: { category_id: categoryId },
         });
-
         if (!category) {
             throw new NotFoundException(`Không tìm thấy danh mục với ID ${categoryId}`);
         }
-
         this.logger.log(`(getCategoryById) Lấy danh mục thành công: ${JSON.stringify(category, null, 2)}`);
         return category;
     }
@@ -53,31 +100,13 @@ export class CategoriesService {
     async createCategory(
         createCategoryDto: CreateCategoriesDto,
     ): Promise<Category> {
-
-        const queryRunner = this.dataSource.createQueryRunner();
-        await queryRunner.connect();
-        await queryRunner.startTransaction();
         try {
-            const categoryData = {
-                name: createCategoryDto.name,
-                description: createCategoryDto.description,
-                image_url: createCategoryDto.icon_url,
-            };
-
-            const newCategory = queryRunner.manager.create(Category, categoryData);
-            const savedCategory = await queryRunner.manager.save(Category, newCategory);
-
-            await queryRunner.commitTransaction();
-            return savedCategory;
-
+            return await this.categoriesRepository.create(createCategoryDto);
         } catch (error) {
-            await queryRunner.rollbackTransaction();
             if (error instanceof BadRequestException || error instanceof NotFoundException) {
                 throw error;
             }
             throw new InternalServerErrorException(`Không thể tạo category: ${error.message}`);
-        } finally {
-            await queryRunner.release();
         }
     }
 

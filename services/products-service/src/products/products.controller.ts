@@ -16,7 +16,7 @@ import {
   ParseIntPipe,
   Headers,
   Logger,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
 import { Role } from "src/common/enums/role.enum";
 import { ProductsService } from "./products.service";
@@ -30,16 +30,15 @@ import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString } from "class-validator";
 
 
 export class GetProductsByIdsRequestDto {
-
   @IsArray()
   @ArrayNotEmpty() // Đảm bảo mảng không rỗng
   @IsString({ each: true }) // Đảm bảo mỗi phần tử là string
   @IsNotEmpty({ each: true }) // Đảm bảo mỗi phần tử không rỗng
   product_ids: string[];
 }
+
 @Controller('product')
 export class ProductsController {
-
   private readonly logger = new Logger(ProductsController.name);
   constructor(private readonly productsService: ProductsService) { }
 
@@ -54,7 +53,6 @@ export class ProductsController {
     }
     return this.productsService.create(createProductDto, userId);
   }
-
 
   @Delete(':id')
   async deleteProduct(
@@ -88,6 +86,27 @@ export class ProductsController {
     return this.productsService.findProductById(id);
   }
 
+  @Get()
+  async searchAndFilterProducts(
+    @Query() paginationOptions: PaginationOptions,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('subcategory') subcategory?: string,
+    @Query('minPrice') minPrice?: number,
+    @Query('maxPrice') maxPrice?: number,
+    @Query('farmId') farmId?: string,
+    @Query('status') status?: ProductStatus,
+  ) {
+    return this.productsService.searchAndFilterProducts(paginationOptions, {
+      search,
+      category,
+      subcategory,
+      minPrice,
+      maxPrice,
+      farmId,
+      status,
+    });
+  }
   // @Get()
   // async searchAndFillterProducts(
   //   @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,

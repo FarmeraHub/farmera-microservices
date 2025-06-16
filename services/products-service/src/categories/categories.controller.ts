@@ -1,16 +1,13 @@
-import { Body, Get, Controller, Post, UploadedFile, UseGuards, UseInterceptors, Request, UnauthorizedException, Param } from '@nestjs/common';
+import { Body, Get, Controller, Post, UploadedFile, UseGuards, UseInterceptors, Request, UnauthorizedException, Param, Query } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoriesDto } from './dto/request/create-categories.dto';
-
 import { Role } from 'src/common/enums/role.enum';
-import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { CreateSubcategoryDto } from './dto/request/create-subcategories.dto';
-
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) { }
-
   @Post('create')
   async create(
     @Body() categoriesDto: CreateCategoriesDto,
@@ -24,16 +21,19 @@ export class CategoriesController {
     // @Body() createCategoryDto: CreateCategoriesDto
     return this.categoriesService.createCategory(categoriesDto);
   }
-  @Get('getall')
-  async getAllCategories() {
-    return this.categoriesService.getCategoriesWithSubcategories();
-  }
 
+  @Get('getall')
+  async getAllCategories(@Query() paginationOptions?: PaginationOptions) {
+    return this.categoriesService.getCategoriesWithSubcategories(
+      paginationOptions,
+    );
+  }
 
   @Post('sub/create')
   async createSubcategory(
     @Request() req: Request,
-    @Body() createSubcategoryDto: CreateSubcategoryDto) {
+    @Body() createSubcategoryDto: CreateSubcategoryDto,
+  ) {
     const userId = req.headers['x-user-id'];
     const role = req.headers['x-user-role'];
     if (!(role == Role.ADMIN)) {

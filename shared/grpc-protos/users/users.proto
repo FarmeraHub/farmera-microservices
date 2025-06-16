@@ -29,15 +29,19 @@ service UsersService {
   rpc SendVerificationEmail(SendVerificationEmailRequest) returns (SendVerificationEmailResponse);
   rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
   
+  // Phone verification
+  rpc SendVerificationPhone(SendVerificationPhoneRequest) returns (SendVerificationPhoneResponse);
+  rpc VerifyPhone(VerifyPhoneRequest) returns (VerifyPhoneResponse);
+  
   // User profile
   rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
   rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
   
   // Location management
   rpc AddUserLocation(AddUserLocationRequest) returns (AddUserLocationResponse);
-  // rpc UpdateUserLocation(UpdateUserLocationRequest) returns (UpdateUserLocationResponse);
-  // rpc DeleteUserLocation(DeleteUserLocationRequest) returns (DeleteUserLocationResponse);
-  // rpc GetUserLocations(GetUserLocationsRequest) returns (GetUserLocationsResponse);
+  rpc UpdateUserLocation(UpdateUserLocationRequest) returns (UpdateUserLocationResponse);
+  rpc DeleteUserLocation(DeleteUserLocationRequest) returns (DeleteUserLocationResponse);
+  rpc GetUserLocations(GetUserLocationsRequest) returns (GetUserLocationsResponse);
   
   // Payment methods
   rpc AddPaymentMethod(AddPaymentMethodRequest) returns (AddPaymentMethodResponse);
@@ -234,6 +238,25 @@ message VerifyEmailRequest {
 }
 
 message VerifyEmailResponse {
+  bool success = 1;
+}
+
+// Phone verification requests/responses
+message SendVerificationPhoneRequest {
+  string phone = 1;
+}
+
+message SendVerificationPhoneResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message VerifyPhoneRequest {
+  string phone = 1;
+  string verification_code = 2;
+}
+
+message VerifyPhoneResponse {
   bool success = 1;
 }
 

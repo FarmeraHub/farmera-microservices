@@ -12,6 +12,9 @@ import { FarmRegistrationDto } from './dto/farm-registration.dto';
 import { FptIdrCccdFrontData, FptIdrCardFrontData } from 'src/biometrics/interfaces/fpt-idr-front.interface';
 import { AddressGHN } from './entities/address-ghn.entity';
 import { validate as isUUID } from 'uuid';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
+import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
+import { PaginationMeta } from 'src/pagination/dto/pagination-meta.dto';
 import { AzureBlobService } from 'src/services/azure-blob.service';
 @Injectable()
 export class FarmsService {
@@ -255,7 +258,7 @@ export class FarmsService {
         try {
             const farm = await this.farmsRepository.findOne({
                 where: { farm_id: farmId },
-                relations: ['address'], // Ensure address is loaded
+                relations: ['address'],
             });
 
             if (!farm) {

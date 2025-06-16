@@ -1,13 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne, UpdateDateColumn, OneToMany, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne, UpdateDateColumn, OneToMany, JoinColumn, BeforeInsert } from "typeorm";
 import { Address } from "./address.entity";
 import { FarmStatus } from '../../common/enums/farm-status.enum';
-import { Product } from "../../products/entities/product.entity";
-import { Identification } from "./identification.entity";
+import { Product } from '../../products/entities/product.entity';
+import { Identification } from './identification.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
 export class Farm {
   @PrimaryGeneratedColumn('uuid')
   farm_id: string;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.farm_id) {
+      this.farm_id = uuidv4();
+    }
+  }
 
   @Column()
   farm_name: string;
@@ -49,7 +57,6 @@ export class Farm {
   @OneToOne(() => Address, (address) => address.farm, { cascade: true })
   @JoinColumn({ name: 'address_id' })
   address: Address;
-
   @OneToOne(() => Identification, (identification) => identification.farm, { cascade: true })
   identification: Identification;
 

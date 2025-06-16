@@ -16,7 +16,7 @@ import { AuthGuard } from './auth/auth.guard';
 import { TransformInterceptor } from './interceptors/transform.interceptor';
 import { ConfigService } from '@nestjs/config';
 import { SanitizeInterceptor } from './interceptors/sanitize.interceptor';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

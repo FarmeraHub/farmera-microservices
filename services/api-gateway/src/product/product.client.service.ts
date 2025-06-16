@@ -1,121 +1,173 @@
-import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ClientGrpc } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
 import {
-    GetProductRequest,
-    GetProductResponse,
-    ProductsServiceClient,
-    CreateCategoryRequest,
-    CreateCategoryResponse,
-    GetCategoryRequest,
-    GetCategoryResponse,
-    CreateSubcategoryRequest,
-    CreateSubcategoryResponse,
-    GetSubcategoryResponse,
-    GetSubcategoryRequest,
-    GetFarmRequest,
-    GetFarmResponse,
-    GetFarmByUserRequest,
-} from "@farmera/grpc-proto/dist/products/products";
-import { ClientGrpc } from "@nestjs/microservices";
-import { firstValueFrom } from "rxjs";
+  ProductsServiceClient,
+  GetProductRequest,
+  GetProductResponse,
+  GetListProductsRequest,
+  GetListProductsResponse,
+  CreateProductRequest,
+  CreateProductResponse,
+  UpdateProductRequest,
+  UpdateProductResponse,
+  DeleteProductRequest,
+  DeleteProductResponse,
+  SearchProductsRequest,
+  SearchProductsResponse,
+  GetAllCategoryWithSubcategoryRequest,
+  GetAllCategoryWithSubcategoryResponse,
+  GetCategoryRequest,
+  GetCategoryResponse,
+  CreateCategoryRequest,
+  CreateCategoryResponse,
+  GetSubcategoryRequest,
+  GetSubcategoryResponse,
+  CreateSubcategoryRequest,
+  CreateSubcategoryResponse,
+  GetFarmRequest,
+  GetFarmResponse,
+  GetFarmByUserRequest,
+  GetFarmByUserResponse,
+  CreateFarmRequest,
+  CreateFarmResponse,
+  UpdateFarmRequest,
+  UpdateFarmResponse,
+  ListFarmsRequest,
+  ListFarmsResponse,
+  UpdateFarmStatusRequest,
+  UpdateFarmStatusResponse,
+} from '@farmera/grpc-proto/dist/products/products';
 
 @Injectable()
 export class ProductClientService implements OnModuleInit {
-    private readonly logger = new Logger(ProductClientService.name);
-    private productsServiceGrpcClient: ProductsServiceClient;
+  private readonly logger = new Logger(ProductClientService.name);
+  private productsServiceGrpcClient: ProductsServiceClient;
 
-    constructor(
-        @Inject('PRODUCTS_PACKAGE') private readonly clientGrpcInstance: ClientGrpc,
-    ) { }
+  constructor(
+    @Inject('PRODUCTS_PACKAGE') private readonly clientGrpcInstance: ClientGrpc,
+  ) {}
 
-    onModuleInit() {
-        this.logger.log('ProductClientService onModuleInit called.');
-        this.productsServiceGrpcClient = this.clientGrpcInstance.getService<ProductsServiceClient>('ProductsService');
-        if (!this.productsServiceGrpcClient) {
-            this.logger.error('Failed to get ProductsService gRPC client on module init.');
-            throw new Error('Critical: ProductsService gRPC client could not be initialized.');
-        } else {
-            this.logger.log('ProductsService gRPC client initialized successfully.');
-        }
-    }
-    async GetProduct(request: GetProductRequest): Promise<GetProductResponse>{
-        const result = await firstValueFrom(this.productsServiceGrpcClient.getProduct(request));
-        return result;
-    }
-    async GetAllCategoryWithSubcategory(): Promise<any> {
-        this.logger.log('Fetching all categories with subcategories...');
-        try {
-            const result = await firstValueFrom(this.productsServiceGrpcClient.getAllCategoryWithSubcategory({}));
-            this.logger.log('Successfully fetched all categories with subcategories.');
-            return result;
-        } catch (error) {
-            this.logger.error('Error fetching all categories with subcategories:', error);
-            throw error;
-        }
-    }
-    async CreateCategory(CreateCategoryRequest: CreateCategoryRequest) : Promise<CreateCategoryResponse> {
-        this.logger.log('Creating category with request:', CreateCategoryRequest);
-        try {
-            const result = await firstValueFrom(this.productsServiceGrpcClient.createCategory(CreateCategoryRequest));
-            this.logger.log('Successfully created category:', result);
-            return result;
-        } catch (error) {
-            this.logger.error('Error creating category:', error);
-            throw error;
-        }
-    }
-    async GetCategory(request: GetCategoryRequest): Promise<GetCategoryResponse> {
-        this.logger.log('Fetching category with request:', request);
-        try {
-            const result = await firstValueFrom(this.productsServiceGrpcClient.getCategory(request));
-            this.logger.log('Successfully fetched category:', result);
-            return result;
-        } catch (error) {
-            this.logger.error('Error fetching category:', error);
-            throw error;
-        }
-    }
-    async GetSubcategory(request: GetSubcategoryRequest): Promise<GetSubcategoryResponse> {
-        this.logger.log('Fetching subcategory with request:', request);
-        try {
-            const result = await firstValueFrom(this.productsServiceGrpcClient.getSubcategory(request));
-            this.logger.log('Successfully fetched subcategory:', result);
-            return result;
-        } catch (error) {
-            this.logger.error('Error fetching subcategory:', error);
-            throw error;
-        }
-    }
-    async CreateSubcategory(request: CreateSubcategoryRequest): Promise<CreateSubcategoryResponse> {
-        this.logger.log('Creating subcategory with request:', request);
-        try {
-            const result = await firstValueFrom(this.productsServiceGrpcClient.createSubcategory(request));
-            this.logger.log('Successfully created subcategory:', result);
-            return result;
-        } catch (error) {
-            this.logger.error('Error creating subcategory:', error);
-            throw error;
-        }
-    }
-    async GetFarm(request: GetFarmRequest): Promise<GetFarmResponse>{
-        this.logger.log('Fetching farm with request:', request);
-        try {
-            const result = await firstValueFrom(this.productsServiceGrpcClient.getFarm(request));
-            this.logger.log('Successfully fetched farm:', result);
-            return result;
-        } catch (error) {
-            this.logger.error('Error fetching farm:', error);
-            throw error;
-        }
-    }
-    async GetFarmByUser(request: GetFarmByUserRequest): Promise<GetFarmResponse> {
-        this.logger.log('Fetching farm by user with request:', request);
-        try {
-            const result = await firstValueFrom(this.productsServiceGrpcClient.getFarmByUser(request));
-            this.logger.log('Successfully fetched farm by user:', result);
-            return result;
-        } catch (error) {
-            this.logger.error('Error fetching farm by user:', error);
-            throw error;
-        }
-    }
+  onModuleInit() {
+    this.productsServiceGrpcClient =
+      this.clientGrpcInstance.getService<ProductsServiceClient>(
+        'ProductsService',
+      );
+    this.logger.log('ProductClientService initialized with gRPC client');
+  }
+
+  // Product methods
+  getProduct(request: GetProductRequest): Observable<GetProductResponse> {
+    this.logger.log(`Getting product with ID: ${request.product_id}`);
+    return this.productsServiceGrpcClient.getProduct(request);
+  }
+
+  getListProducts(
+    request: GetListProductsRequest,
+  ): Observable<GetListProductsResponse> {
+    this.logger.log(
+      `Getting products with IDs: ${request.products.map((p) => p.product_id).join(', ')}`,
+    );
+    return this.productsServiceGrpcClient.getListProducts(request);
+  }
+
+  createProduct(
+    request: CreateProductRequest,
+  ): Observable<CreateProductResponse> {
+    this.logger.log('Creating new product');
+    return this.productsServiceGrpcClient.createProduct(request);
+  }
+
+  updateProduct(
+    request: UpdateProductRequest,
+  ): Observable<UpdateProductResponse> {
+    this.logger.log(`Updating product with ID: ${request.product_id}`);
+    return this.productsServiceGrpcClient.updateProduct(request);
+  }
+
+  deleteProduct(
+    request: DeleteProductRequest,
+  ): Observable<DeleteProductResponse> {
+    this.logger.log(`Deleting product with ID: ${request.product_id}`);
+    return this.productsServiceGrpcClient.deleteProduct(request);
+  }
+
+  searchProducts(
+    request: SearchProductsRequest,
+  ): Observable<SearchProductsResponse> {
+    this.logger.log('Searching products with filters');
+    return this.productsServiceGrpcClient.searchProducts(request);
+  }
+
+  // Category methods
+  getAllCategoryWithSubcategory(
+    request: GetAllCategoryWithSubcategoryRequest,
+  ): Observable<GetAllCategoryWithSubcategoryResponse> {
+    this.logger.log('Getting all categories with subcategories');
+    return this.productsServiceGrpcClient.getAllCategoryWithSubcategory(
+      request,
+    );
+  }
+
+  getCategory(request: GetCategoryRequest): Observable<GetCategoryResponse> {
+    this.logger.log(`Getting category with ID: ${request.category_id}`);
+    return this.productsServiceGrpcClient.getCategory(request);
+  }
+
+  createCategory(
+    request: CreateCategoryRequest,
+  ): Observable<CreateCategoryResponse> {
+    this.logger.log('Creating new category');
+    return this.productsServiceGrpcClient.createCategory(request);
+  }
+
+  getSubcategory(
+    request: GetSubcategoryRequest,
+  ): Observable<GetSubcategoryResponse> {
+    this.logger.log(`Getting subcategory with ID: ${request.subcategory_id}`);
+    return this.productsServiceGrpcClient.getSubcategory(request);
+  }
+
+  createSubcategory(
+    request: CreateSubcategoryRequest,
+  ): Observable<CreateSubcategoryResponse> {
+    this.logger.log('Creating new subcategory');
+    return this.productsServiceGrpcClient.createSubcategory(request);
+  }
+
+  // Farm methods
+  getFarm(request: GetFarmRequest): Observable<GetFarmResponse> {
+    this.logger.log(`Getting farm with ID: ${request.farm_id}`);
+    return this.productsServiceGrpcClient.getFarm(request);
+  }
+
+  getFarmByUser(
+    request: GetFarmByUserRequest,
+  ): Observable<GetFarmByUserResponse> {
+    this.logger.log(`Getting farm for user: ${request.user_id}`);
+    return this.productsServiceGrpcClient.getFarmByUser(request);
+  }
+
+  createFarm(request: CreateFarmRequest): Observable<CreateFarmResponse> {
+    this.logger.log('Creating new farm');
+    return this.productsServiceGrpcClient.createFarm(request);
+  }
+
+  updateFarm(request: UpdateFarmRequest): Observable<UpdateFarmResponse> {
+    this.logger.log(`Updating farm with ID: ${request.farm_id}`);
+    return this.productsServiceGrpcClient.updateFarm(request);
+  }
+
+  listFarms(request: ListFarmsRequest): Observable<ListFarmsResponse> {
+    this.logger.log('Listing farms with filters');
+    return this.productsServiceGrpcClient.listFarms(request);
+  }
+
+  // Admin methods
+  updateFarmStatus(
+    request: UpdateFarmStatusRequest,
+  ): Observable<UpdateFarmStatusResponse> {
+    this.logger.log(`Updating farm status for farm: ${request.farm_id}`);
+    return this.productsServiceGrpcClient.updateFarmStatus(request);
+  }
 }

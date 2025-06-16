@@ -4,7 +4,7 @@ import { join } from 'path';
 import { AppModule } from './app.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   // Create the main HTTP application
@@ -50,7 +50,10 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'farmera.users',
-      protoPath: join(__dirname, '../../../shared/grpc-protos/users/users.proto'),
+      protoPath: join(
+        __dirname,
+        '../../../shared/grpc-protos/users/users.proto',
+      ),
       url: 'localhost:50051',
       loader: {
         keepCase: true,

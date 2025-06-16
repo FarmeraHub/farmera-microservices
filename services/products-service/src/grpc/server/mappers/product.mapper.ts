@@ -42,32 +42,36 @@ import { TypesMapper } from './common/types.mapper';
 import { FarmMapper } from './product/farm.mapper';
 import { CategoryMapper } from './product/category.mapper';
 export class ProductMapper {
-
-
-
   static toGpcProductRequest(productRequest: any): ProductRequest {
     return {
       product_id: productRequest.product_id || '',
       farm_id: productRequest.farm_id || '',
       product_name: productRequest.product_name || '',
-    }
+    };
   }
-  static toGrpcGetListProductRequest(productRequest: any): GetListProductsRequest {
+  static toGrpcGetListProductRequest(
+    productRequest: any,
+  ): GetListProductsRequest {
     if (!productRequest || !Array.isArray(productRequest.products)) {
-      throw new BadGatewayException('Invalid request format: "products" array is required.');
+      throw new BadGatewayException(
+        'Invalid request format: "products" array is required.',
+      );
     }
 
-    const products: ProductRequest[] = productRequest.products.map((product: any) => ({
-      product_id: product.product_id || '',
-      farm_id: product.farm_id || '',
-      product_name: product.product_name || '',
-    }));
+    const products: ProductRequest[] = productRequest.products.map(
+      (product: any) => ({
+        product_id: product.product_id || '',
+        farm_id: product.farm_id || '',
+        product_name: product.product_name || '',
+      }),
+    );
 
     return { products };
-
   }
   static toGrpcProduct(product: Product): GrpcProduct | undefined {
-    if (!product) { return undefined; }
+    if (!product) {
+      return undefined;
+    }
     let farmId = '';
     if (product.farm) {
       if (typeof product.farm === 'string') {
@@ -117,7 +121,7 @@ export class ProductMapper {
   //   // Kiểm tra xem các ID cần thiết có tồn tại không, nếu không thì có thể coi là invalid entity
   //   if (entity.id === undefined || entity.product === undefined || entity.subcategory === undefined) {
   //     console.warn("Invalid ProductSubcategoryDetailEntity, missing IDs:", entity);
-  //     return undefined; 
+  //     return undefined;
   //   }
 
   //   return {
@@ -127,7 +131,6 @@ export class ProductMapper {
   //   };
 
   // }
-
 
   // static mapProductSubcategoryDetailEntityToGrpc(
   //   entity: ProductSubcategoryDetail,
@@ -161,7 +164,9 @@ export class ProductMapper {
   //   };
   // }
 
-  static toGrpcSubcategory(subcategory: Subcategory): GrpcSubcategory | undefined {
+  static toGrpcSubcategory(
+    subcategory: Subcategory,
+  ): GrpcSubcategory | undefined {
     if (!subcategory) {
       return undefined;
     }
@@ -181,24 +186,25 @@ export class ProductMapper {
       product: grpcProduct,
       farm: grpcFarm,
     };
-
   }
-  static toGrpcGetListProductsResponse(productResponseItems: GrpcProductResponse[]): GrpcGetListProductsResponse {
+  static toGrpcGetListProductsResponse(
+    productResponseItems: GrpcProductResponse[],
+  ): GrpcGetListProductsResponse {
     return {
       products_found: productResponseItems || [],
-    }
-
-
+    };
   }
 
   static toGrpcGetProductResponse(product: any): GetProductResponse {
     const grpcProduct = this.toGrpcProduct(product);
     return {
       product: grpcProduct,
-    }
+    };
   }
-  static toGrpcListCategoriesResponse(categories: Category[]): GrpcListCategoriesResponse {
-    const grpcCategories = categories.map(category => {
+  static toGrpcListCategoriesResponse(
+    categories: Category[],
+  ): GrpcListCategoriesResponse {
+    const grpcCategories = categories.map((category) => {
       return {
         category_id: category.category_id,
         name: category.name,
@@ -220,11 +226,12 @@ export class ProductMapper {
         next_cursor: '',
         previous_cursor: '',
       },
-
     };
   }
 
-  static toGrpcGetAllCategoryWithSubcategoryResponse(categories: Category[]): GetAllCategoryWithSubcategoryResponse {
+  static toGrpcGetAllCategoryWithSubcategoryResponse(
+    categories: Category[],
+  ): GetAllCategoryWithSubcategoryResponse {
     const grpcCategories = categories
       .map(category => CategoryMapper.toGrpcCategory(category))
       .filter((category): category is GrpcCategory => category !== undefined);
@@ -241,6 +248,6 @@ export class ProductMapper {
         next_cursor: '',
         previous_cursor: '',
       },
-    }
+    };
   }
 }
