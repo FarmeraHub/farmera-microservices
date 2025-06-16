@@ -17,10 +17,18 @@ import { UserService } from './user.service';
             package: 'farmera.users',
             protoPath: join(
               __dirname,
-              '../../../shared/grpc-protos/users/users.proto',
+              '../../../../shared/grpc-protos/users/users.proto',
             ),
             url:
               configService.get<string>('USERS_GRPC_URL') || 'localhost:50051',
+            loader: {
+              keepCase: true,
+              longs: String,
+              enums: String,
+              defaults: true,
+              oneofs: true,
+              includeDirs: [join(__dirname, '../../../../shared/grpc-protos')],
+            },
           },
         }),
         inject: [ConfigService],
