@@ -2,7 +2,8 @@ version: v2
 plugins:
   - remote: buf.build/community/stephenh-ts-proto:v2.6.1
     out: ../generated/nodejs/nestjs/src
-    opt: 
+    opt:
       - nestJs=true
       - snakeToCamel=false
+      - esModuleInterop=true
     # opt: useDate=false # use google.probuf.Timestamp {secs, nanos}
