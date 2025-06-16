@@ -1,10 +1,11 @@
 import { ProductsServiceClient, VerifyFarmRequest } from '@farmera/grpc-proto/dist/products/products';
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { FarmRegistrationDto } from './dto/farm-registration.dto';
 import { FarmMapper } from 'src/mappers/product/farm.mapper';
 import { firstValueFrom, Observable, ReplaySubject } from 'rxjs';
 import { randomUUID } from 'crypto';
+import { ErrorMapper } from 'src/mappers/common/error.mapper';
 
 @Injectable()
 export class FarmService implements OnModuleInit {
@@ -26,8 +27,8 @@ export class FarmService implements OnModuleInit {
             return FarmMapper.fromGrpcFarm(result.farm);
         }
         catch (err) {
-            this.logger.error(err);
-            throw new InternalServerErrorException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -80,8 +81,8 @@ export class FarmService implements OnModuleInit {
             return FarmMapper.fromGrpcFarm(result.farm);
         }
         catch (err) {
-            this.logger.error(err);
-            throw new InternalServerErrorException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -94,8 +95,8 @@ export class FarmService implements OnModuleInit {
             return FarmMapper.fromGrpcFarm(result.farm);
         }
         catch (err) {
-            this.logger.error(err)
-            throw new BadRequestException(err);
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -108,8 +109,8 @@ export class FarmService implements OnModuleInit {
             return FarmMapper.fromGrpcFarm(result.farm);
         }
         catch (err) {
-            this.logger.error(err);
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 }

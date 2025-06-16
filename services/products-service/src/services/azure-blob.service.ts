@@ -226,7 +226,7 @@ export class AzureBlobService {
                 return false;
             }
         } catch (error) {
-            this.logger.error(`File deletion failed: ${error.message}`, error.stack);
+            this.logger.error(`File deletion failed: ${error.message}`);
             throw new Error(`Failed to delete file: ${error.message}`);
         }
     }

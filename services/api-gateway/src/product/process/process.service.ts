@@ -8,6 +8,7 @@ import { ProcessMapper } from 'src/mappers/product/process.mapper';
 import { firstValueFrom } from 'rxjs';
 import { SimpleCursorPagination } from 'src/common/dto/pagination.dto';
 import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
+import { ErrorMapper } from 'src/mappers/common/error.mapper';
 
 @Injectable()
 export class ProcessService {
@@ -39,7 +40,7 @@ export class ProcessService {
         }
         catch (err) {
             this.logger.error(err.message);
-            throw new BadRequestException();
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -53,7 +54,7 @@ export class ProcessService {
         }
         catch (err) {
             this.logger.error(err.message);
-            throw new BadRequestException();
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -69,7 +70,8 @@ export class ProcessService {
             return { processes, pagination: { next_cursor } };
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 }

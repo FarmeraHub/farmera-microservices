@@ -8,6 +8,7 @@ import { ReviewMapper } from 'src/mappers/review/review.mapper';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { ReviewReply } from './entities/review-reply.entity';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { ErrorMapper } from 'src/mappers/common/error.mapper';
 
 @Injectable()
 export class ReviewService implements OnModuleInit {
@@ -36,7 +37,8 @@ export class ReviewService implements OnModuleInit {
             return ReviewMapper.fromGrpcReview(result.review);
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -50,7 +52,8 @@ export class ReviewService implements OnModuleInit {
             return ReviewMapper.fromGrpcReply(result.reply);
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -67,7 +70,8 @@ export class ReviewService implements OnModuleInit {
             return ReviewMapper.fromGrpcReview(result.review);
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -81,7 +85,8 @@ export class ReviewService implements OnModuleInit {
             return ReviewMapper.fromGrpcReply(result.reply);
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -94,7 +99,8 @@ export class ReviewService implements OnModuleInit {
             return result.success;
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -107,7 +113,8 @@ export class ReviewService implements OnModuleInit {
             return result.success
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -120,7 +127,8 @@ export class ReviewService implements OnModuleInit {
             return result.success
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 }

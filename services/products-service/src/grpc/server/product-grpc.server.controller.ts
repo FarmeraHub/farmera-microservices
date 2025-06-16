@@ -1,5 +1,5 @@
 import { FarmAdminService } from './../../admin/farm/farm-admin.service';
-import { BadRequestException, Controller, InternalServerErrorException, Logger } from "@nestjs/common";
+import { BadRequestException, ConflictException, Controller, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { CategoriesService } from "src/categories/categories.service";
 import { FarmsService } from "src/farms/farms.service";
 import { ProductsService } from "src/products/products.service";
@@ -81,6 +81,7 @@ import { ProcessMapper } from './mappers/product/process.mapper';
 import { EnumsMapper } from './mappers/common/enums.mapper';
 import { status } from '@grpc/grpc-js';
 import { CreateSubcategoryDto } from 'src/categories/dto/create-subcategories.dto';
+import { ErrorMapper } from './mappers/common/error.mapper';
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -126,7 +127,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
             }
         }
         catch (err) {
-            throw new RpcException(`Internal Server Error: ${err}`);
+            throw ErrorMapper.toRpcException(err);
         }
     }
 
@@ -197,18 +198,18 @@ export class ProductGrpcServerController implements ProductsServiceController {
                 }
             } catch (err) {
                 this.logger.error('Error processing chunk:', err);
-                subject.error({
+                subject.error(new RpcException({
                     message: 'Error processing chunk: ' + err.message,
-                    code: VerifyStatusCode.FAILED,
-                });
+                    code: status.CANCELLED
+                }));
             }
         }
 
         const onError = (err) => {
-            subject.error({
+            subject.error(new RpcException({
                 message: 'Failed to verify: ' + err.message,
-                code: VerifyStatusCode.FAILED,
-            });
+                code: status.INTERNAL
+            }));
         }
 
         const onComplete = async () => {
@@ -217,10 +218,10 @@ export class ProductGrpcServerController implements ProductsServiceController {
                 const bioRecord = Object.values(fileRecords).find(record => record.type == "biometric_video");
 
                 if (!ssnRecord || !bioRecord) {
-                    return subject.error({
+                    return subject.error(new RpcException({
                         message: 'Thiếu ảnh CCCD hoặc video sinh trắc học',
-                        code: VerifyStatusCode.FAILED,
-                    });
+                        code: status.INVALID_ARGUMENT
+                    }));
                 }
 
                 const ssnBuffer = Buffer.concat(ssnRecord.chunks_buffer);
@@ -262,11 +263,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
                 subject.complete();
 
             } catch (err) {
-                console.error('Verification error:', err);
-                subject.error({
-                    message: 'Xử lý verify thất bại: ' + err.message,
-                    code: VerifyStatusCode.FAILED,
-                });
+                throw ErrorMapper.toRpcException(err);
             }
         }
 
@@ -281,44 +278,29 @@ export class ProductGrpcServerController implements ProductsServiceController {
 
     // verified
     async getFarm(request: GetFarmRequest): Promise<GetFarmResponse> {
-        // this.logger.log(`[gRPC In - GetFarm] Received request for farm_id: ${request.farm_id}`);
-
-        if (!request || !request.farm_id) {
-            this.logger.error('[gRPC In - GetFarm] Invalid request: farm_id is required.');
-            throw new RpcException('Invalid request: farm_id is required.');
+        try {
+            const farmEntity = await this.farmsService.findFarmById(request.farm_id);
+            return {
+                farm: FarmMapper.toGrpcFarm(farmEntity)
+            };
+        } catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.toRpcException(err);
         }
-
-        const farmEntity = await this.farmsService.findFarmById(request.farm_id);
-
-        if (!farmEntity) {
-            this.logger.warn(`[gRPC Logic - GetFarm] No farm found for ID: ${request.farm_id}`);
-            throw new RpcException(`No farm found for ID: ${request.farm_id}`);
-        }
-
-        return {
-            farm: FarmMapper.toGrpcFarm(farmEntity)
-        };
     }
 
     // verified
     async getFarmByUser(request: GetFarmByUserRequest): Promise<GetFarmByUserResponse> {
-        this.logger.log(`[gRPC In - GetFarm] Received request for user_id: ${request.user_id}`);
-
-        if (!request || !request.user_id) {
-            this.logger.error('[gRPC In - GetFarm] Invalid request: farm_id is required.');
-            throw new RpcException('Invalid request: farm_id is required.');
+        try {
+            const farmEntity = await this.farmsService.findByUserID(request.user_id);
+            return {
+                farm: FarmMapper.toGrpcFarm(farmEntity)
+            };
         }
-
-        const farmEntity = await this.farmsService.findByUserID(request.user_id);
-
-        if (!farmEntity) {
-            this.logger.warn(`[gRPC Logic - GetFarm] No farm found for user id: ${request.user_id}`);
-            throw new RpcException(`No farm found for User ID: ${request.user_id}`);
+        catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.toRpcException(err);
         }
-
-        return {
-            farm: FarmMapper.toGrpcFarm(farmEntity)
-        };
     }
 
     // Admin methods
@@ -468,152 +450,139 @@ export class ProductGrpcServerController implements ProductsServiceController {
 
     // verified
     async createCategory(request: CreateCategoryRequest): Promise<CreateCategoryResponse> {
-        this.logger.debug(`[gRPC In - CreateCategory] Received request to create category: ${JSON.stringify(request)}`);
-        if (!request || !request.name) {
-            this.logger.error('[gRPC In - CreateCategory] Invalid request: name is required.');
-            throw new RpcException('Invalid request: name is required.');
+        try {
+            const categoryData = await this.categoriesService.createCategory({
+                name: request.name,
+                description: request.description,
+                image_url: request.category_icon_url,
+            });
+            return {
+                category: CategoryMapper.toGrpcCategory(categoryData),
+            };
         }
-        const categoryData = await this.categoriesService.createCategory({
-            name: request.name,
-            description: request.description,
-            image_url: request.category_icon_url,
-        });
-        return {
-            category: CategoryMapper.toGrpcCategory(categoryData),
-        };
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
     // verified
     async getCategory(request: GetCategoryRequest): Promise<GetCategoryResponse> {
-        const category = await this.categoriesService.getCategoryById(request.category_id);
-        if (!category) {
-            this.logger.error(`[gRPC Logic - GetCategory] No category found for ID: ${request.category_id}`);
-            throw new RpcException(`No category found for ID: ${request.category_id}`);
+        try {
+            const category = await this.categoriesService.getCategoryById(request.category_id);
+            return {
+                category: CategoryMapper.toGrpcCategory(category)
+            };
         }
-        this.logger.log(`[gRPC Logic - GetCategory] Successfully fetched category: ${category.category_id}`);
-        const result = CategoryMapper.toGrpcCategory(category);
-        if (!result) {
-            this.logger.warn('[gRPC Logic - GetCategory] No category found after fetching.');
-            throw new RpcException('No category found after fetching.');
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
         }
-        this.logger.debug(`[gRPC Out - GetCategory] Returning category: ${JSON.stringify(result)}`);
-        return {
-            category: result
-        };
     }
 
     // verified
     async createSubcategory(request: CreateSubcategoryRequest): Promise<CreateSubcategoryResponse> {
-        this.logger.debug(`[gRPC In - CreateSubcategory] Received request to create subcategory: ${JSON.stringify(request)}`);
-        if (!request || !request.name || !request.category_id) {
-            this.logger.error('[gRPC In - CreateSubcategory] Invalid request: name and category_id are required.');
-            throw new RpcException('Invalid request: name and category_id are required.');
+        try {
+            const req: CreateSubcategoryDto = {
+                name: request.name,
+                description: request.description || '',
+                category_id: request.category_id,
+            }
+            // create subcategory
+            const subcategory = await this.categoriesService.createSubcategory(req);
+            return {
+                subcategory: CategoryMapper.toGrpcSubCategory(subcategory)
+            };
         }
-        const req: CreateSubcategoryDto = {
-            name: request.name,
-            description: request.description || '',
-            category_id: request.category_id,
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
         }
-        // create subcategory
-        const subcategory = await this.categoriesService.createSubcategory(req);
-
-        if (!subcategory) {
-            this.logger.error('[gRPC Logic - CreateSubcategory] Failed to create subcategory.');
-            throw new RpcException('Failed to create subcategory.');
-        }
-        this.logger.debug(`[gRPC Logic - CreateSubcategory] Successfully created subcategory: ${subcategory.subcategory_id}`);
-
-        // convert to grpc message
-        const result = CategoryMapper.toGrpcSubCategory(subcategory);
-
-        if (!result) {
-            this.logger.error('[gRPC Logic - CreateSubcategory] No subcategory found after creation.');
-            throw new RpcException('No subcategory found after creation.');
-        }
-        return {
-            subcategory: result
-        };
     }
 
     // verified
     async getSubcategory(request: GetSubcategoryRequest): Promise<GetSubcategoryResponse> {
-        this.logger.log(`[gRPC In - GetSubcategory] Received request for subcategory_id: ${request.subcategory_id}`);
-        if (!request || !request.subcategory_id) {
-            this.logger.error('[gRPC In - GetSubcategory] Invalid request: subcategory_id is required.');
-            throw new RpcException('Invalid request: subcategory_id is required.');
+        try {
+            const subcategory = await this.categoriesService.getSubcategoryById(request.subcategory_id);
+            return {
+                subcategory: CategoryMapper.toGrpcSubCategory(subcategory)
+            };
         }
-        const subcategory = await this.categoriesService.getSubcategoryById(request.subcategory_id);
-        if (!subcategory) {
-            this.logger.error(`[gRPC Logic - GetSubcategory] No subcategory found for ID: ${request.subcategory_id}`);
-            throw new RpcException(`No subcategory found for ID: ${request.subcategory_id}`);
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
         }
-        const result = CategoryMapper.toGrpcSubCategory(subcategory);
-        this.logger.debug(`[gRPC Out - GetSubcategory] Returning subcategory: ${JSON.stringify(result)}`);
-        if (!result) {
-            this.logger.warn('[gRPC Logic - GetSubcategory] No subcategory found after fetching.');
-            throw new RpcException('No subcategory found after fetching.');
-        }
-        return {
-            subcategory: result
-        };
     }
 
     // verified
     async getCategoryTree(request: GetCategoryTreeRequest): Promise<GetCategoryTreeResponse> {
-        const result = await this.categoriesService.getSubCategoryTree(request.category_id);
-        if (!result) {
-            throw new RpcException("");
+        try {
+            const result = await this.categoriesService.getSubCategoryTree(request.category_id);
+            return {
+                category: CategoryMapper.toGrpcCategory(result),
+                sublist: result.subcategories.map((value) => CategoryMapper.toGrpcSubcategoryLite(value))
+            }
         }
-        return {
-            category: CategoryMapper.toGrpcCategory(result),
-            sublist: result.subcategories.map((value) => CategoryMapper.toGrpcSubcategoryLite(value))
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
         }
     }
 
     // verified
     // Review methods
     async createReview(request: CreateReviewRequest): Promise<CreateReviewResponse> {
-        const result = await this.reviewService.createReview(
-            {
-                product_id: request.product_id,
-                rating: request.rating,
-                comment: request.comment,
-                image_urls: request.image_urls?.list,
-                video_urls: request.video_urls?.list,
-            },
-            request.user_id
-        )
-        return {
-            review: ReviewMapper.toGrpcReview(result)
+        try {
+            const result = await this.reviewService.createReview(
+                {
+                    product_id: request.product_id,
+                    rating: request.rating,
+                    comment: request.comment,
+                    image_urls: request.image_urls?.list,
+                    video_urls: request.video_urls?.list,
+                },
+                request.user_id
+            )
+            return {
+                review: ReviewMapper.toGrpcReview(result)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
         }
     }
 
     async createReply(request: CreateReplyRequest): Promise<CreateReplyResponse> {
-        const result = await this.reviewService.createReply(
-            {
-                review_id: request.review_id,
-                reply: request.reply
-            },
-            request.user_id
-        )
-        return {
-            reply: ReviewMapper.toGrpcReply(result)
+        try {
+            const result = await this.reviewService.createReply(
+                {
+                    review_id: request.review_id,
+                    reply: request.reply
+                },
+                request.user_id
+            )
+            return {
+                reply: ReviewMapper.toGrpcReply(result)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
         }
     }
 
     async updateReview(request: UpdateReviewRequest): Promise<UpdateReviewResponse> {
-        const result = await this.reviewService.updateReview(
-            request.review_id,
-            {
-                rating: request.rating,
-                comment: request.comment,
-                image_urls: request.image_urls?.list,
-                video_urls: request.video_urls?.list,
-            },
-            request.user_id
-        )
-        return {
-            review: ReviewMapper.toGrpcReview(result)
+        try {
+            const result = await this.reviewService.updateReview(
+                request.review_id,
+                {
+                    rating: request.rating,
+                    comment: request.comment,
+                    image_urls: request.image_urls?.list,
+                    video_urls: request.video_urls?.list,
+                },
+                request.user_id
+            )
+            return {
+                review: ReviewMapper.toGrpcReview(result)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
         }
     }
 
@@ -646,30 +615,40 @@ export class ProductGrpcServerController implements ProductsServiceController {
     }
 
     // verified
-    // Review methods
+    // Process methods
     async createProcess(request: CreateProcessRequest): Promise<CreateProcessResponse> {
-        const result = await this.processService.createProcess(
-            {
-                product_id: request.product_id,
-                stage_name: request.stage_name,
-                description: request.description,
-                start_date: TypesMapper.fromGrpcTimestamp(request.start_date),
-                end_date: TypesMapper.fromGrpcTimestamp(request.end_date),
-                latitude: request.latitude,
-                longitude: request.longitude,
-                image_urls: request.image_urls,
-                video_urls: request.video_urls?.list,
-            },
-            request.user_id,
-        )
-        return {
-            process: ProcessMapper.toGrpcProcess(result)
+        try {
+            const result = await this.processService.createProcess(
+                {
+                    product_id: request.product_id,
+                    stage_name: request.stage_name,
+                    description: request.description,
+                    start_date: TypesMapper.fromGrpcTimestamp(request.start_date),
+                    end_date: TypesMapper.fromGrpcTimestamp(request.end_date),
+                    latitude: request.latitude,
+                    longitude: request.longitude,
+                    image_urls: request.image_urls,
+                    video_urls: request.video_urls?.list,
+                },
+                request.user_id,
+            )
+            return {
+                process: ProcessMapper.toGrpcProcess(result)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
         }
     }
 
     async getProcess(request: GetProcessRequest): Promise<GetProcessResponse> {
-        const result = await this.processService.getProcess(request.process_id);
-        return { process: ProcessMapper.toGrpcProcess(result) }
+        try {
+            const result = await this.processService.getProcess(request.process_id);
+            return { process: ProcessMapper.toGrpcProcess(result) }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
     async listProcesses(request: ListProcessesRequest): Promise<ListProcessesResponse> {
@@ -687,10 +666,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
             }
         }
         catch (err) {
-            if (err instanceof BadRequestException) {
-                throw new RpcException({ code: status.INVALID_ARGUMENT, message: err.message });
-            }
-            throw new RpcException({ code: status.INTERNAL, message: err.message });
+            throw ErrorMapper.toRpcException(err);
         }
     }
 }

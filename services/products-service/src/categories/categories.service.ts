@@ -100,11 +100,8 @@ export class CategoriesService {
         createCategoryDto: CreateCategoriesDto,
     ): Promise<Category> {
         try {
-            return this.categoriesRepository.create(createCategoryDto);
+            return this.categoriesRepository.save(createCategoryDto);
         } catch (error) {
-            if (error instanceof BadRequestException || error instanceof NotFoundException) {
-                throw error;
-            }
             throw new InternalServerErrorException(`Không thể tạo category: ${error.message}`);
         }
     }

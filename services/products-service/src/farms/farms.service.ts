@@ -1,5 +1,5 @@
 import { GhnService } from './../ghn/ghn.service';
-import { BadRequestException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { Farm } from './entities/farm.entity';
@@ -36,7 +36,7 @@ export class FarmsService {
 
         const existingFarm = await this.farmsRepository.findOne({ where: { user_id: userId } });
         if (existingFarm) {
-            throw new BadRequestException('Người dùng đã tạo một trang trại trước đó.');
+            throw new ConflictException('Người dùng đã tạo một trang trại trước đó.');
         }
 
         try {
@@ -44,18 +44,15 @@ export class FarmsService {
             const ghn_province_id = await this.GhnService.getIdProvince(registerDto.city);
 
             if (!ghn_province_id) {
-                this.logger.error(`[Register] Không tìm thấy ID tỉnh GHN cho thành phố ${registerDto.city}`);
-                throw new BadRequestException(`Không tìm thấy ID tỉnh GHN cho thành phố ${registerDto.city}`);
+                throw new NotFoundException(`Không tìm thấy ID tỉnh GHN cho thành phố ${registerDto.city}`);
             }
             const ghn_district_id = await this.GhnService.getIdDistrict(registerDto.district, ghn_province_id);
             if (!ghn_district_id) {
-                this.logger.error(`[Register] Không tìm thấy ID quận huyện GHN cho ${registerDto.district} trong tỉnh ${registerDto.city}`);
-                throw new BadRequestException(`Không tìm thấy ID quận huyện GHN cho ${registerDto.district} trong tỉnh ${registerDto.city}`);
+                throw new NotFoundException(`Không tìm thấy ID quận huyện GHN cho ${registerDto.district} trong tỉnh ${registerDto.city}`);
             }
             const ghn_ward_id = await this.GhnService.getIdWard(registerDto.ward, ghn_district_id);
             if (!ghn_ward_id) {
-                this.logger.error(`[Register] Không tìm thấy ID phường xã GHN cho ${registerDto.ward} trong quận ${registerDto.district}`);
-                throw new BadRequestException(`Không tìm thấy ID phường xã GHN cho ${registerDto.ward} trong quận ${registerDto.district}`);
+                throw new NotFoundException(`Không tìm thấy ID phường xã GHN cho ${registerDto.ward} trong quận ${registerDto.district}`);
             }
 
             const queryRunner = this.dataSource.createQueryRunner();
@@ -90,7 +87,7 @@ export class FarmsService {
 
                 const savedFarm = await queryRunner.manager.save(farm);
                 await queryRunner.commitTransaction();
-                this.logger.log(`[Register] Đăng ký farm thành công cho user ${userId}, Farm ID: ${savedFarm.farm_id}`);
+                this.logger.debug(`[Register] Đăng ký farm thành công cho user ${userId}, Farm ID: ${savedFarm.farm_id}`);
 
                 // // delete biometric video
                 // await this.fileStorageService.deleteFile(registerDto.biometric_video_url);
@@ -169,44 +166,15 @@ export class FarmsService {
         }
     }
 
-    async findOne(id: string): Promise<Farm> {
-        const farm = await this.farmsRepository.findOne({
-            where: { farm_id: id },
-            relations: ['address'],
-        });
-
-        if (!farm) {
-            throw new NotFoundException(`Không tìm thấy trang trại với ID ${id}`);
-        }
-
-        return farm;
-    }
-
-    // Tìm kiếm trang trại theo user_id trả về true nếu có trang trại, false nếu không có
-    async findByUserId(userId: string): Promise<Boolean> {
-        const farm = await this.farmsRepository.findOne({
-            where: { user_id: userId, status: FarmStatus.VERIFIED || FarmStatus.APPROVED },
-            relations: ['address'],
-        });
-        if (!farm) {
-            return false;
-        }
-        return true;
-    }
-
     async findByUserID(userId: string): Promise<Farm> {
         const farm = await this.farmsRepository.findOne({
-            where: { user_id: userId, status: FarmStatus.VERIFIED || FarmStatus.APPROVED },
+            where: { user_id: userId, status: In([FarmStatus.VERIFIED, FarmStatus.APPROVED]) },
             relations: ['address', 'address.address_ghn'],
         });
-
         if (!farm) {
+            this.logger.error(`Không tìm thấy trang trại của người dùng với ID ${userId}`);
             throw new NotFoundException(`Không tìm thấy trang trại của người dùng với ID ${userId}`);
         }
-        if (userId !== farm.user_id) {
-            throw new BadRequestException('Người dùng không có quyền truy cập trang trại này');
-        }
-
         return farm;
     }
 

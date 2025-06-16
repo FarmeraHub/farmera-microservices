@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Process } from './entities/process.entity';
 import { Repository } from 'typeorm';
@@ -20,7 +20,7 @@ export class ProcessService {
     async createProcess(createProcessDto: CreateProcessDto, userId: string) {
         const product = await this.productRepository.findOne({ where: { farm: { user_id: userId } } });
         if (!product) {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException("Người dùng không sở hữu sản phẩm");
         }
 
         try {
@@ -30,11 +30,6 @@ export class ProcessService {
         }
         catch (error) {
             this.logger.error(`Error in createProcess: ${error}`);
-
-            if (error instanceof BadRequestException) {
-                throw error;
-            }
-
             throw new InternalServerErrorException(`Không thể quy trình sản xuất`);
         }
     }
@@ -87,7 +82,7 @@ export class ProcessService {
     async getProcess(processId: number) {
         const process = await this.processRepository.findOne({ where: { process_id: processId }, relations: ["product"] });
         if (!process) {
-            throw new BadRequestException('Không tìm thấy quy trình sản xuất');
+            throw new NotFoundException('Không tìm thấy quy trình sản xuất');
         }
         return process;
     }

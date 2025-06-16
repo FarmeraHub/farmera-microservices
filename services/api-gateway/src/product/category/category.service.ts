@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
 import { Category } from './entities/category.entity';
 import { CategoryMapper } from 'src/mappers/product/category.mapper';
+import { ErrorMapper } from 'src/mappers/common/error.mapper';
 
 @Injectable()
 export class CategoryService implements OnModuleInit {
@@ -31,7 +32,8 @@ export class CategoryService implements OnModuleInit {
             return CategoryMapper.fromGrpcCategory(result.category);
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -46,7 +48,8 @@ export class CategoryService implements OnModuleInit {
             return CategoryMapper.fromGrpcSubcategory(result.subcategory);
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -59,7 +62,8 @@ export class CategoryService implements OnModuleInit {
             return CategoryMapper.fromGrpcCategory(result.category);
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -72,7 +76,8 @@ export class CategoryService implements OnModuleInit {
             return CategoryMapper.fromGrpcSubcategory(result.subcategory);
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 
@@ -85,7 +90,8 @@ export class CategoryService implements OnModuleInit {
             return CategoryMapper.fromGetCategoryTreeResponse(result);
         }
         catch (err) {
-            throw new BadRequestException();
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
         }
     }
 }

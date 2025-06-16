@@ -7,6 +7,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { AzureBlobService } from 'src/services/azure-blob.service';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { ErrorMapper } from 'src/grpc/server/mappers/common/error.mapper';
 
 @Injectable()
 export class ReviewsService {
@@ -46,7 +47,6 @@ export class ReviewsService {
 
             const review = this.reviewRepository.create(createReviewDto);
 
-            console.log(review);
             review.user_id = userId;
             review.order_detailId = orderDetailId;
             review.created = new Date();
@@ -55,9 +55,6 @@ export class ReviewsService {
 
         } catch (error) {
             this.logger.error(error);
-            if (error instanceof NotFoundException || error instanceof BadRequestException) {
-                throw error;
-            }
             throw new InternalServerErrorException(`Không thể đánh giá`);
         }
     }
@@ -212,27 +209,42 @@ export class ReviewsService {
     }
 
     async deleteReview(reviewId: number, userId: string) {
-        const result = await this.reviewRepository.update({ review_id: reviewId, user_id: userId }, { is_deleted: true });
-        if (result.affected == 0) {
-            throw new NotFoundException(`Không tìm thấy review`);
+        try {
+            const result = await this.reviewRepository.update({ review_id: reviewId, user_id: userId }, { is_deleted: true });
+            if (result.affected == 0) {
+                throw new NotFoundException(`Không tìm thấy review`);
+            }
+            return true;
         }
-        return true;
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
     async deleteReply(replyId: number, userId: string) {
-        const result = await this.replyRepository.update({ id: replyId, user_id: userId }, { is_deleted: true });
-        if (result.affected == 0) {
-            throw new NotFoundException(`Không tìm thấy reply`);
+        try {
+            const result = await this.replyRepository.update({ id: replyId, user_id: userId }, { is_deleted: true });
+            if (result.affected == 0) {
+                throw new NotFoundException(`Không tìm thấy reply`);
+            }
+            return true;
         }
-        return true;
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
     async approveReview(reviewId: number, approve: boolean) {
-        const result = await this.reviewRepository.update({ review_id: reviewId }, { seller_approved: approve });
-        if (result.affected == 0) {
-            throw new NotFoundException(`Không tìm thấy reply`);
+        try {
+            const result = await this.reviewRepository.update({ review_id: reviewId }, { seller_approved: approve });
+            if (result.affected == 0) {
+                throw new NotFoundException(`Không tìm thấy review`);
+            }
+            return true
         }
-        return true
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
     async updateReview(reviewId: number, updateReviewDto: UpdateReviewDto, userId: string) {
@@ -241,6 +253,7 @@ export class ReviewsService {
                 review_id: reviewId,
                 user_id: userId,
             });
+
 
             if (!existingReview) {
                 throw new NotFoundException('Không tìm thấy review');
@@ -259,7 +272,7 @@ export class ReviewsService {
 
                 imgResults.forEach((result, index) => {
                     if (result.status === 'rejected') {
-                        this.logger.error(`Failed to delete image: ${deleteImgUrls[index]}`, result.reason);
+                        this.logger.error(`Failed to delete image: ${deleteImgUrls[index]}`);
                         failedDeletes.push(deleteImgUrls[index]);
                     }
                 });
@@ -273,7 +286,7 @@ export class ReviewsService {
 
                 videoResults.forEach((result, index) => {
                     if (result.status === 'rejected') {
-                        this.logger.error(`Failed to delete video: ${deleteVideoUrls[index]}`, result.reason);
+                        this.logger.error(`Failed to delete video: ${deleteVideoUrls[index]}`);
                         failedDeletes.push(deleteVideoUrls[index]);
                     }
                 });
@@ -289,11 +302,11 @@ export class ReviewsService {
             return result;
 
         } catch (error) {
-            this.logger.error(error);
-            if (error instanceof NotFoundException || error instanceof BadRequestException) {
+            this.logger.error(error.message);
+            if (error instanceof NotFoundException) {
                 throw error;
             }
-            throw new InternalServerErrorException(`Không thể đánh giá`);
+            throw new InternalServerErrorException(`Không cập nhật thể đánh giá`);
         }
     }
 

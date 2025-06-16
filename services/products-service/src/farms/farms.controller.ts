@@ -71,15 +71,6 @@ export class FarmsController {
     return this.farmsService.findByUserID(userId);
   }
 
-
-
-
-  //Lấy danh sách farm của người dùng đã đăng nhập
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.farmsService.findOne(id);
-  }
-
   //Update farm của người dùng đã đăng nhập
   @Patch(':id')
   async updateFarm(
@@ -94,6 +85,4 @@ export class FarmsController {
       userId,
     );
   }
-
-
 }
