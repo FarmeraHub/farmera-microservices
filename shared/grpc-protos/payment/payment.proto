@@ -5,7 +5,6 @@ package farmera.payment;
 import "common/types.proto";
 import "common/enums.proto";
 import "common/pagination.proto";
-import "common/errors.proto";
 
 option go_package = "github.com/farmera/grpc-protos/payment";
 
