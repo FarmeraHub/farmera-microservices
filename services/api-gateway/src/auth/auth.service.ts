@@ -13,99 +13,49 @@ import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import ms from 'ms';
 import { firstValueFrom } from 'rxjs';
+import { ClientGrpc } from '@nestjs/microservices';
+import { HashService } from '../services/hash.service';
+import { Observable } from 'rxjs';
 import {
-  ForgotPasswordDto,
-  UpdateNewPasswordDto,
+  LoginRequest,
+  LoginResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  UpdatePasswordRequest,
+  UpdatePasswordResponse,
+  LogoutRequest,
+  LogoutResponse,
+  CreateUserRequest,
+  CreateUserResponse,
+  SendVerificationEmailRequest,
+  SendVerificationEmailResponse,
+  VerifyEmailRequest,
+  VerifyEmailResponse,
+  SendVerificationPhoneRequest,
+  SendVerificationPhoneResponse,
+  VerifyPhoneRequest,
+  VerifyPhoneResponse,
+  UsersServiceClient,
+} from '@farmera/grpc-proto/dist/users/users';
+import {
   LoginDto,
   RegisterDto,
+  ForgotPasswordDto,
+  UpdateNewPasswordDto,
   SendVerificationEmailDto,
   VerifyEmailDto,
   SendVerificationPhoneDto,
   VerifyPhoneDto,
 } from './dto';
-import { ClientGrpc } from '@nestjs/microservices';
-import { HashService } from '../services/hash.service';
-import { Observable } from 'rxjs';
 
 export const REFRESH_TOKEN_COOKIES_KEY = 'refresh_token';
-
-// gRPC response interfaces
-interface LoginResponse {
-  user: any;
-  token_info: {
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-  };
-  requires_verification: boolean;
-  verification_type: string;
-}
-
-interface RefreshTokenResponse {
-  token_info: {
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-  };
-}
-
-interface ForgotPasswordResponse {
-  success: boolean;
-  message: string;
-}
-
-interface UpdatePasswordResponse {
-  success: boolean;
-  requires_relogin: boolean;
-}
-
-interface LogoutResponse {
-  success: boolean;
-}
-
-interface CreateUserResponse {
-  user: any;
-  verification_sent: boolean;
-}
-
-interface SendVerificationEmailResponse {
-  success: boolean;
-  message: string;
-}
-
-interface VerifyEmailResponse {
-  success: boolean;
-  user: any;
-}
-
-interface SendVerificationPhoneResponse {
-  success: boolean;
-  message: string;
-}
-
-interface VerifyPhoneResponse {
-  success: boolean;
-  user?: any;
-}
-
-// gRPC service interface
-interface UsersGrpcService {
-  login(data: any): Observable<LoginResponse>;
-  refreshToken(data: any): Observable<RefreshTokenResponse>;
-  forgotPassword(data: any): Observable<ForgotPasswordResponse>;
-  updatePassword(data: any): Observable<UpdatePasswordResponse>;
-  logout(data: any): Observable<LogoutResponse>;
-  createUser(data: any): Observable<CreateUserResponse>;
-  sendVerificationEmail(data: any): Observable<SendVerificationEmailResponse>;
-  verifyEmail(data: any): Observable<VerifyEmailResponse>;
-  sendVerificationPhone(data: any): Observable<SendVerificationPhoneResponse>;
-  verifyPhone(data: any): Observable<VerifyPhoneResponse>;
-}
 
 @Injectable()
 export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
-  private usersGrpcService: UsersGrpcService;
+  private usersGrpcService: UsersServiceClient;
 
   constructor(
     @Inject('USERS_GRPC_PACKAGE') private readonly client: ClientGrpc,
@@ -116,20 +66,22 @@ export class AuthService implements OnModuleInit {
 
   onModuleInit() {
     this.usersGrpcService =
-      this.client.getService<UsersGrpcService>('UsersService');
+      this.client.getService<UsersServiceClient>('UsersService');
   }
 
   async login(req: LoginDto, res: Response) {
     try {
       this.logger.log(`Attempting login for email: ${req.email}`);
 
+      const grpcRequest: LoginRequest = {
+        email: req.email,
+        password: req.password,
+        remember_me: false,
+        device_info: 'API Gateway',
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.login({
-          email: req.email,
-          password: req.password,
-          remember_me: false,
-          device_info: 'API Gateway',
-        }),
+        this.usersGrpcService.login(grpcRequest),
       );
 
       if (result.user && result.token_info) {
@@ -175,10 +127,12 @@ export class AuthService implements OnModuleInit {
 
       this.logger.log('Processing refresh token request');
 
+      const grpcRequest: RefreshTokenRequest = {
+        refresh_token: refreshToken,
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.refreshToken({
-          refresh_token: refreshToken,
-        }),
+        this.usersGrpcService.refreshToken(grpcRequest),
       );
 
       if (result.token_info) {
@@ -226,10 +180,12 @@ export class AuthService implements OnModuleInit {
     try {
       this.logger.log(`Processing forgot password for email: ${req.email}`);
 
+      const grpcRequest: ForgotPasswordRequest = {
+        email: req.email,
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.forgotPassword({
-          email: req.email,
-        }),
+        this.usersGrpcService.forgotPassword(grpcRequest),
       );
 
       if (result.success) {
@@ -254,12 +210,14 @@ export class AuthService implements OnModuleInit {
     try {
       this.logger.log(`Processing password update for email: ${req.email}`);
 
+      const grpcRequest: UpdatePasswordRequest = {
+        email: req.email,
+        new_password: req.newPassword,
+        code: req.verification_code,
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.updatePassword({
-          email: req.email,
-          new_password: req.newPassword,
-          reset_token: req.verification_code,
-        }),
+        this.usersGrpcService.updatePassword(grpcRequest),
       );
 
       if (result.success) {
@@ -288,11 +246,13 @@ export class AuthService implements OnModuleInit {
       // Clear the refresh token cookie
       res.clearCookie(REFRESH_TOKEN_COOKIES_KEY);
 
+      const grpcRequest: LogoutRequest = {
+        user_id: '', // Will be resolved by users service using the token
+        device_id: 'API Gateway',
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.logout({
-          user_id: '', // Will be resolved by users service using the token
-          device_id: 'API Gateway',
-        }),
+        this.usersGrpcService.logout(grpcRequest),
       );
 
       if (result.success) {
@@ -329,23 +289,27 @@ export class AuthService implements OnModuleInit {
         throw new BadRequestException('All fields are required');
       }
 
-      console.log(req);
+      const grpcRequest: CreateUserRequest = {
+        email: req.email,
+        password: req.password,
+        first_name: req.first_name,
+        last_name: req.last_name,
+        phone: '', // Optional for registration
+        role: 1, // Default user role
+        gender: 0, // Unspecified
+        birthday: undefined,
+        verification_code: req.verification_code,
+      };
 
       const result = await firstValueFrom(
-        this.usersGrpcService.createUser({
-          email: req.email,
-          password: req.password,
-          first_name: req.first_name,
-          last_name: req.last_name,
-          verification_code: req.verification_code,
-        }),
+        this.usersGrpcService.createUser(grpcRequest),
       );
 
       if (result.user) {
         this.logger.log(`Registration successful for user: ${result.user.id}`);
         return {
           user: result.user,
-          verification_sent: result.verification_sent,
+          verification_sent: true, // Assume verification was sent
         };
       }
 
@@ -363,10 +327,12 @@ export class AuthService implements OnModuleInit {
         `Processing send verification email request for: ${req.email}`,
       );
 
+      const grpcRequest: SendVerificationEmailRequest = {
+        email: req.email,
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.sendVerificationEmail({
-          email: req.email,
-        }),
+        this.usersGrpcService.sendVerificationEmail(grpcRequest),
       );
 
       if (result.success) {
@@ -400,11 +366,14 @@ export class AuthService implements OnModuleInit {
         throw new BadRequestException('Verification code is required');
       }
 
+      const grpcRequest: VerifyEmailRequest = {
+        email: req.email,
+        verification_code: req.verification_code,
+        verification_token: '', // May not be needed
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.verifyEmail({
-          email: req.email,
-          verification_code: req.verification_code,
-        }),
+        this.usersGrpcService.verifyEmail(grpcRequest),
       );
 
       if (result.success) {
@@ -431,10 +400,12 @@ export class AuthService implements OnModuleInit {
         `Processing send verification phone request for: ${req.phone}`,
       );
 
+      const grpcRequest: SendVerificationPhoneRequest = {
+        phone: req.phone,
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.sendVerificationPhone({
-          phone: req.phone,
-        }),
+        this.usersGrpcService.sendVerificationPhone(grpcRequest),
       );
 
       if (result.success) {
@@ -468,11 +439,13 @@ export class AuthService implements OnModuleInit {
         throw new BadRequestException('Verification code is required');
       }
 
+      const grpcRequest: VerifyPhoneRequest = {
+        phone: req.phone,
+        verification_code: req.verification_code,
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.verifyPhone({
-          phone: req.phone,
-          verification_code: req.verification_code,
-        }),
+        this.usersGrpcService.verifyPhone(grpcRequest),
       );
 
       if (result.success) {

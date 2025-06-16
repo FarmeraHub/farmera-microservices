@@ -539,9 +539,75 @@ export class ProductGrpcServerController implements ProductsServiceController {
   async searchProducts(
     request: SearchProductsRequest,
   ): Promise<SearchProductsResponse> {
-    throw new RpcException(
-      'SearchProducts method not yet implemented - requires service layer implementation',
+    this.logger.log(
+      `[gRPC In - SearchProducts] Received search request: ${JSON.stringify(request)}`,
     );
+
+    try {
+      // Convert gRPC pagination to service pagination
+      const { PaginationOptions } = await import(
+        'src/pagination/dto/pagination-options.dto'
+      );
+      const paginationOptions = Object.assign(new PaginationOptions(), {
+        page: request.pagination?.page || 1,
+        limit: request.pagination?.page_size || 10,
+        all: false,
+      });
+
+      // Extract filters from request
+      const filters = {
+        search: request.query || undefined,
+        // Add other filters as needed based on the request structure
+      };
+
+      const result = await this.productsService.searchAndFilterProducts(
+        paginationOptions,
+        filters,
+      );
+
+      this.logger.log(
+        `[gRPC Logic - SearchProducts] Found ${result.data.length} products`,
+      );
+
+      // Convert result to gRPC Product entities
+      const grpcProducts = await Promise.all(
+        result.data.map(async (productDto) => {
+          // Convert ResponseProductDto back to Product entity for mapping
+          const productEntity = await this.productsService.findProductById(
+            Number(productDto.product_id),
+            { includeFarm: true },
+          );
+          return productEntity
+            ? ProductMapper.toGrpcProduct(productEntity)
+            : null;
+        }),
+      );
+
+      return {
+        products: grpcProducts.filter(
+          (p): p is NonNullable<typeof p> => p !== null,
+        ),
+        pagination: {
+          current_page: result.meta.page,
+          page_size: result.meta.limit,
+          total_items: result.meta.totalItems,
+          total_pages: result.meta.totalPages,
+          has_next_page: result.meta.hasNextPage,
+          has_previous_page: result.meta.hasPreviousPage,
+          next_cursor: '',
+          previous_cursor: '',
+        },
+        suggested_queries: [],
+      };
+    } catch (error) {
+      this.logger.error(
+        `[gRPC Logic - SearchProducts] Error searching products: ${error.message}`,
+        error.stack,
+      );
+      throw new RpcException(
+        `Error processing SearchProducts request: ${error.message}`,
+      );
+    }
   }
 
   async createFarm(request: CreateFarmRequest): Promise<CreateFarmResponse> {
@@ -557,8 +623,77 @@ export class ProductGrpcServerController implements ProductsServiceController {
   }
 
   async listFarms(request: ListFarmsRequest): Promise<ListFarmsResponse> {
-    throw new RpcException(
-      'ListFarms method not yet implemented - requires service layer implementation',
+    this.logger.log(
+      `[gRPC In - ListFarms] Received list farms request: ${JSON.stringify(request)}`,
     );
+
+    try {
+      // Convert gRPC pagination to service pagination
+      const { PaginationOptions } = await import(
+        'src/pagination/dto/pagination-options.dto'
+      );
+      const paginationOptions = Object.assign(new PaginationOptions(), {
+        page: request.pagination?.page || 1,
+        limit: request.pagination?.page_size || 10,
+        all: false,
+      });
+
+      // Use the existing getAllFarms method with pagination
+      const result = await this.farmsService.getAllFarms(paginationOptions);
+
+      this.logger.log(
+        `[gRPC Logic - ListFarms] Found farms, processing response`,
+      );
+
+      // Handle both paginated and non-paginated results
+      let farms: any[];
+      let meta: any;
+
+      if (Array.isArray(result)) {
+        // Non-paginated result
+        farms = result;
+        meta = {
+          page: 1,
+          limit: farms.length,
+          totalItems: farms.length,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        };
+      } else {
+        // Paginated result
+        farms = result.data;
+        meta = result.meta;
+      }
+
+      // Convert farms to gRPC format
+      const grpcFarms = farms
+        .map((farm) => ProductMapper.toGrpcFarm(farm))
+        .filter(
+          (f): f is NonNullable<typeof f> => f !== null && f !== undefined,
+        );
+
+      return {
+        farms: grpcFarms,
+        pagination: {
+          current_page: meta.page,
+          page_size: meta.limit,
+          total_items: meta.totalItems,
+          total_pages: meta.totalPages,
+          has_next_page: meta.hasNextPage,
+          has_previous_page: meta.hasPreviousPage,
+          next_cursor: '',
+          previous_cursor: '',
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `[gRPC Logic - ListFarms] Error listing farms: ${error.message}`,
+        error.stack,
+      );
+      throw new RpcException(
+        `Error processing ListFarms request: ${error.message}`,
+      );
+    }
   }
 }

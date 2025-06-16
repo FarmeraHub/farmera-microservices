@@ -1,54 +1,63 @@
 import {
-  Controller, Post, Body, UploadedFiles, UseInterceptors, UseGuards, Request,
-  Get, Param,
+  Controller,
+  Post,
+  Body,
+  UploadedFiles,
+  UseInterceptors,
+  UseGuards,
+  Request,
+  Get,
+  Param,
   Patch,
   Headers,
-  BadRequestException
+  BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { FarmsService } from './farms.service';
 import { UpdateFarmDto } from './dto/update-farm.dto';
 import { FarmRegistrationDto } from './dto/farm-registration.dto';
 import { Farm } from './entities/farm.entity';
-
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 
 @Controller('farm')
 export class FarmsController {
-  constructor(private readonly farmsService: FarmsService) { }
+  constructor(private readonly farmsService: FarmsService) {}
 
   @Post('register')
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'cccd', maxCount: 1 },
-      { name: 'biometric_video', maxCount: 1 }
+      { name: 'biometric_video', maxCount: 1 },
     ]),
-
   )
   async farmRegister(
     @Headers('x-user-id') userId: string,
     @Headers('x-user-role') role: string,
     @Body() farmRegistration: FarmRegistrationDto,
-    @UploadedFiles() files: {
-      cccd?: Express.Multer.File[],
-      biometric_video?: Express.Multer.File[],
+    @UploadedFiles()
+    files: {
+      cccd?: Express.Multer.File[];
+      biometric_video?: Express.Multer.File[];
     },
   ): Promise<Farm> {
-
     return this.farmsService.farmRegister(farmRegistration, userId, files);
-
   }
+
+  // Get all farms with pagination
+  @Get('all')
+  async getAllFarms(@Query() paginationOptions?: PaginationOptions) {
+    return this.farmsService.getAllFarms(paginationOptions);
+  }
+
   //Lấy danh sách farm của người dùng đã đăng nhập
   @Get('my-farm')
   async getMyFarm(
     @Headers('x-user-id') userId: string,
     @Headers('x-user-role') role: string,
   ): Promise<any> {
-
     return this.farmsService.findByUserID(userId);
   }
-
-
-
 
   //Lấy danh sách farm của người dùng đã đăng nhập
   @Get(':id')
@@ -69,25 +78,19 @@ export class FarmsController {
     @Request() req: Request,
     @Param('id') id: string,
     @Body() updateFarmDto: UpdateFarmDto,
-    @UploadedFiles() files?: {
-      avatar?: Express.Multer.File[],
-      profile_images?: Express.Multer.File[],
-      certificate_images?: Express.Multer.File[]
+    @UploadedFiles()
+    files?: {
+      avatar?: Express.Multer.File[];
+      profile_images?: Express.Multer.File[];
+      certificate_images?: Express.Multer.File[];
     },
   ) {
     const userId = req.headers['x-user-id'];
-     const filesData = files || {};
-    return this.farmsService.updateFarm(
-      id,
-      updateFarmDto,
-      userId,
-      {
-        avatarFile: filesData.avatar ? filesData.avatar[0] : undefined,
-        profileFiles: filesData.profile_images || [],
-        certificateFiles: filesData.certificate_images || [],
-      },
-    );
+    const filesData = files || {};
+    return this.farmsService.updateFarm(id, updateFarmDto, userId, {
+      avatarFile: filesData.avatar ? filesData.avatar[0] : undefined,
+      profileFiles: filesData.profile_images || [],
+      certificateFiles: filesData.certificate_images || [],
+    });
   }
-
-
 }

@@ -6,7 +6,3 @@ export * from './verify-email.dto';
 export * from './send-verification-email.dto';
 export * from './send-verification-phone.dto';
 export * from './verify-phone.dto';
-export * from './update-profile.dto';
-export * from './change-password.dto';
-export * from './update-address.dto';
-export * from './create-address.dto';

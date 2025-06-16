@@ -780,7 +780,7 @@ export class ProductsService {
     return new PaginationResult(transformedProducts, meta);
   }
 
-  // Legacy method for backward compatibility
+  // Legacy method for backward compatibility - keeping for existing API consumers
   async searchAndFillterProducts(
     page: number,
     limit: number,

@@ -1,39 +1,48 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
-
-// gRPC method interfaces for Products Service
-interface ProductsGrpcService {
-  // Products
-  getProduct(data: any): Observable<any>;
-  getListProducts(data: any): Observable<any>;
-  createProduct(data: any): Observable<any>;
-  updateProduct(data: any): Observable<any>;
-  deleteProduct(data: any): Observable<any>;
-  searchProducts(data: any): Observable<any>;
-
-  // Categories
-  getAllCategoryWithSubcategory(data: any): Observable<any>;
-  getCategory(data: any): Observable<any>;
-  createCategory(data: any): Observable<any>;
-  getSubcategory(data: any): Observable<any>;
-  createSubcategory(data: any): Observable<any>;
-
-  // Farms
-  getFarm(data: any): Observable<any>;
-  getFarmByUser(data: any): Observable<any>;
-  createFarm(data: any): Observable<any>;
-  updateFarm(data: any): Observable<any>;
-  listFarms(data: any): Observable<any>;
-
-  // Admin
-  updateFarmStatus(data: any): Observable<any>;
-}
+import {
+  ProductsServiceClient,
+  GetProductRequest,
+  GetProductResponse,
+  GetListProductsRequest,
+  GetListProductsResponse,
+  CreateProductRequest,
+  CreateProductResponse,
+  UpdateProductRequest,
+  UpdateProductResponse,
+  DeleteProductRequest,
+  DeleteProductResponse,
+  SearchProductsRequest,
+  SearchProductsResponse,
+  GetAllCategoryWithSubcategoryRequest,
+  GetAllCategoryWithSubcategoryResponse,
+  GetCategoryRequest,
+  GetCategoryResponse,
+  CreateCategoryRequest,
+  CreateCategoryResponse,
+  GetSubcategoryRequest,
+  GetSubcategoryResponse,
+  CreateSubcategoryRequest,
+  CreateSubcategoryResponse,
+  GetFarmRequest,
+  GetFarmResponse,
+  GetFarmByUserRequest,
+  GetFarmByUserResponse,
+  CreateFarmRequest,
+  CreateFarmResponse,
+  UpdateFarmRequest,
+  UpdateFarmResponse,
+  ListFarmsRequest,
+  ListFarmsResponse,
+  UpdateFarmStatusRequest,
+  UpdateFarmStatusResponse,
+} from '@farmera/grpc-proto/dist/products/products';
 
 @Injectable()
 export class ProductClientService implements OnModuleInit {
   private readonly logger = new Logger(ProductClientService.name);
-  private productsServiceGrpcClient: ProductsGrpcService;
+  private productsServiceGrpcClient: ProductsServiceClient;
 
   constructor(
     @Inject('PRODUCTS_PACKAGE') private readonly clientGrpcInstance: ClientGrpc,
@@ -41,131 +50,124 @@ export class ProductClientService implements OnModuleInit {
 
   onModuleInit() {
     this.productsServiceGrpcClient =
-      this.clientGrpcInstance.getService<ProductsGrpcService>(
+      this.clientGrpcInstance.getService<ProductsServiceClient>(
         'ProductsService',
       );
     this.logger.log('ProductClientService initialized with gRPC client');
   }
 
   // Product methods
-  getProduct(productId: number): Observable<any> {
-    this.logger.log(`Getting product with ID: ${productId}`);
-    return this.productsServiceGrpcClient.getProduct({ product_id: productId });
+  getProduct(request: GetProductRequest): Observable<GetProductResponse> {
+    this.logger.log(`Getting product with ID: ${request.product_id}`);
+    return this.productsServiceGrpcClient.getProduct(request);
   }
 
-  getListProducts(productIds: number[]): Observable<any> {
-    this.logger.log(`Getting products with IDs: ${productIds.join(', ')}`);
-    const products = productIds.map((id) => ({ product_id: id }));
-    return this.productsServiceGrpcClient.getListProducts({ products });
+  getListProducts(
+    request: GetListProductsRequest,
+  ): Observable<GetListProductsResponse> {
+    this.logger.log(
+      `Getting products with IDs: ${request.products.map((p) => p.product_id).join(', ')}`,
+    );
+    return this.productsServiceGrpcClient.getListProducts(request);
   }
 
-  createProduct(productData: any): Observable<any> {
+  createProduct(
+    request: CreateProductRequest,
+  ): Observable<CreateProductResponse> {
     this.logger.log('Creating new product');
-    return this.productsServiceGrpcClient.createProduct(productData);
+    return this.productsServiceGrpcClient.createProduct(request);
   }
 
-  updateProduct(productId: number, productData: any): Observable<any> {
-    this.logger.log(`Updating product with ID: ${productId}`);
-    return this.productsServiceGrpcClient.updateProduct({
-      product_id: productId,
-      ...productData,
-    });
+  updateProduct(
+    request: UpdateProductRequest,
+  ): Observable<UpdateProductResponse> {
+    this.logger.log(`Updating product with ID: ${request.product_id}`);
+    return this.productsServiceGrpcClient.updateProduct(request);
   }
 
-  deleteProduct(productId: number, userId: string): Observable<any> {
-    this.logger.log(`Deleting product with ID: ${productId}`);
-    return this.productsServiceGrpcClient.deleteProduct({
-      product_id: productId,
-      user_id: userId,
-    });
+  deleteProduct(
+    request: DeleteProductRequest,
+  ): Observable<DeleteProductResponse> {
+    this.logger.log(`Deleting product with ID: ${request.product_id}`);
+    return this.productsServiceGrpcClient.deleteProduct(request);
   }
 
-  searchProducts(searchParams: any): Observable<any> {
+  searchProducts(
+    request: SearchProductsRequest,
+  ): Observable<SearchProductsResponse> {
     this.logger.log('Searching products with filters');
-    return this.productsServiceGrpcClient.searchProducts(searchParams);
+    return this.productsServiceGrpcClient.searchProducts(request);
   }
 
   // Category methods
-  getAllCategoryWithSubcategory(): Observable<any> {
+  getAllCategoryWithSubcategory(
+    request: GetAllCategoryWithSubcategoryRequest,
+  ): Observable<GetAllCategoryWithSubcategoryResponse> {
     this.logger.log('Getting all categories with subcategories');
-    return this.productsServiceGrpcClient.getAllCategoryWithSubcategory({});
+    return this.productsServiceGrpcClient.getAllCategoryWithSubcategory(
+      request,
+    );
   }
 
-  getCategory(categoryId: number): Observable<any> {
-    this.logger.log(`Getting category with ID: ${categoryId}`);
-    return this.productsServiceGrpcClient.getCategory({
-      category_id: categoryId,
-    });
+  getCategory(request: GetCategoryRequest): Observable<GetCategoryResponse> {
+    this.logger.log(`Getting category with ID: ${request.category_id}`);
+    return this.productsServiceGrpcClient.getCategory(request);
   }
 
-  createCategory(categoryData: any): Observable<any> {
+  createCategory(
+    request: CreateCategoryRequest,
+  ): Observable<CreateCategoryResponse> {
     this.logger.log('Creating new category');
-    return this.productsServiceGrpcClient.createCategory(categoryData);
+    return this.productsServiceGrpcClient.createCategory(request);
   }
 
-  getSubcategory(subcategoryId: number): Observable<any> {
-    this.logger.log(`Getting subcategory with ID: ${subcategoryId}`);
-    return this.productsServiceGrpcClient.getSubcategory({
-      subcategory_id: subcategoryId,
-    });
+  getSubcategory(
+    request: GetSubcategoryRequest,
+  ): Observable<GetSubcategoryResponse> {
+    this.logger.log(`Getting subcategory with ID: ${request.subcategory_id}`);
+    return this.productsServiceGrpcClient.getSubcategory(request);
   }
 
-  createSubcategory(subcategoryData: any): Observable<any> {
+  createSubcategory(
+    request: CreateSubcategoryRequest,
+  ): Observable<CreateSubcategoryResponse> {
     this.logger.log('Creating new subcategory');
-    return this.productsServiceGrpcClient.createSubcategory(subcategoryData);
+    return this.productsServiceGrpcClient.createSubcategory(request);
   }
 
   // Farm methods
-  getFarm(farmId: string, includeProducts: boolean = false): Observable<any> {
-    this.logger.log(`Getting farm with ID: ${farmId}`);
-    return this.productsServiceGrpcClient.getFarm({
-      farm_id: farmId,
-      include_products: includeProducts,
-    });
+  getFarm(request: GetFarmRequest): Observable<GetFarmResponse> {
+    this.logger.log(`Getting farm with ID: ${request.farm_id}`);
+    return this.productsServiceGrpcClient.getFarm(request);
   }
 
   getFarmByUser(
-    userId: string,
-    includeProducts: boolean = false,
-  ): Observable<any> {
-    this.logger.log(`Getting farm for user: ${userId}`);
-    return this.productsServiceGrpcClient.getFarmByUser({
-      user_id: userId,
-      include_products: includeProducts,
-    });
+    request: GetFarmByUserRequest,
+  ): Observable<GetFarmByUserResponse> {
+    this.logger.log(`Getting farm for user: ${request.user_id}`);
+    return this.productsServiceGrpcClient.getFarmByUser(request);
   }
 
-  createFarm(farmData: any): Observable<any> {
+  createFarm(request: CreateFarmRequest): Observable<CreateFarmResponse> {
     this.logger.log('Creating new farm');
-    return this.productsServiceGrpcClient.createFarm(farmData);
+    return this.productsServiceGrpcClient.createFarm(request);
   }
 
-  updateFarm(farmId: string, farmData: any): Observable<any> {
-    this.logger.log(`Updating farm with ID: ${farmId}`);
-    return this.productsServiceGrpcClient.updateFarm({
-      farm_id: farmId,
-      ...farmData,
-    });
+  updateFarm(request: UpdateFarmRequest): Observable<UpdateFarmResponse> {
+    this.logger.log(`Updating farm with ID: ${request.farm_id}`);
+    return this.productsServiceGrpcClient.updateFarm(request);
   }
 
-  listFarms(filters: any): Observable<any> {
+  listFarms(request: ListFarmsRequest): Observable<ListFarmsResponse> {
     this.logger.log('Listing farms with filters');
-    return this.productsServiceGrpcClient.listFarms(filters);
+    return this.productsServiceGrpcClient.listFarms(request);
   }
 
   // Admin methods
   updateFarmStatus(
-    farmId: string,
-    status: string,
-    reason: string,
-    userId: string,
-  ): Observable<any> {
-    this.logger.log(`Updating farm status for farm: ${farmId}`);
-    return this.productsServiceGrpcClient.updateFarmStatus({
-      farm_id: farmId,
-      status,
-      reason,
-      user_id: userId,
-    });
+    request: UpdateFarmStatusRequest,
+  ): Observable<UpdateFarmStatusResponse> {
+    this.logger.log(`Updating farm status for farm: ${request.farm_id}`);
+    return this.productsServiceGrpcClient.updateFarmStatus(request);
   }
 }

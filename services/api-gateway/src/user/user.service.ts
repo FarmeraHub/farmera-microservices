@@ -14,76 +14,30 @@ import {
   CreateAddressDto,
 } from './dto';
 import { ClientGrpc } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
-
-// gRPC response interfaces
-interface GetUserProfileResponse {
-  user: any;
-  stats: {
-    total_orders: number;
-    total_reviews: number;
-    loyalty_points: number;
-    member_since: any;
-  };
-}
-
-interface UpdateUserProfileResponse {
-  user: any;
-}
-
-interface ChangePasswordResponse {
-  success: boolean;
-  message?: string;
-}
-
-interface UpdatePasswordResponse {
-  success: boolean;
-  requires_relogin: boolean;
-}
-
-interface UpdateUserLocationResponse {
-  location: any;
-}
-
-interface GetUserLocationsResponse {
-  locations: any[];
-}
-
-interface DeleteUserLocationResponse {
-  success: boolean;
-}
-
-interface AddUserLocationResponse {
-  location: any;
-}
-
-interface LoginResponse {
-  user: any;
-  token_info: {
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-  };
-  requires_verification: boolean;
-  verification_type: string;
-}
-
-// gRPC service interface
-interface UsersGrpcService {
-  login(data: any): Observable<LoginResponse>;
-  updatePassword(data: any): Observable<UpdatePasswordResponse>;
-  getUserProfile(data: any): Observable<GetUserProfileResponse>;
-  updateUserProfile(data: any): Observable<UpdateUserProfileResponse>;
-  updateUserLocation(data: any): Observable<UpdateUserLocationResponse>;
-  getUserLocations(data: any): Observable<GetUserLocationsResponse>;
-  deleteUserLocation(data: any): Observable<DeleteUserLocationResponse>;
-  addUserLocation(data: any): Observable<AddUserLocationResponse>;
-}
+import {
+  GetUserProfileRequest,
+  GetUserProfileResponse,
+  UpdateUserProfileRequest,
+  UpdateUserProfileResponse,
+  UpdatePasswordRequest,
+  UpdatePasswordResponse,
+  LoginRequest,
+  LoginResponse,
+  UpdateUserLocationRequest,
+  UpdateUserLocationResponse,
+  GetUserLocationsRequest,
+  GetUserLocationsResponse,
+  DeleteUserLocationRequest,
+  DeleteUserLocationResponse,
+  AddUserLocationRequest,
+  AddUserLocationResponse,
+  UsersServiceClient,
+} from '@farmera/grpc-proto/dist/users/users';
 
 @Injectable()
 export class UserService implements OnModuleInit {
   private readonly logger = new Logger(UserService.name);
-  private usersGrpcService: UsersGrpcService;
+  private usersGrpcService: UsersServiceClient;
 
   constructor(
     @Inject('USERS_GRPC_PACKAGE') private readonly client: ClientGrpc,
@@ -91,7 +45,7 @@ export class UserService implements OnModuleInit {
 
   onModuleInit() {
     this.usersGrpcService =
-      this.client.getService<UsersGrpcService>('UsersService');
+      this.client.getService<UsersServiceClient>('UsersService');
   }
 
   async getUserProfile(userId: string) {
@@ -102,10 +56,12 @@ export class UserService implements OnModuleInit {
 
       this.logger.log(`Getting user profile for user: ${userId}`);
 
+      const grpcRequest: GetUserProfileRequest = {
+        user_id: userId,
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.getUserProfile({
-          user_id: userId,
-        }),
+        this.usersGrpcService.getUserProfile(grpcRequest),
       );
 
       if (result.user) {
@@ -142,21 +98,28 @@ export class UserService implements OnModuleInit {
 
       this.logger.log(`Updating user profile for user: ${userId}`);
 
-      // Convert birthday string to timestamp if provided
-      const updateData: any = {
+      const grpcRequest: UpdateUserProfileRequest = {
         user_id: userId,
-        ...req,
+        first_name: req.first_name,
+        last_name: req.last_name,
+        phone: req.phone,
+        gender: req.gender ? this.mapGenderToEnum(req.gender) : undefined,
+        birthday: req.birthday
+          ? {
+              value: {
+                seconds: Math.floor(new Date(req.birthday).getTime() / 1000),
+                nanos: 0,
+              },
+            }
+          : undefined,
+        bio: req.bio,
+        interests: [], // Can be extended
+        preferences: {}, // Can be extended
+        avatar_url: req.avatar_url,
       };
 
-      if (req.birthday) {
-        updateData.birthday = {
-          seconds: Math.floor(new Date(req.birthday).getTime() / 1000),
-          nanos: 0,
-        };
-      }
-
       const result = await firstValueFrom(
-        this.usersGrpcService.updateUserProfile(updateData),
+        this.usersGrpcService.updateUserProfile(grpcRequest),
       );
 
       if (result.user) {
@@ -193,10 +156,12 @@ export class UserService implements OnModuleInit {
       this.logger.log(`Changing password for user: ${userId}`);
 
       // First, get user info to validate current password
+      const userProfileRequest: GetUserProfileRequest = {
+        user_id: userId,
+      };
+
       const userProfile = await firstValueFrom(
-        this.usersGrpcService.getUserProfile({
-          user_id: userId,
-        }),
+        this.usersGrpcService.getUserProfile(userProfileRequest),
       );
 
       if (!userProfile.user) {
@@ -205,26 +170,28 @@ export class UserService implements OnModuleInit {
 
       // Validate old password by attempting a login
       try {
-        await firstValueFrom(
-          this.usersGrpcService.login({
-            email: userProfile.user.email,
-            password: req.oldPassword,
-            remember_me: false,
-            device_info: 'Password Change Validation',
-          }),
-        );
+        const loginRequest: LoginRequest = {
+          email: userProfile.user.email,
+          password: req.oldPassword,
+          remember_me: false,
+          device_info: 'Password Change Validation',
+        };
+
+        await firstValueFrom(this.usersGrpcService.login(loginRequest));
       } catch (loginError) {
         throw new BadRequestException('Current password is incorrect');
       }
 
       // Update password using the forgot password flow (but we know it's valid)
-      const result = (await firstValueFrom(
-        this.usersGrpcService.updatePassword({
-          email: userProfile.user.email,
-          new_password: req.newPassword,
-          code: '', // Empty code since we validated via login
-        }),
-      )) as UpdatePasswordResponse;
+      const updatePasswordRequest: UpdatePasswordRequest = {
+        email: userProfile.user.email,
+        new_password: req.newPassword,
+        code: '', // Empty code since we validated via login
+      };
+
+      const result = await firstValueFrom(
+        this.usersGrpcService.updatePassword(updatePasswordRequest),
+      );
 
       if (result.success) {
         this.logger.log('Password changed successfully');
@@ -265,10 +232,12 @@ export class UserService implements OnModuleInit {
 
       this.logger.log(`Getting addresses for user: ${userId}`);
 
+      const grpcRequest: GetUserLocationsRequest = {
+        user_id: userId,
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.getUserLocations({
-          user_id: userId,
-        }),
+        this.usersGrpcService.getUserLocations(grpcRequest),
       );
 
       if (result.locations) {
@@ -304,23 +273,26 @@ export class UserService implements OnModuleInit {
 
       this.logger.log(`Creating address for user: ${userId}`);
 
-      // Convert to the format expected by gRPC
-      const locationData = {
+      const grpcRequest: AddUserLocationRequest = {
         user_id: userId,
         location: {
+          id: '', // Will be generated by the service
+          user_id: userId,
+          address_line: req.address_line,
           city: req.city,
           state: req.district || req.state || '', // Map district to state for gRPC
-          address_line: req.address_line,
-          country: req.country || 'VN',
           postal_code: req.postal_code || '',
+          country: req.country || 'VN',
           latitude: req.latitude || 0,
           longitude: req.longitude || 0,
           is_default: req.is_primary || false,
+          created_at: undefined, // Will be set by service
+          updated_at: undefined, // Will be set by service
         },
       };
 
       const result = await firstValueFrom(
-        this.usersGrpcService.addUserLocation(locationData),
+        this.usersGrpcService.addUserLocation(grpcRequest),
       );
 
       if (result.location) {
@@ -362,17 +334,27 @@ export class UserService implements OnModuleInit {
         `Updating address for user: ${userId}, location: ${locationId}`,
       );
 
-      // Convert to the format expected by gRPC
-      const updateData: any = {
+      const grpcRequest: UpdateUserLocationRequest = {
         user_id: userId,
         location_id: locationId,
         location: {
-          ...req,
+          id: locationId,
+          user_id: userId,
+          address_line: req.address_line || '',
+          city: req.city || '',
+          state: req.state || '',
+          postal_code: req.postal_code || '',
+          country: req.country || 'VN',
+          latitude: req.latitude || 0,
+          longitude: req.longitude || 0,
+          is_default: req.is_primary || false,
+          created_at: undefined,
+          updated_at: undefined,
         },
       };
 
       const result = await firstValueFrom(
-        this.usersGrpcService.updateUserLocation(updateData),
+        this.usersGrpcService.updateUserLocation(grpcRequest),
       );
 
       if (result.location) {
@@ -410,11 +392,13 @@ export class UserService implements OnModuleInit {
         `Deleting address for user: ${userId}, location: ${locationId}`,
       );
 
+      const grpcRequest: DeleteUserLocationRequest = {
+        user_id: userId,
+        location_id: locationId,
+      };
+
       const result = await firstValueFrom(
-        this.usersGrpcService.deleteUserLocation({
-          user_id: userId,
-          location_id: locationId,
-        }),
+        this.usersGrpcService.deleteUserLocation(grpcRequest),
       );
 
       if (result.success) {
@@ -436,15 +420,20 @@ export class UserService implements OnModuleInit {
         );
       }
 
-      // Check if it's a not found error
-      if (error.message?.includes('not found') || error.code === 5) {
-        throw new BadRequestException(error.details || 'Address not found');
-      }
-
       // Use error.details if available, otherwise provide a generic message
       throw new BadRequestException(
         error.details || 'Failed to delete user address',
       );
     }
+  }
+
+  private mapGenderToEnum(gender: string): number {
+    const genderMap: { [key: string]: number } = {
+      GENDER_MALE: 1,
+      GENDER_FEMALE: 2,
+      GENDER_OTHER: 3,
+      GENDER_PREFER_NOT_TO_SAY: 4,
+    };
+    return genderMap[gender] || 0; // 0 = GENDER_UNSPECIFIED
   }
 }

@@ -30,7 +30,7 @@ import {
   User as UserInterface,
   UserRole,
 } from '../common/interfaces/user.interface';
-import { ProductClientService } from './product.client.service';
+import { ProductService } from './product.service';
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -50,7 +50,7 @@ import { ProductIdsDto } from './dto/product/product-ids.dto';
 export class ProductController {
   private readonly logger = new Logger(ProductController.name);
 
-  constructor(private readonly productClientService: ProductClientService) {}
+  constructor(private readonly productService: ProductService) {}
 
   @Get()
   @ApiOperation({ summary: 'Search and filter products with pagination' })
@@ -62,23 +62,7 @@ export class ProductController {
     );
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.searchProducts({
-          search: searchDto.search,
-          category: searchDto.category,
-          subcategory: searchDto.subcategory,
-          min_price: searchDto.minPrice,
-          max_price: searchDto.maxPrice,
-          farm_id: searchDto.farmId,
-          status: searchDto.status,
-          page: searchDto.page,
-          limit: searchDto.limit,
-          sort_by: searchDto.sort_by,
-          order: searchDto.order,
-          all: searchDto.all,
-        }),
-      );
-      return result;
+      return await this.productService.searchProducts(searchDto);
     } catch (error) {
       this.logger.error(
         `Error searching products: ${error.message}`,
@@ -97,10 +81,7 @@ export class ProductController {
     this.logger.log(`Getting product with ID: ${id}`);
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.getProduct(id),
-      );
-      return result;
+      return await this.productService.getProductById(id);
     } catch (error) {
       this.logger.error(`Error getting product: ${error.message}`, error.stack);
       throw new BadRequestException('Failed to retrieve product');
@@ -137,14 +118,11 @@ export class ProductController {
     }
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.createProduct({
-          ...createProductDto,
-          user_id: user.id,
-          files,
-        }),
+      return await this.productService.createProduct(
+        createProductDto,
+        user.id,
+        files,
       );
-      return result;
     } catch (error) {
       this.logger.error(
         `Error creating product: ${error.message}`,
@@ -186,14 +164,12 @@ export class ProductController {
     }
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.updateProduct(id, {
-          ...updateProductDto,
-          user_id: user.id,
-          files,
-        }),
+      return await this.productService.updateProduct(
+        id,
+        updateProductDto,
+        user.id,
+        files,
       );
-      return result;
     } catch (error) {
       this.logger.error(
         `Error updating product: ${error.message}`,
@@ -222,10 +198,7 @@ export class ProductController {
     }
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.deleteProduct(id, user.id),
-      );
-      return result;
+      return await this.productService.deleteProduct(id, user.id);
     } catch (error) {
       this.logger.error(
         `Error deleting product: ${error.message}`,
@@ -245,10 +218,9 @@ export class ProductController {
     );
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.getListProducts(productIdsDto.product_ids),
+      return await this.productService.getProductsByIds(
+        productIdsDto.product_ids,
       );
-      return result;
     } catch (error) {
       this.logger.error(
         `Error getting products by IDs: ${error.message}`,
@@ -269,10 +241,7 @@ export class ProductController {
     this.logger.log('Getting all categories with subcategories');
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.getAllCategoryWithSubcategory(),
-      );
-      return result;
+      return await this.productService.getAllCategories();
     } catch (error) {
       this.logger.error(
         `Error getting categories: ${error.message}`,
@@ -291,10 +260,7 @@ export class ProductController {
     this.logger.log(`Getting category with ID: ${id}`);
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.getCategory(id),
-      );
-      return result;
+      return await this.productService.getCategoryById(id);
     } catch (error) {
       this.logger.error(
         `Error getting category: ${error.message}`,
@@ -305,14 +271,14 @@ export class ProductController {
   }
 
   @Post('categories')
-  @ApiOperation({ summary: 'Create new category (Admin only)' })
+  @ApiOperation({ summary: 'Create new category' })
   @ApiResponse({ status: 201, description: 'Category created successfully' })
   @ResponseMessage('Category created successfully')
   async createCategory(
     @User() user: UserInterface,
     @Body() createCategoryDto: CreateCategoryDto,
   ) {
-    this.logger.log(`Creating category for admin: ${user.id}`);
+    this.logger.log(`Creating category for user: ${user.id}`);
 
     // Only admins can create categories
     if (user.role !== UserRole.ADMIN) {
@@ -320,10 +286,7 @@ export class ProductController {
     }
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.createCategory(createCategoryDto),
-      );
-      return result;
+      return await this.productService.createCategory(createCategoryDto);
     } catch (error) {
       this.logger.error(
         `Error creating category: ${error.message}`,
@@ -345,10 +308,7 @@ export class ProductController {
     this.logger.log(`Getting subcategory with ID: ${id}`);
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.getSubcategory(id),
-      );
-      return result;
+      return await this.productService.getSubcategoryById(id);
     } catch (error) {
       this.logger.error(
         `Error getting subcategory: ${error.message}`,
@@ -359,14 +319,17 @@ export class ProductController {
   }
 
   @Post('subcategories')
-  @ApiOperation({ summary: 'Create new subcategory (Admin only)' })
-  @ApiResponse({ status: 201, description: 'Subcategory created successfully' })
+  @ApiOperation({ summary: 'Create new subcategory' })
+  @ApiResponse({
+    status: 201,
+    description: 'Subcategory created successfully',
+  })
   @ResponseMessage('Subcategory created successfully')
   async createSubcategory(
     @User() user: UserInterface,
     @Body() createSubcategoryDto: CreateSubcategoryDto,
   ) {
-    this.logger.log(`Creating subcategory for admin: ${user.id}`);
+    this.logger.log(`Creating subcategory for user: ${user.id}`);
 
     // Only admins can create subcategories
     if (user.role !== UserRole.ADMIN) {
@@ -374,10 +337,7 @@ export class ProductController {
     }
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.createSubcategory(createSubcategoryDto),
-      );
-      return result;
+      return await this.productService.createSubcategory(createSubcategoryDto);
     } catch (error) {
       this.logger.error(
         `Error creating subcategory: ${error.message}`,
@@ -397,19 +357,7 @@ export class ProductController {
     );
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.listFarms({
-          search: farmFiltersDto.search,
-          status: farmFiltersDto.status,
-          city: farmFiltersDto.city,
-          page: farmFiltersDto.page,
-          limit: farmFiltersDto.limit,
-          sort_by: farmFiltersDto.sort_by,
-          order: farmFiltersDto.order,
-          all: farmFiltersDto.all,
-        }),
-      );
-      return result;
+      return await this.productService.getFarms(farmFiltersDto);
     } catch (error) {
       this.logger.error(`Error getting farms: ${error.message}`, error.stack);
       throw new BadRequestException('Failed to retrieve farms');
@@ -428,10 +376,10 @@ export class ProductController {
     this.logger.log(`Getting farm with ID: ${id}`);
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.getFarm(id, includeProducts || false),
+      return await this.productService.getFarmById(
+        id,
+        includeProducts || false,
       );
-      return result;
     } catch (error) {
       this.logger.error(`Error getting farm: ${error.message}`, error.stack);
       throw new BadRequestException('Failed to retrieve farm');
@@ -439,9 +387,9 @@ export class ProductController {
   }
 
   @Get('farms/my/farm')
-  @ApiOperation({ summary: "Get current user's farm" })
-  @ApiResponse({ status: 200, description: 'User farm retrieved successfully' })
-  @ResponseMessage('User farm retrieved successfully')
+  @ApiOperation({ summary: 'Get current user farm' })
+  @ApiResponse({ status: 200, description: 'Farm retrieved successfully' })
+  @ResponseMessage('Farm retrieved successfully')
   async getMyFarm(
     @User() user: UserInterface,
     @Query('include_products') includeProducts?: boolean,
@@ -449,27 +397,27 @@ export class ProductController {
     this.logger.log(`Getting farm for user: ${user.id}`);
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.getFarmByUser(
-          user.id,
-          includeProducts || false,
-        ),
+      return await this.productService.getFarmByUserId(
+        user.id,
+        includeProducts || false,
       );
-      return result;
     } catch (error) {
-      this.logger.error(
-        `Error getting user farm: ${error.message}`,
-        error.stack,
-      );
-      throw new BadRequestException('Failed to retrieve user farm');
+      this.logger.error(`Error getting farm: ${error.message}`, error.stack);
+      throw new BadRequestException('Failed to retrieve farm');
     }
   }
 
-  @Post('farms/register')
+  @Post('farms')
   @ApiOperation({ summary: 'Register new farm' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Farm registered successfully' })
   @ResponseMessage('Farm registered successfully')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'cccd', maxCount: 2 },
+      { name: 'biometric_video', maxCount: 1 },
+    ]),
+  )
   async registerFarm(
     @User() user: UserInterface,
     @Body() registerFarmDto: RegisterFarmDto,
@@ -482,14 +430,11 @@ export class ProductController {
     this.logger.log(`Registering farm for user: ${user.id}`);
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.createFarm({
-          ...registerFarmDto,
-          user_id: user.id,
-          files,
-        }),
+      return await this.productService.createFarm(
+        registerFarmDto,
+        user.id,
+        files,
       );
-      return result;
     } catch (error) {
       this.logger.error(
         `Error registering farm: ${error.message}`,
@@ -505,6 +450,13 @@ export class ProductController {
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 200, description: 'Farm updated successfully' })
   @ResponseMessage('Farm updated successfully')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'avatar', maxCount: 1 },
+      { name: 'profile_images', maxCount: 5 },
+      { name: 'certificate_images', maxCount: 5 },
+    ]),
+  )
   async updateFarm(
     @User() user: UserInterface,
     @Param('id') id: string,
@@ -519,21 +471,19 @@ export class ProductController {
     this.logger.log(`Updating farm ${id} for user: ${user.id}`);
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.updateFarm(id, {
-          ...updateFarmDto,
-          user_id: user.id,
-          files,
-        }),
+      return await this.productService.updateFarm(
+        id,
+        updateFarmDto,
+        user.id,
+        files,
       );
-      return result;
     } catch (error) {
       this.logger.error(`Error updating farm: ${error.message}`, error.stack);
       throw new BadRequestException('Failed to update farm');
     }
   }
 
-  @Put('admin/farms/:id/status')
+  @Put('farms/:id/status')
   @ApiOperation({ summary: 'Update farm status (Admin only)' })
   @ApiParam({ name: 'id', description: 'Farm ID' })
   @ApiResponse({ status: 200, description: 'Farm status updated successfully' })
@@ -543,9 +493,7 @@ export class ProductController {
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateFarmStatusDto,
   ) {
-    this.logger.log(
-      `Admin ${user.id} updating farm ${id} status to: ${updateStatusDto.status}`,
-    );
+    this.logger.log(`Updating farm status for farm: ${id}`);
 
     // Only admins can update farm status
     if (user.role !== UserRole.ADMIN) {
@@ -553,15 +501,11 @@ export class ProductController {
     }
 
     try {
-      const result = await firstValueFrom(
-        this.productClientService.updateFarmStatus(
-          id,
-          updateStatusDto.status,
-          updateStatusDto.reason || '',
-          user.id,
-        ),
+      return await this.productService.updateFarmStatus(
+        id,
+        updateStatusDto,
+        user.id,
       );
-      return result;
     } catch (error) {
       this.logger.error(
         `Error updating farm status: ${error.message}`,
