@@ -133,20 +133,24 @@ EOF
 
     # Rust template
     cat > buf.gen.rust.yaml << EOF
-version: v1
+version: v2
 plugins:
-  - plugin: buf.build/community/neoeinstein-prost:v0.12.1
+  - remote: buf.build/community/neoeinstein-prost:v0.4.0
     out: ../generated/rust/src
     opt:
       - bytes=.
       - file_descriptor_set
-  - plugin: buf.build/community/neoeinstein-prost-serde:v0.12.1
+      - extern_path=.google.protobuf.Any=::prost_wkt_types::Any
+      - extern_path=.google.protobuf.Timestamp=::prost_wkt_types::Timestamp
+  - remote: buf.build/community/neoeinstein-prost-serde:v0.3.1
     out: ../generated/rust/src
-  - plugin: buf.build/community/neoeinstein-tonic:v0.10.0
+  - remote: buf.build/community/neoeinstein-tonic:v0.4.1
     out: ../generated/rust/src
     opt:
       - no_include
       - compile_well_known_types
+      - extern_path=.google.protobuf.Any=::prost_wkt_types::Any
+      - extern_path=.google.protobuf.Timestamp=::prost_wkt_types::Timestamp
 EOF
 
     # Go template (optional)
@@ -222,13 +226,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tonic = "0.10"
-prost = "0.12"
-serde = { version = "1.0", features = ["derive"] }
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tonic = "0.12"  # Match the tonic version compatible with neoeinstein-tonic:v0.4.1
+prost = "0.13"  # Match the prost version compatible with neoeinstein-prost:v0.4.0
+serde = { version = "1.0.219", features = ["derive"] }
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
+prost-types = "0.13"
+pbjson = "0.7.0"
+prost-wkt-types = "0.6.1"   # For Any and Timestamp
 
 [build-dependencies]
-tonic-build = "0.10"
+tonic-build = "0.13.1"
 EOF
 
     # Create lib.rs
@@ -256,10 +263,17 @@ pub mod payment {
 
 pub mod notification {
     include!("farmera.notification.rs");
+    include!("farmera.notification.tonic.rs");
 }
 
 pub mod communication {
     include!("farmera.communication.rs");
+    include!("farmera.communication.tonic.rs");
+}
+
+pub mod hello {
+    include!("hello.rs");
+    include!("hello.tonic.rs");
 }
 
 // Re-export commonly used types
