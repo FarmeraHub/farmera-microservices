@@ -14,5 +14,12 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     synchronize: configService.get<boolean>('DB_SYNC', true),
     logging: configService.get<boolean>('DB_LOGGING', false),
+    ssl:
+      configService.get<string>('NODE_ENV') === 'production'
+        ? {
+            require: true,
+            rejectUnauthorized: false,
+          }
+        : false,
   }),
 };

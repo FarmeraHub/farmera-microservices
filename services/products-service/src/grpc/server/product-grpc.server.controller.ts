@@ -53,7 +53,6 @@ import { Observable, of, throwError, map, catchError, tap, from } from 'rxjs';
 import { ProductMapper } from './mappers/product.mapper';
 import { CreateSubcategoryDto } from 'src/categories/dto/request/create-subcategories.dto';
 import { Subcategory } from 'src/categories/entities/subcategory.entity';
-import { r } from 'pinata/dist/index-CQFQEo3K';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
 import { FarmStatus } from 'src/common/enums/farm-status.enum';
 
