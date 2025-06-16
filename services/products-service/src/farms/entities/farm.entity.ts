@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne, UpdateDateColumn, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne, UpdateDateColumn, OneToMany, JoinColumn } from "typeorm";
 import { Address } from "./address.entity";
 import { FarmStatus } from '../../common/enums/farm-status.enum';
 import { Product } from "../../products/entities/product.entity";
@@ -15,7 +15,7 @@ export class Farm {
   @Column()
   description: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   avatar_url: string;
 
   @Column('text', { array: true, nullable: true })
@@ -33,27 +33,29 @@ export class Farm {
   @Column()
   tax_number: string;
 
-  @Column({ 
-    type: 'enum', 
-    enum: FarmStatus, 
-    default: FarmStatus.PENDING 
+  @Column({
+    type: 'enum',
+    enum: FarmStatus,
+    default: FarmStatus.PENDING
   })
   status: FarmStatus;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: "timestamptz" })
   created: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: "timestamptz" })
   updated: Date;
 
   @OneToOne(() => Address, (address) => address.farm, { cascade: true })
+  @JoinColumn({ name: 'address_id' })
   address: Address;
-  @OneToOne(()=> Identification,(identification) => identification.farm, {cascade:true} )
+
+  @OneToOne(() => Identification, (identification) => identification.farm, { cascade: true })
   identification: Identification;
 
   @Column('uuid')
   user_id: string;
 
-  @OneToMany(()  => Product, (product) => product.farm, { cascade: true })
+  @OneToMany(() => Product, (product) => product.farm, { cascade: true })
   products: Product[];
 }

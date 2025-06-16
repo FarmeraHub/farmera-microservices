@@ -38,11 +38,18 @@ export class CreateProductDto {
   @IsPositive()
   weight: number;
 
-  @IsEnum(ProductStatus)
-  status: ProductStatus;
-
   @IsArray()
   @ArrayNotEmpty()
   @IsOptional()
   subcategory_ids?: number[];
+
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  image_urls?: string[];
+
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  video_urls?: string[];
 }

@@ -1,0 +1,13 @@
+export class Process {
+    process_id: number;
+    product_id: number;
+    stage_name: string;
+    description: Record<string, string>;
+    image_urls: string[];
+    video_urls: string[] | null;
+    start_date: Date;
+    end_date: Date;
+    latitude: number;
+    longitude: number;
+    created: Date;
+}

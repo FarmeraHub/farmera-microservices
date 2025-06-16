@@ -4,7 +4,6 @@ import { Product } from "src/products/entities/product.entity";
 import { Farm } from "src/farms/entities/farm.entity";
 import { Address } from "src/farms/entities/address.entity";
 import { AddressGHN } from "src/farms/entities/address-ghn.entity";
-import { ProductSubcategoryDetail } from "src/products/entities/product-subcategory-detail.entity";
 import { BadGatewayException } from "@nestjs/common";
 import {
   ProductsServiceControllerMethods,
@@ -77,33 +76,33 @@ export class ProductMapper {
         farmId = product.farm.farm_id; // Nếu farm là object FarmEntity
       }
     }
-    const grpcProduct: GrpcProduct = {
-      product_id: product.product_id,
-      farm_id: farmId,
-      product_name: product.product_name,
-      description: product.description,
-      price_per_unit: product.price_per_unit,
-      unit: product.unit,
-      stock_quantity: product.stock_quantity,
-      weight: product.weight,
-      image_urls: product.image_urls,
-      video_urls: product.video_urls,
-      status: EnumsMapper.toGrpcProductStatus(product.status),
-      average_rating: product.average_rating,
-      total_sold: product.total_sold,
-      created: TypesMapper.toGrpcTimestamp(product.created),
-      updated: TypesMapper.toGrpcTimestamp(product.updated),
-      subcategory_details: product.productSubcategoryDetails
-        ? product.productSubcategoryDetails
-          .map(detailEntity =>
-            // Truyền product.product_id vào hàm map chi tiết
-            this.mapProductSubcategoryDetailEntityToGrpc(detailEntity, product.product_id)
-          )
-          .filter((detail): detail is GrpcProductSubcategoryDetail => detail !== undefined)
-        : [],
-    };
+    // const grpcProduct: GrpcProduct = {
+    //   product_id: product.product_id,
+    //   farm_id: farmId,
+    //   product_name: product.product_name,
+    //   description: product.description,
+    //   price_per_unit: product.price_per_unit,
+    //   unit: product.unit,
+    //   stock_quantity: product.stock_quantity,
+    //   weight: product.weight,
+    //   image_urls: product.image_urls,
+    //   video_urls: product.video_urls,
+    //   status: EnumsMapper.toGrpcProductStatus(product.status),
+    //   average_rating: product.average_rating,
+    //   total_sold: product.total_sold,
+    //   created: TypesMapper.toGrpcTimestamp(product.created),
+    //   updated: TypesMapper.toGrpcTimestamp(product.updated),
+    //   subcategory_details: product.productSubcategoryDetails
+    //     ? product.productSubcategoryDetails
+    //       .map(detailEntity =>
+    //         // Truyền product.product_id vào hàm map chi tiết
+    //         this.mapProductSubcategoryDetailEntityToGrpc(detailEntity, product.product_id)
+    //       )
+    //       .filter((detail): detail is GrpcProductSubcategoryDetail => detail !== undefined)
+    //     : [],
+    // };
 
-    return grpcProduct;
+    // return grpcProduct;
   }
 
 
@@ -130,37 +129,37 @@ export class ProductMapper {
   // }
 
 
-  static mapProductSubcategoryDetailEntityToGrpc(
-    entity: ProductSubcategoryDetail,
-    productId: number // Nhận product_id từ bên ngoài
-  ): GrpcProductSubcategoryDetail | undefined {
-    if (!entity) return undefined;
+  // static mapProductSubcategoryDetailEntityToGrpc(
+  //   entity: ProductSubcategoryDetail,
+  //   productId: number // Nhận product_id từ bên ngoài
+  // ): GrpcProductSubcategoryDetail | undefined {
+  //   if (!entity) return undefined;
 
-    // Bây giờ chúng ta kiểm tra entity.id và entity.subcategory
-    // product_id đã được cung cấp trực tiếp
-    if (entity.id === undefined || !entity.subcategory || entity.subcategory.subcategory_id === undefined) {
-      console.warn("Invalid ProductSubcategoryDetailEntity, missing id or subcategory details:", entity);
-      return undefined;
-    }
+  //   // Bây giờ chúng ta kiểm tra entity.id và entity.subcategory
+  //   // product_id đã được cung cấp trực tiếp
+  //   if (entity.id === undefined || !entity.subcategory || entity.subcategory.subcategory_id === undefined) {
+  //     console.warn("Invalid ProductSubcategoryDetailEntity, missing id or subcategory details:", entity);
+  //     return undefined;
+  //   }
 
-    // Nếu entity.subcategory là một đối tượng Subcategory đầy đủ và bạn chỉ muốn subcategory_id:
-    const subcategory = entity.subcategory;
+  //   // Nếu entity.subcategory là một đối tượng Subcategory đầy đủ và bạn chỉ muốn subcategory_id:
+  //   const subcategory = entity.subcategory;
 
-    // Hoặc nếu entity.subcategory chỉ là subcategory_id (ví dụ: entity.subcategoryId):
-    // const subcategoryId = entity.subcategoryId; (Cần điều chỉnh tùy theo cấu trúc thực tế của ProductSubcategoryDetailEntity)
+  //   // Hoặc nếu entity.subcategory chỉ là subcategory_id (ví dụ: entity.subcategoryId):
+  //   // const subcategoryId = entity.subcategoryId; (Cần điều chỉnh tùy theo cấu trúc thực tế của ProductSubcategoryDetailEntity)
 
-    // Kiểm tra lại subcategoryId nếu nó có thể undefined từ bước trên
-    if (!subcategory || subcategory.subcategory_id === undefined) {
-      console.warn("Invalid ProductSubcategoryDetailEntity, missing subcategory_id:", entity);
-      return undefined;
-    }
+  //   // Kiểm tra lại subcategoryId nếu nó có thể undefined từ bước trên
+  //   if (!subcategory || subcategory.subcategory_id === undefined) {
+  //     console.warn("Invalid ProductSubcategoryDetailEntity, missing subcategory_id:", entity);
+  //     return undefined;
+  //   }
 
-    return {
-      id: entity.id,
-      product_id: productId, // Sử dụng productId được truyền vào
-      subcategory: this.toGrpcSubcategory(subcategory), // Lấy từ entity.subcategory.subcategory_id
-    };
-  }
+  //   return {
+  //     id: entity.id,
+  //     product_id: productId, // Sử dụng productId được truyền vào
+  //     subcategory: this.toGrpcSubcategory(subcategory), // Lấy từ entity.subcategory.subcategory_id
+  //   };
+  // }
 
   static toGrpcSubcategory(subcategory: Subcategory): GrpcSubcategory | undefined {
     if (!subcategory) {

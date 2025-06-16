@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "common/enums.proto";
+
 package farmera.common;
 
 option go_package = "github.com/farmera/grpc-protos/common";
@@ -70,4 +72,14 @@ message ListResponse {
 message SimplePaginationRequest {
   optional int32 page = 1;
   optional int32 limit = 2;
+}
+
+message SimpleCursorPaginationRequest {
+  optional farmera.common.PaginationOrder order = 1;
+  optional int32 limit = 2;
+  optional string cursor = 3;
+}
+
+message SimpleCursorPaginationResponse {
+  optional string next_cursor = 1;
 }

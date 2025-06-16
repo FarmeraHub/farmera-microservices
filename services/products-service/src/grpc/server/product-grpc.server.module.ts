@@ -6,6 +6,7 @@ import { ProductGrpcServerController } from "./product-grpc.server.controller";
 import { ProductMapper } from "./mappers/product.mapper";
 import { AdminModule } from "src/admin/admin.module";
 import { ReviewsModule } from "src/reviews/reviews.module";
+import { ProcessModule } from "src/process/process.module";
 
 @Module({
     imports: [
@@ -13,7 +14,8 @@ import { ReviewsModule } from "src/reviews/reviews.module";
         FarmsModule,
         CategoriesModule,
         AdminModule,
-        ReviewsModule
+        ReviewsModule,
+        ProcessModule
     ],
     controllers: [ProductGrpcServerController],
     providers: [ProductMapper],

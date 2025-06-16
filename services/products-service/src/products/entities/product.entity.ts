@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from 'typeorm';
 import { Farm } from 'src/farms/entities/farm.entity';
 import { ProductStatus } from 'src/common/enums/product-status.enum';
-import { ProductSubcategoryDetail } from './product-subcategory-detail.entity';
+import { Subcategory } from 'src/categories/entities/subcategory.entity';
+import { Process } from 'src/process/entities/process.entity';
 
 
 @Entity('product')
@@ -31,14 +32,16 @@ export class Product {
   @Column({ type: 'float' })
   weight: number; // in grams
 
-  @Column({name : 'total_sold', type: 'int', default: 0 })
+  @Column({ name: 'total_sold', type: 'int', default: 0 })
   total_sold: number;
-  @Column({name: 'average_rating', type: 'float', default: 0 })
+
+  @Column({ name: 'average_rating', type: 'float', default: 0 })
   average_rating: number;
-  @Column('text', { array: true })
+
+  @Column('text', { array: true, nullable: true })
   image_urls: string[];
 
-  @Column('text', { array: true })
+  @Column('text', { array: true, nullable: true })
   video_urls: string[];
 
   @Column({
@@ -48,12 +51,17 @@ export class Product {
   })
   status: ProductStatus;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'timestamptz' })
   created: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated: Date;
 
-  @OneToMany(() => ProductSubcategoryDetail, (productSubcategoryDetail) => productSubcategoryDetail.product, { cascade: true })
-  productSubcategoryDetails: ProductSubcategoryDetail[];
+  @ManyToMany(() => Subcategory, (sub) => sub.products, { cascade: true })
+  @JoinTable()
+  subcategories: Subcategory[];
+
+  @OneToMany(() => Process, (process) => process.product)
+  @JoinColumn({ name: "process_id" })
+  processes: Process[]
 }

@@ -58,13 +58,9 @@ service ProductsService {
   //rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse);
   
   // Process tracking
-  //rpc CreateProcess(CreateProcessRequest) returns (CreateProcessResponse);
-  //rpc GetProcess(GetProcessRequest) returns (GetProcessResponse);
-  //rpc UpdateProcess(UpdateProcessRequest) returns (UpdateProcessResponse);
-  //rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);
-  //rpc GetProductProcesses(GetProductProcessesRequest) returns (GetProductProcessesResponse);
-  //rpc VerifyProcess(VerifyProcessRequest) returns (VerifyProcessResponse);
-  
+  rpc CreateProcess(CreateProcessRequest) returns (CreateProcessResponse);
+  rpc GetProcess(GetProcessRequest) returns (GetProcessResponse);
+  rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);  
 
   // File management
   //rpc UploadProductImage(UploadProductImageRequest) returns (UploadProductImageResponse);
@@ -166,7 +162,7 @@ message Subcategory {
 message SubcategoryLite  {
   int32 subcategory_id = 1;
   string name = 2;
-  string description = 3;
+  optional string description = 3;
   farmera.common.Timestamp created = 4;
 }
 
@@ -176,25 +172,6 @@ message ProductSubcategoryDetail {
   int32 product_id = 2;
   Subcategory subcategory = 3;
 }
-
-// Product process tracking
-message ProductProcess {
-  int32 process_id = 1;
-  int32 product_id = 2;
-  string process_name = 3;
-  string description = 4;
-  farmera.common.Timestamp process_date = 5;
-  string location = 6;
-  repeated farmera.common.Image images = 7;
-  repeated farmera.common.Video videos = 8;
-  bool is_verified = 9;
-  string verified_by = 10;
-  farmera.common.Timestamp verified_at = 11;
-  map<string, string> metadata = 12;
-  string blockchain_hash = 13; // For blockchain verification
-}
-
-
 
 // Product inventory tracking
 message ProductInventory {
@@ -616,16 +593,33 @@ message GetProductReviewsResponse {
   farmera.common.Rating rating_summary = 3;
 }
 
-// Process tracking requests/responses
+// Process
+// Product process tracking
+message ProductProcess {
+  int32 process_id = 1;
+  int32 product_id = 2;
+  string stage_name = 3;
+  map<string, string> description = 4;
+  repeated string image_urls = 5;
+  optional farmera.common.StringList video_urls = 6;
+  farmera.common.Timestamp start_date = 7;
+  farmera.common.Timestamp end_date = 8;
+  int32 latitude = 9;
+  int32 longitude = 10;
+  farmera.common.Timestamp created = 11;
+}
+
 message CreateProcessRequest {
   int32 product_id = 1;
-  string process_name = 2;
-  string description = 3;
-  farmera.common.Timestamp process_date = 4;
-  string location = 5;
-  repeated string image_urls = 6;
-  repeated string video_urls = 7;
-  map<string, string> metadata = 8;
+  string stage_name = 2;
+  map<string, string> description = 3;
+  farmera.common.Timestamp start_date = 4;
+  farmera.common.Timestamp end_date = 5;
+  int32 latitude = 6;
+  int32 longitude = 7;
+  repeated string image_urls = 8;
+  optional farmera.common.StringList video_urls = 9;
+  string user_id = 10;
 }
 
 message CreateProcessResponse {
@@ -640,55 +634,15 @@ message GetProcessResponse {
   ProductProcess process = 1;
 }
 
-message UpdateProcessRequest {
-  int32 process_id = 1;
-  optional string description = 2;
-  optional string location = 3;
-  repeated string image_urls = 4;
-  repeated string video_urls = 5;
-  map<string, string> metadata = 6;
-}
-
-message UpdateProcessResponse {
-  ProductProcess process = 1;
-}
-
 message ListProcessesRequest {
-  farmera.common.PaginationRequest pagination = 1;
-  optional int32 product_id_filter = 2;
-  optional bool verified_only = 3;
-  optional farmera.common.TimeRange date_range = 4;
+  farmera.common.SimpleCursorPaginationRequest pagination = 1;
+  int32 product_id = 2;
 }
 
 message ListProcessesResponse {
   repeated ProductProcess processes = 1;
-  farmera.common.PaginationResponse pagination = 2;
+  farmera.common.SimpleCursorPaginationResponse pagination = 2;
 }
-
-message GetProductProcessesRequest {
-  int32 product_id = 1;
-  farmera.common.PaginationRequest pagination = 2;
-  optional bool verified_only = 3;
-}
-
-message GetProductProcessesResponse {
-  repeated ProductProcess processes = 1;
-  farmera.common.PaginationResponse pagination = 2;
-}
-
-message VerifyProcessRequest {
-  int32 process_id = 1;
-  bool is_verified = 2;
-  string verified_by = 3;
-  string verification_notes = 4;
-  string blockchain_hash = 5;
-}
-
-message VerifyProcessResponse {
-  ProductProcess process = 1;
-}
-
-
 
 // File management requests/responses
 message UploadProductImageRequest {

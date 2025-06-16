@@ -4,17 +4,13 @@ import { CategoriesService } from './categories.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { Subcategory } from './entities/subcategory.entity';
-import { ProductSubcategoryDetail } from 'src/products/entities/product-subcategory-detail.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Category, Subcategory, ProductSubcategoryDetail])
+    TypeOrmModule.forFeature([Category, Subcategory])
   ],
   controllers: [CategoriesController],
   providers: [CategoriesService],
-  exports: [
-    CategoriesService,
-    TypeOrmModule,
-  ],
+  exports: [CategoriesService, TypeOrmModule],
 })
 export class CategoriesModule { }

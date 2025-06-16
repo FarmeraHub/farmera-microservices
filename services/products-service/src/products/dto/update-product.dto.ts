@@ -39,16 +39,12 @@ export class UpdateProductDto {
     status: ProductStatus;
 
     @IsOptional()
-    @ArrayNotEmpty()
-    subcategory_ids: number[];
-
-    @IsOptional()
+    @IsString({ each: true })
+    @IsNotEmpty({ each: true })
     image_urls: string[];
 
     @IsOptional()
+    @IsString({ each: true })
+    @IsNotEmpty({ each: true })
     video_urls: string[];
-
-
-
-
 }

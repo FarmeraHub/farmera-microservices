@@ -2,13 +2,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MulterModule } from '@nestjs/platform-express';
 import { FarmsModule } from './farms/farms.module';
 import { typeOrmAsyncConfig } from './config/typeorm.config';
-import { multerAsyncConfig } from './config/multer.config';
 import { AdminModule } from './admin/admin.module';
 import { CategoriesModule } from './categories/categories.module';
-import { Product } from './products/entities/product.entity';
 import { ProductsModule } from './products/products.module';
 import { BiometricsModule } from './biometrics/biometrics.module';
 import { ReviewsModule } from './reviews/reviews.module';

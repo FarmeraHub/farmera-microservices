@@ -5,7 +5,6 @@ import { Category } from './entities/category.entity';
 import { DataSource, In, Repository } from 'typeorm';
 import { CreateCategoriesDto } from './dto/request/create-categories.dto';
 import { CreateSubcategoryDto } from './dto/request/create-subcategories.dto';
-import { ProductSubcategoryDetail } from 'src/products/entities/product-subcategory-detail.entity';
 
 @Injectable()
 export class CategoriesService {
@@ -15,8 +14,8 @@ export class CategoriesService {
         private readonly categoriesRepository: Repository<Category>,
         @InjectRepository(Subcategory)
         private readonly subcategoriesRepository: Repository<Subcategory>,
-        @InjectRepository(ProductSubcategoryDetail)
-        private readonly productSubcategoryDetailRepository: Repository<ProductSubcategoryDetail>,
+        // @InjectRepository(ProductSubcategoryDetail)
+        // private readonly productSubcategoryDetailRepository: Repository<ProductSubcategoryDetail>,
         private readonly dataSource: DataSource, // Inject DataSource for transaction management
     ) { }
     async getCategoriesWithSubcategories() {
@@ -110,19 +109,19 @@ export class CategoriesService {
         return subcategory;
     }
 
-    async findProductSubcategoryDetailsByProductIds(productIds: number[]): Promise<ProductSubcategoryDetail[]> {
-        if (!productIds || productIds.length === 0) {
-            return [];
-        }
-        return this.productSubcategoryDetailRepository.find({
-            where: { product: { product_id: In(productIds) } },
-            relations: [
-                'product',
-                'subcategory',
-                'subcategory.category',
-            ],
-        });
-    }
+    // async findProductSubcategoryDetailsByProductIds(productIds: number[]): Promise<ProductSubcategoryDetail[]> {
+    //     if (!productIds || productIds.length === 0) {
+    //         return [];
+    //     }
+    //     return this.productSubcategoryDetailRepository.find({
+    //         where: { product: { product_id: In(productIds) } },
+    //         relations: [
+    //             'product',
+    //             'subcategory',
+    //             'subcategory.category',
+    //         ],
+    //     });
+    // }
 
     // verified
     async getSubCategoryTree(category_id: number): Promise<Category> {

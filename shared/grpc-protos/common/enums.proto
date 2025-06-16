@@ -200,3 +200,9 @@ enum VerifyStatusCode {
     OK = 1;
     FAILED = 2;
 }
+
+enum PaginationOrder {
+  ORDER_UNSPECIFIED = 0;
+  DESC = 1;
+  ASC = 2;
+}
