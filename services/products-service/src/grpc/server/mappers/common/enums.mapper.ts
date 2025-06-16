@@ -1,4 +1,5 @@
 import { FarmStatus as GrpcFarmStatus, IdentificationMethod as GrpcIdentificationMethod, IdentificationStatus as GrpcIdentificationStatus, ProductStatus as GrpcProductStatus, PaginationOrder as GrpcPaginationOrder } from "@farmera/grpc-proto/dist/common/enums";
+import { BadRequestException, InternalServerErrorException } from "@nestjs/common";
 import { FarmStatus } from "src/common/enums/farm-status.enum";
 import { PaginationOrder } from "src/common/enums/pagination.enums";
 import { ProductStatus } from "src/common/enums/product-status.enum";
@@ -66,11 +67,11 @@ export class EnumsMapper {
     }
 
     static fromGrpcPaginationOrder(value?: GrpcPaginationOrder): PaginationOrder {
-        if (!value) return PaginationOrder.UNSPECIFIED;
+        if (!value) throw new InternalServerErrorException("Invalid value");
         switch (value.toString()) {
             case "ASC": return PaginationOrder.ASC;
             case "DESC": return PaginationOrder.DESC;
-            default: return PaginationOrder.UNSPECIFIED;
+            default: throw new BadRequestException("Invalid value");
         }
     }
 }

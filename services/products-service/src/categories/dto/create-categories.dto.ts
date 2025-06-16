@@ -8,5 +8,5 @@ export class CreateCategoriesDto {
     @IsOptional()
     description?: string;
     @IsString()
-    icon_url?: string;
+    image_url?: string;
 }

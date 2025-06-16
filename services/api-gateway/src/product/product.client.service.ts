@@ -15,8 +15,6 @@ import {
   DeleteProductResponse,
   SearchProductsRequest,
   SearchProductsResponse,
-  GetAllCategoryWithSubcategoryRequest,
-  GetAllCategoryWithSubcategoryResponse,
   GetCategoryRequest,
   GetCategoryResponse,
   CreateCategoryRequest,
@@ -46,7 +44,7 @@ export class ProductClientService implements OnModuleInit {
 
   constructor(
     @Inject('PRODUCTS_PACKAGE') private readonly clientGrpcInstance: ClientGrpc,
-  ) {}
+  ) { }
 
   onModuleInit() {
     this.productsServiceGrpcClient =
@@ -100,15 +98,6 @@ export class ProductClientService implements OnModuleInit {
   }
 
   // Category methods
-  getAllCategoryWithSubcategory(
-    request: GetAllCategoryWithSubcategoryRequest,
-  ): Observable<GetAllCategoryWithSubcategoryResponse> {
-    this.logger.log('Getting all categories with subcategories');
-    return this.productsServiceGrpcClient.getAllCategoryWithSubcategory(
-      request,
-    );
-  }
-
   getCategory(request: GetCategoryRequest): Observable<GetCategoryResponse> {
     this.logger.log(`Getting category with ID: ${request.category_id}`);
     return this.productsServiceGrpcClient.getCategory(request);

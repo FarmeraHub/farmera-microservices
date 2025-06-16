@@ -26,6 +26,7 @@ import { ProductStatus } from "src/common/enums/product-status.enum";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { ResponseProductDto } from "./dto/response/response-product.dto";
 import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString } from "class-validator";
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 
 
 
@@ -86,27 +87,27 @@ export class ProductsController {
     return this.productsService.findProductById(id);
   }
 
-  @Get()
-  async searchAndFilterProducts(
-    @Query() paginationOptions: PaginationOptions,
-    @Query('search') search?: string,
-    @Query('category') category?: string,
-    @Query('subcategory') subcategory?: string,
-    @Query('minPrice') minPrice?: number,
-    @Query('maxPrice') maxPrice?: number,
-    @Query('farmId') farmId?: string,
-    @Query('status') status?: ProductStatus,
-  ) {
-    return this.productsService.searchAndFilterProducts(paginationOptions, {
-      search,
-      category,
-      subcategory,
-      minPrice,
-      maxPrice,
-      farmId,
-      status,
-    });
-  }
+  // @Get()
+  // async searchAndFilterProducts(
+  //   @Query() paginationOptions: PaginationOptions,
+  //   @Query('search') search?: string,
+  //   @Query('category') category?: string,
+  //   @Query('subcategory') subcategory?: string,
+  //   @Query('minPrice') minPrice?: number,
+  //   @Query('maxPrice') maxPrice?: number,
+  //   @Query('farmId') farmId?: string,
+  //   @Query('status') status?: ProductStatus,
+  // ) {
+  //   return this.productsService.searchAndFilterProducts(paginationOptions, {
+  //     search,
+  //     category,
+  //     subcategory,
+  //     minPrice,
+  //     maxPrice,
+  //     farmId,
+  //     status,
+  //   });
+  // }
   // @Get()
   // async searchAndFillterProducts(
   //   @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,

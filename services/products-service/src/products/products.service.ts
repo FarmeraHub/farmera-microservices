@@ -11,7 +11,6 @@ import { FarmStatus } from 'src/common/enums/farm-status.enum';
 import { ResponseProductDto } from './dto/response/response-product.dto';
 import { ResponseFarmDto } from 'src/farms/dto/response-farm.dto';
 import { ProductStatus } from 'src/common/enums/product-status.enum';
-import { SavedFileResult } from 'src/file-storage/storage.strategy.interface';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';

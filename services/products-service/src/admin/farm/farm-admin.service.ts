@@ -18,7 +18,7 @@ export class FarmAdminService {
     @InjectRepository(ApproveDetail)
     private approveDetailRepository: Repository<ApproveDetail>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async getPendingFarms(
     paginationOptions?: PaginationOptions,

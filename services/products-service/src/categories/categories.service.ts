@@ -2,12 +2,9 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger, 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Subcategory } from './entities/subcategory.entity';
 import { Category } from './entities/category.entity';
-import { DataSource, In, Repository } from 'typeorm';
-import { CreateCategoriesDto } from './dto/request/create-categories.dto';
-import { CreateSubcategoryDto } from './dto/request/create-subcategories.dto';
-import { CategoryDto } from './dto/response/category.dto.response';
-import { RpcException } from '@nestjs/microservices';
-import { status } from '@grpc/grpc-js';
+import { Repository } from 'typeorm';
+import { CreateCategoriesDto } from './dto/create-categories.dto';
+import { CreateSubcategoryDto } from './dto/create-subcategories.dto';
 import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
 import { PaginationMeta } from 'src/pagination/dto/pagination-meta.dto';
@@ -15,12 +12,14 @@ import { PaginationMeta } from 'src/pagination/dto/pagination-meta.dto';
 @Injectable()
 export class CategoriesService {
     private readonly logger = new Logger(CategoriesService.name);
+
     constructor(
         @InjectRepository(Category)
         private readonly categoriesRepository: Repository<Category>,
         @InjectRepository(Subcategory)
         private readonly subcategoriesRepository: Repository<Subcategory>,
     ) { }
+
     async getCategoriesWithSubcategories(
         paginationOptions?: PaginationOptions,
     ): Promise<PaginationResult<Category> | Category[]> {
@@ -101,7 +100,7 @@ export class CategoriesService {
         createCategoryDto: CreateCategoriesDto,
     ): Promise<Category> {
         try {
-            return await this.categoriesRepository.create(createCategoryDto);
+            return this.categoriesRepository.create(createCategoryDto);
         } catch (error) {
             if (error instanceof BadRequestException || error instanceof NotFoundException) {
                 throw error;
@@ -123,10 +122,7 @@ export class CategoriesService {
         return this.subcategoriesRepository.save(subcategory);
     }
 
-    async checkSubcategoryById(id: number): Promise<Boolean> {
-        const subcategory = await this.subcategoriesRepository.findOne({ where: { subcategory_id: id } });
-        return !!subcategory; // Returns true if subcategory exists, otherwise false
-    }
+    // verified
     async getSubcategoryById(id: number): Promise<Subcategory> {
         const subcategory = await this.subcategoriesRepository.findOne({
             where: { subcategory_id: id },
@@ -137,20 +133,6 @@ export class CategoriesService {
         }
         return subcategory;
     }
-
-    // async findProductSubcategoryDetailsByProductIds(productIds: number[]): Promise<ProductSubcategoryDetail[]> {
-    //     if (!productIds || productIds.length === 0) {
-    //         return [];
-    //     }
-    //     return this.productSubcategoryDetailRepository.find({
-    //         where: { product: { product_id: In(productIds) } },
-    //         relations: [
-    //             'product',
-    //             'subcategory',
-    //             'subcategory.category',
-    //         ],
-    //     });
-    // }
 
     // verified
     async getSubCategoryTree(category_id: number): Promise<Category> {
