@@ -118,22 +118,17 @@ generate_go_code() {
 create_buf_templates() {
     print_status "Creating Buf generation templates..."
     
-    # Node.js template
+    # Node.js template (using ts-proto for better NestJS integration)
     cat > buf.gen.nodejs.yaml << EOF
-version: v1
+version: v2
 plugins:
-  - plugin: buf.build/protocolbuffers/js:v3.21.2
-    out: ../generated/nodejs
-    opt: import_style=commonjs
-  - plugin: buf.build/grpc/node:v1.8.14
-    out: ../generated/nodejs
-    opt: grpc_js
-  - plugin: buf.build/protocolbuffers/ts:v4.5.0
-    out: ../generated/nodejs
-    opt: 
-      - generate_dependencies=false
-      - long_type_string=false
-      - enum_type=string_literal
+  - remote: buf.build/community/stephenh-ts-proto:v2.6.1
+    out: ../generated/nodejs/nestjs/src
+    opt:
+      - nestJs=true
+      - snakeToCamel=false
+      - esModuleInterop=true
+    # opt: useDate=false # use google.probuf.Timestamp {secs, nanos}
 EOF
 
     # Rust template
