@@ -1,4 +1,3 @@
-import { status } from '@grpc/grpc-js';
 export class ResponseFarmDto {
     farm_id: string;
     farm_name: string;

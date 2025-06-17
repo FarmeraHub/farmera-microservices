@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../common/pagination-query.dto';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 
 export enum FarmStatus {
   UNSPECIFIED = 'UNSPECIFIED',
@@ -10,7 +10,7 @@ export enum FarmStatus {
   REJECTED = 'REJECTED',
 }
 
-export class FarmFiltersDto extends PaginationQueryDto {
+export class FarmFiltersDto extends PaginationOptions {
   @ApiPropertyOptional({
     description: 'Search term for farm name, email, or city',
     example: 'Green Valley',

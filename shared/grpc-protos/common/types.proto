@@ -31,8 +31,7 @@ message Location {
 message GeoLocation {
   double latitude = 1;
   double longitude = 2;
-  string geohash = 3;
-  double radius_km = 4;
+  double radius_km = 3;
 }
 
 // Money/Currency representation

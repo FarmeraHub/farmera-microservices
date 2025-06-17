@@ -63,6 +63,12 @@ import {
     UpdateFarmResponse,
     UpdateProductRequest,
     UpdateProductResponse,
+    GetAllCategoryWithSubcategoryRequest,
+    GetAllCategoryWithSubcategoryResponse,
+    SearchCategoryRequest,
+    SearchCategoryResponse,
+    SearchFarmRequest,
+    SearchFarmResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
@@ -82,6 +88,7 @@ import { EnumsMapper } from './mappers/common/enums.mapper';
 import { status } from '@grpc/grpc-js';
 import { CreateSubcategoryDto } from 'src/categories/dto/create-subcategories.dto';
 import { ErrorMapper } from './mappers/common/error.mapper';
+import { PaginationMapper } from './mappers/common/pagination.mapper';
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -108,12 +115,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         throw new Error('Method not implemented.');
     }
     searchProducts(request: SearchProductsRequest): Promise<SearchProductsResponse> | Observable<SearchProductsResponse> | SearchProductsResponse {
-        throw new Error('Method not implemented.');
-    }
-    updateFarm(request: UpdateFarmRequest): Promise<UpdateFarmResponse> | Observable<UpdateFarmResponse> | UpdateFarmResponse {
-        throw new Error('Method not implemented.');
-    }
-    listFarms(request: ListFarmsRequest): Promise<ListFarmsResponse> | Observable<ListFarmsResponse> | ListFarmsResponse {
         throw new Error('Method not implemented.');
     }
 
@@ -303,6 +304,51 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
+    updateFarm(request: UpdateFarmRequest): Promise<UpdateFarmResponse> | Observable<UpdateFarmResponse> | UpdateFarmResponse {
+        throw new Error('Method not implemented.');
+    }
+
+    async listFarms(request: ListFarmsRequest): Promise<ListFarmsResponse> {
+        try {
+            const farms = await this.farmsService.listFarms(
+                PaginationMapper.fromGrpcPaginationRequest(request.pagination),
+            );
+            return {
+                farms: farms.data.map((value) => FarmMapper.toGrpcFarm(value)),
+                pagination: farms.meta ? PaginationMapper.toGrpcPaginationResponse(farms.meta) : undefined,
+            }
+        }
+        catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async searchFarm(request: SearchFarmRequest): Promise<SearchFarmResponse> {
+        try {
+            const geoLocation = TypesMapper.fromGrpcGeoLocation(request.location_filter)
+            const farms = await this.farmsService.searchFarm(
+                {
+                    query: request.search_query,
+                    approve_only: request.approved_only,
+                    latitude: geoLocation?.latitude,
+                    longitude: geoLocation?.longitude,
+                    radius_km: geoLocation?.radius_km,
+                    skip: 0,
+                },
+                PaginationMapper.fromGrpcPaginationRequest(request.pagination)
+            )
+            return {
+                farms: farms.data.map((value) => FarmMapper.toGrpcFarm(value)),
+                pagination: farms.meta ? PaginationMapper.toGrpcPaginationResponse(farms.meta) : undefined,
+            }
+        }
+        catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
     // Admin methods
     async updateFarmStatus(request: UpdateFarmStatusRequest): Promise<UpdateFarmStatusResponse> {
         this.logger.debug(`[gRPC In - UpdateFarmStatus] Received request to update farm status: ${JSON.stringify(request)}`);
@@ -435,18 +481,39 @@ export class ProductGrpcServerController implements ProductsServiceController {
     }
 
     // Category methods
-    // async getAllCategoryWithSubcategory(request: GetAllCategoryWithSubcategoryRequest): Promise<GetAllCategoryWithSubcategoryResponse> {
-    //     const categories = await this.categoriesService.getCategoriesWithSubcategories();
-    //     if (!categories || categories.length === 0) {
-    //         this.logger.warn('[gRPC Logic - GetAllCategoryWithSubcategory] No categories found.');
-    //         return { categories: [], pagination: undefined };
-    //     }
-    //     this.logger.log(`[gRPC Logic - GetAllCategoryWithSubcategory] Successfully fetched ${categories.length} categories with subcategories.`);
-    //     const result = ProductMapper.toGrpcGetAllCategoryWithSubcategoryResponse(categories);
-    //     this.logger.log(`[gRPC Out - GetAllCategoryWithSubcategory] Returning ${result.categories.length} categories.`);
-    //     return result;
+    async getAllCategoryWithSubcategory(request: GetAllCategoryWithSubcategoryRequest): Promise<GetAllCategoryWithSubcategoryResponse> {
+        try {
+            const categories = await this.categoriesService.getCategoriesWithSubcategories(
+                PaginationMapper.fromGrpcPaginationRequest(request.pagination)
+            );
+            this.logger.debug(`[gRPC Logic - GetAllCategoryWithSubcategory] Successfully fetched ${categories.data.length} categories with subcategories.`);
+            return {
+                category: categories.data.map((value) => CategoryMapper.toGrpcCategoryWithSubs(value)),
+                pagination: categories.meta ? PaginationMapper.toGrpcPaginationResponse(categories.meta) : undefined,
+            }
 
-    // }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async searchCategory(request: SearchCategoryRequest): Promise<SearchCategoryResponse> {
+        try {
+            const categories = await this.categoriesService.searchCategory(
+                request.name,
+                PaginationMapper.fromGrpcPaginationRequest(request.pagination),
+            );
+            this.logger.debug(`[gRPC Logic - GetAllCategoryWithSubcategory] Successfully fetched ${categories.data.length} categories with subcategories.`);
+            return {
+                category: categories.data.map((value) => CategoryMapper.toGrpcCategoryWithSubs(value)),
+                pagination: categories.meta ? PaginationMapper.toGrpcPaginationResponse(categories.meta) : undefined,
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
 
     // verified
     async createCategory(request: CreateCategoryRequest): Promise<CreateCategoryResponse> {

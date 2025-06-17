@@ -1,4 +1,4 @@
-import { FarmStatus } from "src/enums/product/farm-status.enum";
+import { FarmStatus } from "src/common/enums/product/farm-status.enum";
 import { Address } from "./address.entity";
 import { Identification } from "./identification.entity";
 

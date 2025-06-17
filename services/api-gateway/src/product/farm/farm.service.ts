@@ -6,6 +6,13 @@ import { FarmMapper } from 'src/mappers/product/farm.mapper';
 import { firstValueFrom, Observable, ReplaySubject } from 'rxjs';
 import { randomUUID } from 'crypto';
 import { ErrorMapper } from 'src/mappers/common/error.mapper';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
+import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
+import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
+import { Farm } from './entities/farm.entity';
+import { SearchFarmDto } from './dto/search-farm.dto';
+import { plainToInstance } from 'class-transformer';
+import { TypesMapper } from 'src/mappers/common/types.mapper';
 
 @Injectable()
 export class FarmService implements OnModuleInit {
@@ -107,6 +114,48 @@ export class FarmService implements OnModuleInit {
             }));
 
             return FarmMapper.fromGrpcFarm(result.farm);
+        }
+        catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
+        }
+    }
+
+    async listFarms(pagination?: PaginationOptions): Promise<PaginationResult<Farm>> {
+        try {
+            const result = await firstValueFrom(this.productGrpcService.listFarms({
+                pagination: PaginationMapper.toGrpcPaginationRequest(pagination),
+            }));
+            return {
+                data: result.farms.map((value) => FarmMapper.fromGrpcFarm(value)),
+                pagination: PaginationMapper.fromGrpcPaginationResponse(result.pagination),
+            }
+        }
+        catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
+        }
+    }
+
+    async searchFarms(searchDto: SearchFarmDto): Promise<PaginationResult<Farm>> {
+        try {
+            const result = await firstValueFrom(this.productGrpcService.searchFarm({
+                search_query: searchDto.query,
+                pagination: PaginationMapper.toGrpcPaginationRequest({
+                    page: searchDto.page,
+                    limit: searchDto.limit,
+                    sort_by: searchDto.sort_by,
+                    order: searchDto.order,
+                    all: searchDto.all,
+                    skip: 0,
+                }),
+                approved_only: searchDto.approve_only,
+                location_filter: { latitude: searchDto.latitude, longitude: searchDto.longitude, radius_km: searchDto.radius_km }
+            }));
+            return {
+                data: result.farms.map((value) => FarmMapper.fromGrpcFarm(value)),
+                pagination: PaginationMapper.fromGrpcPaginationResponse(result.pagination),
+            }
         }
         catch (err) {
             this.logger.error(err.message);

@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { join } from "path";
-import { ProductClientService } from "./product.client.service";
 import { FarmController } from './farm/farm.controller';
 import { FarmService } from './farm/farm.service';
 import { ProductController } from './product/product.controller';
@@ -13,6 +12,8 @@ import { ReviewController } from './review/review.controller';
 import { ReviewService } from './review/review.service';
 import { ProcessController } from './process/process.controller';
 import { ProcessService } from './process/process.service';
+import { AdminController } from './admin/admin.controller';
+import { AdminService } from './admin/admin.service';
 
 @Module({
     imports: [
@@ -42,8 +43,8 @@ import { ProcessService } from './process/process.service';
         ]),
 
     ],
-    controllers: [ProductController, FarmController, CategoryController, ReviewController, ProcessController],
-    providers: [ProductService, ProductClientService, FarmService, CategoryService, ReviewService, ProcessService],
+    controllers: [ProductController, FarmController, CategoryController, ReviewController, ProcessController, AdminController],
+    providers: [ProductService, FarmService, CategoryService, ReviewService, ProcessService, AdminService],
     exports: [ProductService],
 })
 export class ProductModule { }

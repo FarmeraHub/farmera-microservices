@@ -4,7 +4,7 @@ import { Process } from './entities/process.entity';
 import { Repository } from 'typeorm';
 import { CreateProcessDto } from './dto/create-process.dto';
 import { Product } from 'src/products/entities/product.entity';
-import { PaginationOrder } from 'src/common/enums/pagination.enums';
+import { Order } from 'src/pagination/dto/pagination-options.dto';
 
 @Injectable()
 export class ProcessService {
@@ -37,7 +37,7 @@ export class ProcessService {
     async getProcesses(
         productId: number,
         limit?: number,
-        order: PaginationOrder = PaginationOrder.DESC,
+        order: Order = Order.DESC,
         cursor?: string
     ) {
         const qb = this.processRepository.createQueryBuilder("process")

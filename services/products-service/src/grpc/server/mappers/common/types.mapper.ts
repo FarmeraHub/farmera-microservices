@@ -1,5 +1,6 @@
-import { Timestamp as GrpcTimestamp } from "@farmera/grpc-proto/dist/common/types";
+import { GeoLocation as GrpcGeoLocation, Timestamp as GrpcTimestamp } from "@farmera/grpc-proto/dist/common/types";
 import { BadRequestException } from "@nestjs/common";
+import { GeoLocation } from "src/farms/dto/search-farm.dto";
 
 export class TypesMapper {
     static toGrpcTimestamp(date: Date): GrpcTimestamp | undefined {
@@ -21,5 +22,14 @@ export class TypesMapper {
         return new Date(
             timestamp.value.seconds * 1000 + timestamp.value.nanos / 1000000,
         );
+    }
+
+    static fromGrpcGeoLocation(value: GrpcGeoLocation | undefined): GeoLocation | undefined {
+        if (!value) return undefined;
+        return {
+            latitude: value.latitude,
+            longitude: value.longitude,
+            radius_km: value.radius_km,
+        }
     }
 }

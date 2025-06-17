@@ -1,4 +1,4 @@
-import { Category as GrpcCategory, Subcategory as GrpcSubcategory, SubcategoryLite } from "@farmera/grpc-proto/dist/products/products";
+import { CategoryWithSub, Category as GrpcCategory, Subcategory as GrpcSubcategory, SubcategoryLite } from "@farmera/grpc-proto/dist/products/products";
 import { Category } from "src/categories/entities/category.entity";
 import { TypesMapper } from "../common/types.mapper";
 import { Subcategory } from "src/categories/entities/subcategory.entity";
@@ -33,6 +33,17 @@ export class CategoryMapper {
             name: value.name,
             description: value.description,
             created: TypesMapper.toGrpcTimestamp(value.created),
+        }
+    }
+
+    static toGrpcCategoryWithSubs(value: Category): CategoryWithSub {
+        return {
+            category_id: value.category_id,
+            name: value.name,
+            description: value.description,
+            image_url: value.image_url,
+            created: TypesMapper.toGrpcTimestamp(value.created),
+            subcategories: value.subcategories.map((value) => this.toGrpcSubcategoryLite(value))
         }
     }
 }

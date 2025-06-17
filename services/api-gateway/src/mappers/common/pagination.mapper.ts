@@ -1,23 +1,25 @@
 import { PaginationOrder as GrpcPaginationOrder } from "@farmera/grpc-proto/dist/common/enums";
-import { SimpleCursorPaginationRequest } from "@farmera/grpc-proto/dist/common/pagination";
-import { SimpleCursorPagination } from "src/common/dto/pagination.dto";
-import { PaginationOrder } from "src/enums/pagination.enums";
+import { PaginationRequest, PaginationResponse, SimpleCursorPaginationRequest } from "@farmera/grpc-proto/dist/common/pagination";
+import { BadRequestException } from "@nestjs/common";
+import { PaginationMeta } from "src/pagination/dto/pagination-meta.dto";
+import { Order, PaginationOptions, SimpleCursorPagination } from "src/pagination/dto/pagination-options.dto";
+import { EnumMapper } from "./enum.mapper";
 
 export class PaginationMapper {
-    static fromGrpcPaginationOrder(value?: GrpcPaginationOrder): PaginationOrder {
-        if (!value) return PaginationOrder.UNSPECIFIED;
+    static fromGrpcPaginationOrder(value?: GrpcPaginationOrder): Order {
+        if (!value) throw new BadRequestException("Invalid value");
         switch (value.toString()) {
-            case "ASC": return PaginationOrder.ASC;
-            case "DESC": return PaginationOrder.DESC;
-            default: return PaginationOrder.UNSPECIFIED;
+            case "ASC": return Order.ASC;
+            case "DESC": return Order.DESC;
+            default: throw new BadRequestException("Invalid value");
         }
     }
 
-    static toGrpcPaginationOrder(value?: PaginationOrder): GrpcPaginationOrder {
+    static toGrpcPaginationOrder(value?: Order): GrpcPaginationOrder {
         if (!value) return GrpcPaginationOrder.ORDER_UNSPECIFIED;
         switch (value) {
-            case PaginationOrder.ASC: return GrpcPaginationOrder.ASC;
-            case PaginationOrder.DESC: return GrpcPaginationOrder.DESC;
+            case Order.ASC: return GrpcPaginationOrder.ASC;
+            case Order.DESC: return GrpcPaginationOrder.DESC;
             default: return GrpcPaginationOrder.ORDER_UNSPECIFIED;
         }
     }
@@ -27,6 +29,28 @@ export class PaginationMapper {
             limit: value.limit,
             order: this.toGrpcPaginationOrder(value.order),
             cursor: value.cursor,
+        }
+    }
+
+    static toGrpcPaginationRequest(pagination?: PaginationOptions): PaginationRequest {
+        return {
+            page: pagination.page,
+            limit: pagination.limit,
+            sort_by: pagination.sort_by,
+            order: EnumMapper.toGrpcSortOrder(pagination.order),
+            all: pagination.all
+        }
+    }
+
+    static fromGrpcPaginationResponse(value?: PaginationResponse): PaginationMeta | undefined {
+        if (!value) return undefined;
+        return {
+            page: value.current_page,
+            limit: value.page_size,
+            totalItems: value.total_items,
+            totalPages: value.total_pages,
+            hasPreviousPage: value.has_previous_page,
+            hasNextPage: value.has_next_page,
         }
     }
 }

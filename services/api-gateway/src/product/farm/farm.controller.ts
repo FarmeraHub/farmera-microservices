@@ -6,6 +6,8 @@ import { User } from 'src/common/decorators/user.decorator';
 import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/common/decorators/public.decorator';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
+import { SearchFarmDto } from './dto/search-farm.dto';
 
 
 @Controller('farm')
@@ -44,7 +46,7 @@ export class FarmController {
         );
     }
 
-    @Get("my-farm")
+    @Get("my/farm")
     async getMyFarm(@User() user: UserInterface) {
         return await this.farmsService.getFarmByUserId(user.id);
     }
@@ -56,23 +58,25 @@ export class FarmController {
     }
 
     @Public()
+    @Get("all")
+    async listFarms(@Query() paginationOptions: PaginationOptions) {
+        return await this.farmsService.listFarms(paginationOptions);
+    }
+
+    @Public()
+    @Get("search")
+    async searchFarms(@Query() searchDto: SearchFarmDto) {
+        return await this.farmsService.searchFarms(searchDto);
+    }
+
+    @Public()
     @Get(":farmId")
     async getFarm(@Param("farmId") farmId: string) {
         return await this.farmsService.getFarm(farmId);
     }
 
-    // //Update farm của người dùng đã đăng nhập
-    // @Patch(':id')
-    // async updateFarm(
-    //     @Request() req: Request,
-    //     @Param('id') id: string,
-    //     @Body() updateFarmDto: UpdateFarmDto,
-    // ) {
-    //     const userId = req.headers['x-user-id'];
-    //     return this.farmsService.updateFarm(
-    //         id,
-    //         updateFarmDto,
-    //         userId,
-    //     );
+    // updateFarm(request: UpdateFarmRequest): Observable<UpdateFarmResponse> {
+    //     this.logger.log(`Updating farm with ID: ${request.farm_id}`);
+    //     return this.productsServiceGrpcClient.updateFarm(request);
     // }
 }

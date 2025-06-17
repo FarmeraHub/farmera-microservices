@@ -1,4 +1,4 @@
-import { Timestamp as GrpcTimestamp } from "@farmera/grpc-proto/dist/common/types"
+import { GeoLocation as GrpcGeoLocation, Timestamp as GrpcTimestamp } from "@farmera/grpc-proto/dist/common/types"
 
 export class TypesMapper {
     // Convert Date to GrpcTimestamp

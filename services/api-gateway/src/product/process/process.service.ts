@@ -1,14 +1,14 @@
 import { ProductsServiceClient } from '@farmera/grpc-proto/dist/products/products';
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { CreateProcessDto } from './dto/create-process.dto';
 import { TypesMapper } from 'src/mappers/common/types.mapper';
 import { Process } from './entities/process.entity';
 import { ProcessMapper } from 'src/mappers/product/process.mapper';
 import { firstValueFrom } from 'rxjs';
-import { SimpleCursorPagination } from 'src/common/dto/pagination.dto';
 import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
 import { ErrorMapper } from 'src/mappers/common/error.mapper';
+import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
 
 @Injectable()
 export class ProcessService {

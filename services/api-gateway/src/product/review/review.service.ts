@@ -1,5 +1,5 @@
 import { ProductsServiceClient } from '@farmera/grpc-proto/dist/products/products';
-import { BadRequestException, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { Review } from './entities/review.entity';

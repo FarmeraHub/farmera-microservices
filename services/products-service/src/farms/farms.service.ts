@@ -1,7 +1,7 @@
 import { GhnService } from './../ghn/ghn.service';
 import { BadRequestException, ConflictException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, ILike, In, Repository } from 'typeorm';
 import { Farm } from './entities/farm.entity';
 import { Address } from './entities/address.entity';
 import { FarmStatus } from '../common/enums/farm-status.enum';
@@ -13,6 +13,10 @@ import { FptIdrCccdFrontData, FptIdrCardFrontData } from 'src/biometrics/interfa
 import { AddressGHN } from './entities/address-ghn.entity';
 import { validate as isUUID } from 'uuid';
 import { AzureBlobService } from 'src/services/azure-blob.service';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
+import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
+import { PaginationMeta } from 'src/pagination/dto/pagination-meta.dto';
+import { SearchFarmDto } from './dto/search-farm.dto';
 
 @Injectable()
 export class FarmsService {
@@ -332,5 +336,219 @@ export class FarmsService {
         } finally {
             await queryRunner.release();
         }
+    }
+
+    async listFarms(paginationOptions?: PaginationOptions): Promise<PaginationResult<Farm>> {
+        // If no pagination options provided, return all categories (for backward compatibility)
+        if (!paginationOptions) {
+            const farms = await this.farmsRepository.find(
+                {
+                    relations: ['address'],
+                    order: { farm_name: 'ASC' },
+                }
+            );
+            if (!farms || farms.length === 0) {
+                this.logger.error('Không tìm thấy danh mục nào.');
+                throw new NotFoundException('Không tìm thấy danh mục nào.');
+            }
+            return new PaginationResult(farms);
+        }
+
+
+        // Use pagination
+        const queryBuilder = this.farmsRepository
+            .createQueryBuilder('farm')
+            .leftJoinAndSelect('farm.address', 'address')
+
+        // Add sorting if specified
+        if (paginationOptions.sort_by) {
+            const validSortValue = ["created", "farm_name", "status"];
+            if (!validSortValue.includes(paginationOptions.sort_by)) {
+                throw new BadRequestException("Cột sắp xếp không hợp lệ.")
+            }
+
+            const order = (paginationOptions.order || 'ASC') as 'ASC' | 'DESC';
+            switch (paginationOptions.sort_by) {
+                case 'farm_name':
+                    queryBuilder.orderBy('farm.farm_name', order);
+                    break;
+                case 'created':
+                    queryBuilder.orderBy('farm.created', order);
+                    break;
+                case 'status':
+                    queryBuilder.orderBy('farm.status', order);
+                    break;
+                default:
+                    queryBuilder.orderBy('farm.farm_name', 'ASC');
+            }
+        }
+        else {
+            queryBuilder.orderBy(
+                'farm.farm_name',
+                (paginationOptions.order || 'ASC') as 'ASC' | 'DESC',
+            );
+        }
+
+        // If all=true, return all results without pagination
+        if (paginationOptions.all) {
+            const farms = await queryBuilder.getMany();
+            if (!farms || farms.length === 0) {
+                this.logger.error('Không tìm thấy danh mục nào.');
+                throw new NotFoundException('Không tìm thấy danh mục nào.');
+            }
+            return new PaginationResult(farms);
+        }
+
+        // Apply pagination
+        const totalItems = await queryBuilder.getCount();
+
+        const totalPages = Math.ceil(totalItems / (paginationOptions.limit ?? 10));
+        const currentPage = paginationOptions.page ?? 1;
+
+        if (totalPages > 0 && currentPage > totalPages) {
+            throw new NotFoundException(`Không tìm thấy dữ liệu ở trang ${currentPage}.`);
+        }
+
+        const farms = await queryBuilder
+            .skip(paginationOptions.skip)
+            .take(paginationOptions.limit)
+            .getMany();
+
+        if (!farms || farms.length === 0) {
+            this.logger.error('Không tìm thấy danh mục nào.');
+            throw new NotFoundException('Không tìm thấy danh mục nào.');
+        }
+
+        const meta = new PaginationMeta({
+            paginationOptions,
+            totalItems,
+        });
+
+        return new PaginationResult(farms, meta);
+    }
+
+    async searchFarm(searchDto: SearchFarmDto, paginationOptions: PaginationOptions) {
+        // If no pagination options provided, return all categories (for backward compatibility)
+        if (!paginationOptions) {
+            const where: any = {};
+            if (searchDto.query?.trim()) {
+                where.farm_name = ILike(`%${searchDto.query}%`);
+            }
+            const farms = await this.farmsRepository.find(
+                {
+                    where,
+                    relations: ['subcategories'],
+                    order: { created: 'DESC' },
+                }
+            );
+            if (!farms || farms.length === 0) {
+                this.logger.error('Không tìm thấy danh mục nào.');
+                throw new NotFoundException('Không tìm thấy danh mục nào.');
+            }
+            return new PaginationResult(farms);
+        }
+
+
+        // Use pagination
+        const qb = this.farmsRepository
+            .createQueryBuilder('farm')
+            .leftJoinAndSelect('farm.address', 'address')
+
+        if (searchDto.latitude && searchDto.longitude && searchDto.radius_km) {
+            qb.addSelect(`
+                    6371 * acos(
+                    cos(radians(:lat)) *
+                    cos(radians(split_part(address.coordinate, ':', 1)::float)) *
+                    cos(radians(split_part(address.coordinate, ':', 2)::float) - radians(:lng)) +
+                    sin(radians(:lat)) *
+                    sin(radians(split_part(address.coordinate, ':', 1)::float))
+                    )
+                `, 'distance')
+                .andWhere(`
+                    6371 * acos(
+                    cos(radians(:lat)) *
+                    cos(radians(split_part(address.coordinate, ':', 1)::float)) *
+                    cos(radians(split_part(address.coordinate, ':', 2)::float) - radians(:lng)) +
+                    sin(radians(:lat)) *
+                    sin(radians(split_part(address.coordinate, ':', 1)::float))
+                    ) <= :radius
+                `, {
+                    lat: searchDto.latitude,
+                    lng: searchDto.longitude,
+                    radius: searchDto.radius_km,
+                });
+        }
+
+        if (searchDto.query?.trim()) {
+            qb.andWhere('farm.farm_name ILIKE :query', { query: `%${searchDto.query}%` });
+        }
+
+        if (searchDto.approve_only) {
+            qb.andWhere('farm.status = :status', { status: FarmStatus.APPROVED });
+        }
+
+        // Add sorting if specified
+        if (paginationOptions.sort_by) {
+            const validSortValue = ["created", "farm_name", "status", "distance"];
+            if (!validSortValue.includes(paginationOptions.sort_by)) {
+                throw new BadRequestException("Cột sắp xếp không hợp lệ.")
+            }
+            const order = (paginationOptions.order || 'ASC') as 'ASC' | 'DESC';
+            switch (paginationOptions.sort_by) {
+                case 'name':
+                    qb.orderBy('farm.farm_name', order);
+                    break;
+                case 'created':
+                    qb.orderBy('farm.created', order);
+                    break;
+                case "distance":
+                    qb.orderBy('distance', order);
+                default:
+                    qb.orderBy('farm.farm_name', 'ASC');
+            }
+        }
+        else {
+            qb.orderBy(
+                'farm.farm_name',
+                (paginationOptions.order || 'ASC') as 'ASC' | 'DESC',
+            );
+        }
+
+        // If all=true, return all results without pagination
+        if (paginationOptions.all) {
+            const farms = await qb.getMany();
+            if (!farms || farms.length === 0) {
+                this.logger.error('Không tìm thấy danh mục nào.');
+                throw new NotFoundException('Không tìm thấy danh mục nào.');
+            }
+            return new PaginationResult(farms);
+        }
+
+        // Apply pagination
+        const totalItems = await qb.getCount();
+
+        const totalPages = Math.ceil(totalItems / (paginationOptions.limit ?? 10));
+        const currentPage = paginationOptions.page ?? 1;
+
+        if (totalPages > 0 && currentPage > totalPages) {
+            throw new NotFoundException(`Không tìm thấy dữ liệu ở trang ${currentPage}.`);
+        }
+
+        const farms = await qb
+            .skip(paginationOptions.skip)
+            .take(paginationOptions.limit)
+            .getMany();
+
+        if (!farms || farms.length === 0) {
+            this.logger.error('Không tìm thấy danh mục nào.');
+            throw new NotFoundException('Không tìm thấy danh mục nào.');
+        }
+
+        const meta = new PaginationMeta({
+            paginationOptions,
+            totalItems,
+        });
+
+        return new PaginationResult(farms, meta);
     }
 }

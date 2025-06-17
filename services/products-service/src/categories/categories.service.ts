@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger, 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Subcategory } from './entities/subcategory.entity';
 import { Category } from './entities/category.entity';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateCategoriesDto } from './dto/create-categories.dto';
 import { CreateSubcategoryDto } from './dto/create-subcategories.dto';
 import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
@@ -20,9 +20,10 @@ export class CategoriesService {
         private readonly subcategoriesRepository: Repository<Subcategory>,
     ) { }
 
+    // verified
     async getCategoriesWithSubcategories(
         paginationOptions?: PaginationOptions,
-    ): Promise<PaginationResult<Category> | Category[]> {
+    ): Promise<PaginationResult<Category>> {
         // If no pagination options provided, return all categories (for backward compatibility)
         if (!paginationOptions) {
             const categories = await this.categoriesRepository.find(
@@ -32,44 +33,143 @@ export class CategoriesService {
                 }
             );
             if (!categories || categories.length === 0) {
-                this.logger.warn('Không tìm thấy danh mục nào.');
-                return [];
+                this.logger.error('Không tìm thấy danh mục nào.');
+                throw new NotFoundException('Không tìm thấy danh mục nào.');
             }
-            return categories;
+            return new PaginationResult(categories);
         }
+
 
         // Use pagination
         const queryBuilder = this.categoriesRepository
             .createQueryBuilder('category')
             .leftJoinAndSelect('category.subcategories', 'subcategories')
-            .orderBy(
-                'category.created',
-                (paginationOptions.order || 'DESC') as 'ASC' | 'DESC',
-            );
 
         // Add sorting if specified
         if (paginationOptions.sort_by) {
+            const validSortValue = ["created", "name"];
+            if (!validSortValue.includes(paginationOptions.sort_by)) {
+                throw new BadRequestException("Cột sắp xếp không hợp lệ.")
+            }
+
             const order = (paginationOptions.order || 'ASC') as 'ASC' | 'DESC';
             switch (paginationOptions.sort_by) {
                 case 'name':
                     queryBuilder.orderBy('category.name', order);
                     break;
                 case 'created':
-                    queryBuilder.orderBy('category.created', order);
+                    queryBuilder.orderBy('category.category_id', order);
                     break;
                 default:
-                    queryBuilder.orderBy('category.created', 'DESC');
+                    queryBuilder.orderBy('category.category_id', 'DESC');
             }
+        }
+        else {
+            queryBuilder.orderBy(
+                'category.category_id',
+                (paginationOptions.order || 'DESC') as 'ASC' | 'DESC',
+            );
         }
 
         // If all=true, return all results without pagination
         if (paginationOptions.all) {
             const categories = await queryBuilder.getMany();
-            return categories;
+            return new PaginationResult(categories);
         }
 
         // Apply pagination
         const totalItems = await queryBuilder.getCount();
+
+        const totalPages = Math.ceil(totalItems / (paginationOptions.limit ?? 10));
+        const currentPage = paginationOptions.page ?? 1;
+
+        if (totalPages > 0 && currentPage > totalPages) {
+            throw new NotFoundException(`Không tìm thấy dữ liệu ở trang ${currentPage}.`);
+        }
+
+        const categories = await queryBuilder
+            .skip(paginationOptions.skip)
+            .take(paginationOptions.limit)
+            .getMany();
+
+        const meta = new PaginationMeta({
+            paginationOptions,
+            totalItems,
+        });
+
+        return new PaginationResult(categories, meta);
+    }
+
+    // verified
+    async searchCategory(
+        search: string,
+        paginationOptions?: PaginationOptions,
+    ): Promise<PaginationResult<Category>> {
+        // If no pagination options provided, return all categories (for backward compatibility)
+        if (!paginationOptions) {
+            const categories = await this.categoriesRepository.find(
+                {
+                    where: { name: ILike(`%${search.trim()}%`) },
+                    relations: ['subcategories'],
+                    order: { created: 'DESC' },
+                }
+            );
+            if (!categories || categories.length === 0) {
+                this.logger.error('Không tìm thấy danh mục nào.');
+                throw new NotFoundException('Không tìm thấy danh mục nào.');
+            }
+            return new PaginationResult(categories);
+        }
+
+
+        // Use pagination
+        const queryBuilder = this.categoriesRepository
+            .createQueryBuilder('category')
+            .leftJoinAndSelect('category.subcategories', 'subcategories')
+            .where('category.name ILIKE :search', { search: `%${search.trim()}%` })
+
+        // Add sorting if specified
+        if (paginationOptions.sort_by) {
+            const validSortValue = ["created", "name"];
+            if (!validSortValue.includes(paginationOptions.sort_by)) {
+                throw new BadRequestException("Cột sắp xếp không hợp lệ.")
+            }
+
+            const order = (paginationOptions.order || 'ASC') as 'ASC' | 'DESC';
+            switch (paginationOptions.sort_by) {
+                case 'name':
+                    queryBuilder.orderBy('category.name', order);
+                    break;
+                case 'created':
+                    queryBuilder.orderBy('category.category_id', order);
+                    break;
+                default:
+                    queryBuilder.orderBy('category.category_id', 'DESC');
+            }
+        }
+        else {
+            queryBuilder.orderBy(
+                'category.category_id',
+                (paginationOptions.order || 'DESC') as 'ASC' | 'DESC',
+            );
+        }
+
+        // If all=true, return all results without pagination
+        if (paginationOptions.all) {
+            const categories = await queryBuilder.getMany();
+            return new PaginationResult(categories);
+        }
+
+        // Apply pagination
+        const totalItems = await queryBuilder.getCount();
+
+        const totalPages = Math.ceil(totalItems / (paginationOptions.limit ?? 10));
+        const currentPage = paginationOptions.page ?? 1;
+
+        if (totalPages > 0 && currentPage > totalPages) {
+            throw new NotFoundException(`Không tìm thấy dữ liệu ở trang ${currentPage}.`);
+        }
+
         const categories = await queryBuilder
             .skip(paginationOptions.skip)
             .take(paginationOptions.limit)

@@ -1,8 +1,9 @@
-import { FarmStatus as GrpcFarmStatus, MessageType as GrpcMessageType, IdentificationStatus as GrpcIdentificationStatus, IdentificationMethod as GrpcIdentificationMethod, ProductStatus as GrpcProductStatus } from "@farmera/grpc-proto/dist/common/enums";
+import { FarmStatus as GrpcFarmStatus, MessageType as GrpcMessageType, IdentificationStatus as GrpcIdentificationStatus, IdentificationMethod as GrpcIdentificationMethod, ProductStatus as GrpcProductStatus, PaginationOrder } from "@farmera/grpc-proto/dist/common/enums";
 import { MessageType } from "src/communication/enums/message-type.enums";
-import { FarmStatus } from "src/enums/product/farm-status.enum";
-import { ProductStatus } from "src/enums/product/product-status.enum";
+import { FarmStatus } from "src/common/enums/product/farm-status.enum";
+import { ProductStatus } from "src/common/enums/product/product-status.enum";
 import { IdentificationMethod, IdentificationStatus } from "src/product/farm/entities/identification.entity";
+import { Order } from "src/pagination/dto/pagination-options.dto";
 
 export class EnumMapper {
     static fromGrpcIdentificationMethod(value: GrpcIdentificationMethod): IdentificationMethod {
@@ -53,6 +54,15 @@ export class EnumMapper {
             case "PRODUCT_STATUS_CLOSED": return ProductStatus.CLOSED;
             case "PRODUCT_STATUS_DELETED": return ProductStatus.DELETED;
             default: return ProductStatus.UNSPECIFIED;
+        }
+    }
+
+    static toGrpcSortOrder(value: Order): PaginationOrder | undefined {
+        if (!value) return undefined;
+        switch (value) {
+            case Order.ASC: return PaginationOrder.ASC;
+            case Order.DESC: return PaginationOrder.DESC;
+            default: return PaginationOrder.ORDER_UNSPECIFIED;
         }
     }
 }

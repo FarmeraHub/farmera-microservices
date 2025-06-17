@@ -77,4 +77,4 @@ import { CommunicationModule } from './communication/communication.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

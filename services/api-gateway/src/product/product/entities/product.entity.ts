@@ -1,5 +1,5 @@
 import { ProductSubcategoryDetail } from './product-subcategory-detail.entity';
-import { ProductStatus } from 'src/enums/product/product-status.enum';
+import { ProductStatus } from 'src/common/enums/product/product-status.enum';
 
 export class Product {
   product_id: number;

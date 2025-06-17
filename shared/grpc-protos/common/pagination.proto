@@ -8,41 +8,23 @@ option go_package = "github.com/farmera/grpc-protos/common";
 
 // Pagination request parameters
 message PaginationRequest {
-  int32 page = 1;        // Page number (1-based)
-  int32 page_size = 2;   // Number of items per page
-  int64 offset = 3;      // Alternative to page-based pagination
-  int32 limit = 4;       // Maximum number of items to return
+  optional int32 page = 1;
+  optional int32 limit = 2;
+  optional string sort_by = 3;
+  optional farmera.common.PaginationOrder order = 4;
+  optional bool all = 5;
 }
 
 // Pagination response metadata
 message PaginationResponse {
   int32 current_page = 1;     // Current page number
   int32 page_size = 2;        // Items per page
-  int64 total_items = 3;      // Total number of items
+  int32 total_items = 3;      // Total number of items
   int32 total_pages = 4;      // Total number of pages
   bool has_next_page = 5;     // Whether there are more pages
   bool has_previous_page = 6; // Whether there are previous pages
-  string next_cursor = 7;     // Cursor for next page (cursor-based pagination)
-  string previous_cursor = 8; // Cursor for previous page
 }
 
-// Cursor-based pagination request
-message CursorPaginationRequest {
-  string cursor = 1;     // Cursor for pagination
-  int32 limit = 2;       // Maximum number of items
-  string direction = 3;  // "forward" or "backward"
-}
-
-// Cursor-based pagination response
-message CursorPaginationResponse {
-  string next_cursor = 1;     // Cursor for next page
-  string previous_cursor = 2; // Cursor for previous page
-  bool has_next = 3;          // Whether there are more items
-  bool has_previous = 4;      // Whether there are previous items
-  int32 returned_count = 5;   // Number of items returned
-}
-
-// Sorting options
 message SortOption {
   string field = 1;           // Field to sort by
   SortDirection direction = 2; // Sort direction
@@ -53,20 +35,6 @@ message SortOption {
     SORT_DIRECTION_DESC = 2;
   }
 }
-
-// Common list request with pagination and sorting
-message ListRequest {
-  PaginationRequest pagination = 1;
-  repeated SortOption sort = 2;
-  map<string, string> filters = 3; // Generic filters
-}
-
-// Common list response with pagination
-message ListResponse {
-  PaginationResponse pagination = 1;
-  repeated SortOption applied_sort = 2;
-  map<string, string> applied_filters = 3;
-} 
 
 // Simple Pagination request parameters
 message SimplePaginationRequest {

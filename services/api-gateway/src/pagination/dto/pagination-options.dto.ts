@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
@@ -13,6 +14,22 @@ import {
 export enum Order {
   ASC = 'ASC',
   DESC = 'DESC',
+}
+
+
+export class SimpleCursorPagination {
+  @IsOptional()
+  @IsEnum(Order)
+  order? = Order.DESC
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  limit? = 10;
+
+  @IsOptional()
+  @IsString()
+  cursor?: string;
 }
 
 export class PaginationOptions {

@@ -27,6 +27,7 @@ service ProductsService {
   rpc GetFarm(GetFarmRequest) returns (GetFarmResponse);
   rpc UpdateFarm(UpdateFarmRequest) returns (UpdateFarmResponse);
   rpc ListFarms(ListFarmsRequest) returns (ListFarmsResponse);
+  rpc SearchFarm(SearchFarmRequest) returns (SearchFarmResponse);
   //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
   rpc GetFarmByUser(GetFarmByUserRequest) returns (GetFarmByUserResponse);
   rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
@@ -38,7 +39,8 @@ service ProductsService {
   //rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
   //rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
   rpc GetCategoryTree(GetCategoryTreeRequest) returns (GetCategoryTreeResponse);
-  //rpc GetAllCategoryWithSubcategory(GetAllCategoryWithSubcategoryRequest) returns (GetAllCategoryWithSubcategoryResponse);
+  rpc GetAllCategoryWithSubcategory(GetAllCategoryWithSubcategoryRequest) returns (GetAllCategoryWithSubcategoryResponse);
+  rpc SearchCategory(SearchCategoryRequest) returns (SearchCategoryResponse);
 
   //Subcategory
   rpc CreateSubcategory(CreateSubcategoryRequest) returns (CreateSubcategoryResponse);
@@ -288,17 +290,24 @@ message UpdateFarmResponse {
 }
 
 message ListFarmsRequest {
-  farmera.common.PaginationRequest pagination = 1;
-  repeated farmera.common.SortOption sort = 2;
-  optional bool verified_only = 3;
-  optional bool active_only = 4;
-  optional string search_query = 5;
-  optional farmera.common.GeoLocation location_filter = 6;
+  optional farmera.common.PaginationRequest pagination = 1;
 }
 
 message ListFarmsResponse {
   repeated Farm farms = 1;
-  farmera.common.PaginationResponse pagination = 2;
+  optional farmera.common.PaginationResponse pagination = 2;
+}
+
+message SearchFarmRequest {
+  optional string search_query = 1;
+  optional farmera.common.PaginationRequest pagination = 2;
+  optional bool approved_only = 3;
+  optional farmera.common.GeoLocation location_filter = 4;
+}
+
+message SearchFarmResponse {
+  repeated Farm farms = 1;
+  optional farmera.common.PaginationResponse pagination = 2;
 }
 
 message GetFarmByUserRequest{
@@ -345,6 +354,15 @@ message SubcategoryLite  {
   farmera.common.Timestamp created = 4;
 }
 
+message CategoryWithSub {
+  int32 category_id = 1;
+  string name = 2;
+  optional string description = 3;
+  string image_url = 4;
+  farmera.common.Timestamp created = 5;
+  repeated SubcategoryLite subcategories = 6;
+}
+
 message CreateCategoryRequest {
   string name = 1;
   optional string description = 2;
@@ -388,6 +406,25 @@ message GetSubcategoryResponse{
 
 message GetSubcategoryRequest {
   int32 subcategory_id = 1;
+}
+
+message GetAllCategoryWithSubcategoryRequest {
+  optional farmera.common.PaginationRequest pagination = 1;
+}
+
+message GetAllCategoryWithSubcategoryResponse {
+  repeated CategoryWithSub category = 1;
+  optional farmera.common.PaginationResponse pagination = 2;
+}
+
+message SearchCategoryRequest {
+  string name = 1;
+  optional farmera.common.PaginationRequest pagination = 2;
+}
+
+message SearchCategoryResponse {
+  repeated CategoryWithSub category = 1;
+  optional farmera.common.PaginationResponse pagination = 2;
 }
 
 // ====================================Review=============================================

@@ -8,9 +8,9 @@ export class PaginationResult<T> {
   readonly data: T[];
 
   @ApiProperty({ type: () => PaginationMeta })
-  readonly meta: PaginationMeta;
+  readonly meta?: PaginationMeta;
 
-  constructor(data: T[], meta: PaginationMeta) {
+  constructor(data: T[], meta?: PaginationMeta) {
     this.data = data;
     this.meta = meta;
   }

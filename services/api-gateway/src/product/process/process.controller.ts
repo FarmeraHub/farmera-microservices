@@ -3,8 +3,8 @@ import { ProcessService } from './process.service';
 import { User } from 'src/common/decorators/user.decorator';
 import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { CreateProcessDto } from './dto/create-process.dto';
-import { SimpleCursorPagination } from 'src/common/dto/pagination.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
 
 @Controller('process')
 export class ProcessController {
