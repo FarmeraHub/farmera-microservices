@@ -1,6 +1,6 @@
 export class Process {
     process_id: number;
-    product_id: number;
+    product_id?: number;
     stage_name: string;
     description: Record<string, string>;
     image_urls: string[];

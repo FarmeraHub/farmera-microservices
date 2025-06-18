@@ -1,228 +1,66 @@
-import { Controller } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { ProductService } from './product.service';
+import { User as UserInterface } from '../../common/interfaces/user.interface';
+import { User } from 'src/common/decorators/user.decorator';
+import { CreateProductDto } from './dto/create-product.dto';
+import { ProductOptions } from './dto/product-options.dto';
+import { Public } from 'src/common/decorators/public.decorator';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
+import { GetProductByFarmDto } from './dto/get-by-farm.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { SearchProductsDto } from './dto/search-products.dto';
 
 @Controller('product')
 export class ProductController {
 
-    //       getProduct(request: GetProductRequest): Observable<GetProductResponse> {
-    //     this.logger.log(`Getting product with ID: ${request.product_id}`);
-    //     return this.productsServiceGrpcClient.getProduct(request);
-    //   }
+    constructor(private readonly productService: ProductService) { }
 
-    //   getListProducts(
-    //     request: GetListProductsRequest,
-    //   ): Observable<GetListProductsResponse> {
-    //     this.logger.log(
-    //       `Getting products with IDs: ${request.products.map((p) => p.product_id).join(', ')}`,
-    //     );
-    //     return this.productsServiceGrpcClient.getListProducts(request);
-    //   }
+    @Post()
+    async createProduct(@User() user: UserInterface, @Body() createProductDto: CreateProductDto) {
+        return await this.productService.createProduct(user.id, createProductDto);
+    }
 
-    //   createProduct(
-    //     request: CreateProductRequest,
-    //   ): Observable<CreateProductResponse> {
-    //     this.logger.log('Creating new product');
-    //     return this.productsServiceGrpcClient.createProduct(request);
-    //   }
+    async getListProducts() { }
 
-    //   updateProduct(
-    //     request: UpdateProductRequest,
-    //   ): Observable<UpdateProductResponse> {
-    //     this.logger.log(`Updating product with ID: ${request.product_id}`);
-    //     return this.productsServiceGrpcClient.updateProduct(request);
-    //   }
+    @Put()
+    async updateProduct(@User() user: UserInterface, @Body() updateProductDto: UpdateProductDto) {
+        return await this.productService.updateProduct(user.id, updateProductDto);
+    }
 
-    //   deleteProduct(
-    //     request: DeleteProductRequest,
-    //   ): Observable<DeleteProductResponse> {
-    //     this.logger.log(`Deleting product with ID: ${request.product_id}`);
-    //     return this.productsServiceGrpcClient.deleteProduct(request);
-    //   }
+    @Delete(":product_id")
+    async deleteProduct(@User() user: UserInterface, @Param("product_id", ParseIntPipe) productId: number) {
+        return await this.productService.deleteProduct(productId, user.id);
+    }
 
-    //   searchProducts(
-    //     request: SearchProductsRequest,
-    //   ): Observable<SearchProductsResponse> {
-    //     this.logger.log('Searching products with filters');
-    //     return this.productsServiceGrpcClient.searchProducts(request);
-    //   }
+    @Public()
+    @Get("search")
+    async searchProducts(@Query() searchProductsDTo: SearchProductsDto) {
+        return await this.productService.searchProducts(searchProductsDTo);
+    }
 
+    @Public()
+    @Get("farm/:farm_id")
+    async getProductsByFarm(@Param("farm_id") farmId: string, @Query() getProductByFarmDto?: GetProductByFarmDto) {
+        return await this.productService.getProductsByFarm(farmId, getProductByFarmDto);
+    }
 
-    /////////////////////////////////
-    //     @Get()
-    //   @ApiOperation({ summary: 'Search and filter products with pagination' })
-    //   @ApiResponse({ status: 200, description: 'Products retrieved successfully' })
-    //   @ResponseMessage('Products retrieved successfully')
-    //   async searchProducts(@Query() searchDto: SearchProductsDto) {
-    //     this.logger.log(
-    //       `Searching products with filters: ${JSON.stringify(searchDto)}`,
-    //     );
+    @Public()
+    @Get("category/sub/:subcategory_id")
+    async getProductsBySubCategory(@Param("subcategory_id", ParseIntPipe) subcategory_id: number, @Query() getProductByFarmDto?: GetProductByFarmDto) {
+        return await this.productService.getProductsBySubCategory(subcategory_id, getProductByFarmDto);
+    }
 
-    //     try {
-    //       return await this.productService.searchProducts(searchDto);
-    //     } catch (error) {
-    //       this.logger.error(
-    //         `Error searching products: ${error.message}`,
-    //         error.stack,
-    //       );
-    //       throw new BadRequestException('Failed to search products');
-    //     }
-    //   }
+    @Public()
+    @Get("category/:category_id")
+    async getProductsByCategory(@Param("category_id", ParseIntPipe) categoryId: number, @Query() getProductByFarmDto?: GetProductByFarmDto) {
+        return await this.productService.getProductsByCategory(categoryId, getProductByFarmDto);
+    }
 
-    //   @Get(':id')
-    //   @ApiOperation({ summary: 'Get product by ID' })
-    //   @ApiParam({ name: 'id', description: 'Product ID' })
-    //   @ApiResponse({ status: 200, description: 'Product retrieved successfully' })
-    //   @ResponseMessage('Product retrieved successfully')
-    //   async getProduct(@Param('id', ParseIntPipe) id: number) {
-    //     this.logger.log(`Getting product with ID: ${id}`);
+    async updateProductStatus() { }
 
-    //     try {
-    //       return await this.productService.getProductById(id);
-    //     } catch (error) {
-    //       this.logger.error(`Error getting product: ${error.message}`, error.stack);
-    //       throw new BadRequestException('Failed to retrieve product');
-    //     }
-    //   }
-
-    //   @Post()
-    //   @ApiOperation({ summary: 'Create new product' })
-    //   @ApiConsumes('multipart/form-data')
-    //   @ApiResponse({ status: 201, description: 'Product created successfully' })
-    //   @ResponseMessage('Product created successfully')
-    //   @UseInterceptors(
-    //     FileFieldsInterceptor([
-    //       { name: 'product_images', maxCount: 5 },
-    //       { name: 'product_videos', maxCount: 2 },
-    //     ]),
-    //   )
-    //   async createProduct(
-    //     @User() user: UserInterface,
-    //     @Body() createProductDto: CreateProductDto,
-    //     @UploadedFiles()
-    //     files: {
-    //       product_images?: Express.Multer.File[];
-    //       product_videos?: Express.Multer.File[];
-    //     },
-    //   ) {
-    //     this.logger.log(`Creating product for user: ${user.id}`);
-
-    //     // Only farmers and admins can create products
-    //     if (user.role !== UserRole.FARMER && user.role !== UserRole.ADMIN) {
-    //       throw new ForbiddenException(
-    //         'Only farmers and admins can create products',
-    //       );
-    //     }
-
-    //     try {
-    //       return await this.productService.createProduct(
-    //         createProductDto,
-    //         user.id,
-    //         files,
-    //       );
-    //     } catch (error) {
-    //       this.logger.error(
-    //         `Error creating product: ${error.message}`,
-    //         error.stack,
-    //       );
-    //       throw new BadRequestException('Failed to create product');
-    //     }
-    //   }
-
-    //   @Put(':id')
-    //   @ApiOperation({ summary: 'Update product by ID' })
-    //   @ApiParam({ name: 'id', description: 'Product ID' })
-    //   @ApiConsumes('multipart/form-data')
-    //   @ApiResponse({ status: 200, description: 'Product updated successfully' })
-    //   @ResponseMessage('Product updated successfully')
-    //   @UseInterceptors(
-    //     FileFieldsInterceptor([
-    //       { name: 'product_images', maxCount: 5 },
-    //       { name: 'product_videos', maxCount: 2 },
-    //     ]),
-    //   )
-    //   async updateProduct(
-    //     @User() user: UserInterface,
-    //     @Param('id', ParseIntPipe) id: number,
-    //     @Body() updateProductDto: UpdateProductDto,
-    //     @UploadedFiles()
-    //     files: {
-    //       product_images?: Express.Multer.File[];
-    //       product_videos?: Express.Multer.File[];
-    //     },
-    //   ) {
-    //     this.logger.log(`Updating product ${id} for user: ${user.id}`);
-
-    //     // Only farmers and admins can update products
-    //     if (user.role !== UserRole.FARMER && user.role !== UserRole.ADMIN) {
-    //       throw new ForbiddenException(
-    //         'Only farmers and admins can update products',
-    //       );
-    //     }
-
-    //     try {
-    //       return await this.productService.updateProduct(
-    //         id,
-    //         updateProductDto,
-    //         user.id,
-    //         files,
-    //       );
-    //     } catch (error) {
-    //       this.logger.error(
-    //         `Error updating product: ${error.message}`,
-    //         error.stack,
-    //       );
-    //       throw new BadRequestException('Failed to update product');
-    //     }
-    //   }
-
-    //   @Delete(':id')
-    //   @ApiOperation({ summary: 'Delete product by ID' })
-    //   @ApiParam({ name: 'id', description: 'Product ID' })
-    //   @ApiResponse({ status: 200, description: 'Product deleted successfully' })
-    //   @ResponseMessage('Product deleted successfully')
-    //   async deleteProduct(
-    //     @User() user: UserInterface,
-    //     @Param('id', ParseIntPipe) id: number,
-    //   ) {
-    //     this.logger.log(`Deleting product ${id} for user: ${user.id}`);
-
-    //     // Only farmers and admins can delete products
-    //     if (user.role !== UserRole.FARMER && user.role !== UserRole.ADMIN) {
-    //       throw new ForbiddenException(
-    //         'Only farmers and admins can delete products',
-    //       );
-    //     }
-
-    //     try {
-    //       return await this.productService.deleteProduct(id, user.id);
-    //     } catch (error) {
-    //       this.logger.error(
-    //         `Error deleting product: ${error.message}`,
-    //         error.stack,
-    //       );
-    //       throw new BadRequestException('Failed to delete product');
-    //     }
-    //   }
-
-    //   @Post('bulk')
-    //   @ApiOperation({ summary: 'Get multiple products by IDs' })
-    //   @ApiResponse({ status: 200, description: 'Products retrieved successfully' })
-    //   @ResponseMessage('Products retrieved successfully')
-    //   async getProductsByIds(@Body() productIdsDto: ProductIdsDto) {
-    //     this.logger.log(
-    //       `Getting products by IDs: ${productIdsDto.product_ids.join(', ')}`,
-    //     );
-
-    //     try {
-    //       return await this.productService.getProductsByIds(
-    //         productIdsDto.product_ids,
-    //       );
-    //     } catch (error) {
-    //       this.logger.error(
-    //         `Error getting products by IDs: ${error.message}`,
-    //         error.stack,
-    //       );
-    //       throw new BadRequestException('Failed to retrieve products');
-    //     }
-    //   }
-
+    @Public()
+    @Get(":product_id")
+    async getProduct(@Param("product_id", ParseIntPipe) productId: number, @Query() productOptions?: ProductOptions) {
+        return await this.productService.getProductById(productId, productOptions);
+    }
 }

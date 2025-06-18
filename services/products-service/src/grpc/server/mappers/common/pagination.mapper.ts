@@ -20,12 +20,13 @@ export class PaginationMapper {
             limit: pagination.limit ?? 10,
             order: EnumsMapper.fromGrpcPaginationOrder(pagination.order),
             all: pagination.all ?? false,
+            sort_by: pagination.sort_by,
             skip: 0
         }
     }
 
-    static toGrpcPaginationResponse(value: PaginationMeta): PaginationResponse {
-        if (!value) throw new BadRequestException("Invalid PaginationMeta value")
+    static toGrpcPaginationResponse(value: PaginationMeta | undefined): PaginationResponse | undefined {
+        if (!value) return undefined;
         return {
             current_page: value.page,
             page_size: value.limit,

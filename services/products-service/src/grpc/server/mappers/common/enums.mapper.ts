@@ -71,7 +71,20 @@ export class EnumsMapper {
         switch (value.toString()) {
             case "ASC": return Order.ASC;
             case "DESC": return Order.DESC;
-            default: throw new BadRequestException("Invalid value");
+            default: throw new BadRequestException("Invalid pagination value");
+        }
+    }
+
+    static fromGrpcProductStatus(value: GrpcProductStatus | undefined): ProductStatus | undefined {
+        if (!value) return undefined;
+        switch (value.toString()) {
+            case "PRODUCT_STATUS_PRE_ORDER": return ProductStatus.PRE_ORDER;
+            case "PRODUCT_STATUS_NOT_YET_OPEN": return ProductStatus.NOT_YET_OPEN;
+            case "PRODUCT_STATUS_OPEN_FOR_SALE": return ProductStatus.OPEN_FOR_SALE;
+            case "PRODUCT_STATUS_SOLD_OUT": return ProductStatus.SOLD_OUT;
+            case "PRODUCT_STATUS_CLOSED": return ProductStatus.CLOSED;
+            case "PRODUCT_STATUS_DELETED": return ProductStatus.DELETED;
+            default: return undefined;
         }
     }
 }

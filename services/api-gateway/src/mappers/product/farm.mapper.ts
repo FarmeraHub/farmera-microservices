@@ -24,7 +24,8 @@ export class FarmMapper {
         }
     }
 
-    static fromGrpcFarm(value: GrpcFarm): Farm {
+    static fromGrpcFarm(value: GrpcFarm): Farm | undefined {
+        if (!value) return undefined;
         return {
             farm_id: value.farm_id,
             farm_name: value.farm_name,

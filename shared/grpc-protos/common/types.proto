@@ -140,10 +140,21 @@ message NotificationAttachmentList {
   repeated NotificationAttachment attachments = 1;
 }
 
+message ProductOptions {
+  optional bool include_farm = 1;
+  optional bool include_processes = 2;
+  optional bool include_categories = 3;
+}
+
+// List
 message StringMap {
   map<string, string> values = 1;
 }
 
 message StringList {
   repeated string list = 1;
+}
+
+message IntList {
+  repeated int32 list = 1;
 }

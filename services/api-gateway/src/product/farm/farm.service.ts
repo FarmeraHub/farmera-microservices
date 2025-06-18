@@ -147,7 +147,7 @@ export class FarmService implements OnModuleInit {
                     sort_by: searchDto.sort_by,
                     order: searchDto.order,
                     all: searchDto.all,
-                    skip: 0,
+                    skip: searchDto.skip,
                 }),
                 approved_only: searchDto.approve_only,
                 location_filter: { latitude: searchDto.latitude, longitude: searchDto.longitude, radius_km: searchDto.radius_km }

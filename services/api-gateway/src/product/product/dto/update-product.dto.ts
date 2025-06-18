@@ -1,8 +1,12 @@
 import { Type } from "class-transformer";
 import { ArrayNotEmpty, IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString } from "class-validator";
-import { ProductStatus } from "src/common/enums/product-status.enum";
 
 export class UpdateProductDto {
+
+    @IsNumber()
+    @IsPositive()
+    @Type(() => Number)
+    product_id: number;
 
     @IsString()
     product_name: string;

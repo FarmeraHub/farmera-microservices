@@ -69,6 +69,14 @@ import {
     SearchCategoryResponse,
     SearchFarmRequest,
     SearchFarmResponse,
+    GetProductsByCategoryRequest,
+    GetProductsByCategoryResponse,
+    GetProductsByFarmRequest,
+    GetProductsByFarmResponse,
+    GetProductsBySubCategoryRequest,
+    GetProductsBySubCategoryResponse,
+    UpdateProductStatusRequest,
+    UpdateProductStatusResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
@@ -89,6 +97,7 @@ import { status } from '@grpc/grpc-js';
 import { CreateSubcategoryDto } from 'src/categories/dto/create-subcategories.dto';
 import { ErrorMapper } from './mappers/common/error.mapper';
 import { PaginationMapper } from './mappers/common/pagination.mapper';
+import { ProductMapper } from "./mappers/product/product.mapper";
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -105,21 +114,225 @@ export class ProductGrpcServerController implements ProductsServiceController {
     ) { }
 
     // Product methods
-    createProduct(request: CreateProductRequest): Promise<CreateProductResponse> | Observable<CreateProductResponse> | CreateProductResponse {
-        throw new Error('Method not implemented.');
-    }
-    updateProduct(request: UpdateProductRequest): Promise<UpdateProductResponse> | Observable<UpdateProductResponse> | UpdateProductResponse {
-        throw new Error('Method not implemented.');
-    }
-    deleteProduct(request: DeleteProductRequest): Promise<DeleteProductResponse> | Observable<DeleteProductResponse> | DeleteProductResponse {
-        throw new Error('Method not implemented.');
-    }
-    searchProducts(request: SearchProductsRequest): Promise<SearchProductsResponse> | Observable<SearchProductsResponse> | SearchProductsResponse {
-        throw new Error('Method not implemented.');
+    async createProduct(request: CreateProductRequest): Promise<CreateProductResponse> {
+        try {
+            const result = await this.productsService.create({
+                product_name: request.product_name,
+                description: request.description,
+                price_per_unit: request.price_per_unit,
+                unit: request.unit,
+                stock_quantity: request.stock_quantity,
+                weight: request.weight,
+                subcategory_ids: request.subcategory_ids,
+                image_urls: request.image_urls?.list,
+                video_urls: request.video_urls?.list,
+            }, request.user_id);
+            return {
+                product: ProductMapper.toGrpcProduct(result)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
+    async getProduct(request: GetProductRequest): Promise<GetProductResponse> {
+        try {
+            const result = await this.productsService.findProductById(request.product_id, TypesMapper.fromGrpcProductOptions(request.options));
+            return {
+                product: ProductMapper.toGrpcProduct(result)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async updateProduct(request: UpdateProductRequest): Promise<UpdateProductResponse> {
+        try {
+            const result = await this.productsService.updateProduct(request.product_id, {
+                product_name: request.product_name,
+                description: request.description,
+                price_per_unit: request.price_per_unit,
+                unit: request.unit,
+                stock_quantity: request.stock_quantity,
+                weight: request.weight,
+                image_urls: request.image_urls?.list,
+                video_urls: request.video_urls?.list,
+            }, request.user_id);
+            return {
+                product: ProductMapper.toGrpcProduct(result)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async deleteProduct(request: DeleteProductRequest): Promise<DeleteProductResponse> {
+        try {
+            const result = await this.productsService.deleteProduct(request.product_id, request.user_id);
+            return {
+                success: result
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async searchProducts(request: SearchProductsRequest): Promise<SearchProductsResponse> {
+        try {
+            const result = await this.productsService.searchAndFilterProducts(
+                PaginationMapper.fromGrpcPaginationRequest(request.pagination),
+                {
+                    search: request.query,
+                    minPrice: request.min_price,
+                    maxPrice: request.max_price,
+                    minRating: request.min_rating,
+                    maxRating: request.max_rating,
+                    minTotalSold: request.min_total_sold,
+                    status: EnumsMapper.fromGrpcProductStatus(request.status),
+                    subCategoryId: request.subcategories_id,
+                    isCategory: request.is_category,
+                },
+                TypesMapper.fromGrpcProductOptions(request.options),
+            )
+            return {
+                products: result.data.map((value) => ProductMapper.toGrpcProduct(value)),
+                pagination: PaginationMapper.toGrpcPaginationResponse(result.meta),
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async getProductsByFarm(request: GetProductsByFarmRequest): Promise<GetProductsByFarmResponse> {
+        try {
+            const result = await this.productsService.findProductsByFarmId(
+                request.farm_id,
+                TypesMapper.fromGrpcProductOptions(request.options),
+                PaginationMapper.fromGrpcPaginationRequest(request.pagination),
+            );
+            return {
+                products: result.data.map((value) => ProductMapper.toGrpcProduct(value)),
+                pagination: PaginationMapper.toGrpcPaginationResponse(result.meta)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async getProductsByCategory(request: GetProductsByCategoryRequest): Promise<GetProductsByCategoryResponse> {
+        try {
+            const result = await this.productsService.findProductsByCategory(
+                request.category_id,
+                true,
+                TypesMapper.fromGrpcProductOptions(request.options),
+                PaginationMapper.fromGrpcPaginationRequest(request.pagination),
+            );
+            return {
+                products: result.data.map((value) => ProductMapper.toGrpcProduct(value)),
+                pagination: PaginationMapper.toGrpcPaginationResponse(result.meta)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async getProductsBySubCategory(request: GetProductsBySubCategoryRequest): Promise<GetProductsBySubCategoryResponse> {
+        try {
+            const result = await this.productsService.findProductsByCategory(
+                request.subcategory_id,
+                false,
+                TypesMapper.fromGrpcProductOptions(request.options),
+                PaginationMapper.fromGrpcPaginationRequest(request.pagination),
+            );
+            return {
+                products: result.data.map((value) => ProductMapper.toGrpcProduct(value)),
+                pagination: PaginationMapper.toGrpcPaginationResponse(result.meta)
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async updateProductStatus(request: UpdateProductStatusRequest): Promise<UpdateProductStatusResponse> {
+        throw new Error();
+    }
+
+    async getListProducts(
+        request: GetListProductsRequest,
+    ): Promise<GetListProductsResponse> {
+        // this.logger.log(`[gRPC In - GetListProducts] Received request: ${JSON.stringify(request)}`);
+        throw new RpcException("");
+        // if (!request.products || request.products.length === 0) {
+        //     // this.logger.log('[gRPC In - GetListProducts] Request "products_requested" array is empty. Returning empty list.');
+        //     return ProductMapper.toGrpcGetListProductsResponse([]);
+        // }
+
+        // const productIdsToFetch: number[] = request.products
+        //     .map(pReq => pReq.product_id)
+        //     .filter(id => id !== undefined && id !== null); // Lọc ID hợp lệ
+
+        // if (productIdsToFetch.length === 0) {
+        //     return ProductMapper.toGrpcGetListProductsResponse([]);
+        // }
+
+        // try {
+        //     this.logger.log(`[gRPC In - GetListProducts] Fetching products for IDs: ${JSON.stringify(productIdsToFetch)}`);
+        //     const productEntitiesWithDetails: ProductEntity[] = await this.productsService.findProductsByIds(
+        //         productIdsToFetch,
+        //         {
+        //             includeFarm: true,
+        //             //includeSubcategoryDetails:false,
+        //             // includeCategory: false,
+        //             includeAddress: true,
+        //             includeAddressGhn: true,
+        //             includeIdentification: true, // Bật nếu cần thông tin identification
+        //         }
+        //     );
+
+        //     if (!productEntitiesWithDetails || productEntitiesWithDetails.length === 0) {
+
+        //         this.logger.log('[gRPC Logic - GetListProducts] No products found for the given IDs.');
+        //         return ProductMapper.toGrpcGetListProductsResponse([]);
+        //     }
+
+        //     const grpcProductResponseItems = productEntitiesWithDetails.map(pEntity => {
+        //         const farmEntity = pEntity.farm;
+        //         const addressEntity = farmEntity?.address; // Sử dụng optional chaining
+        //         const identificationEntity = farmEntity?.identification;
+        //         this.logger.log(`[gRPC Logic - GetListProducts] Processing product: ${pEntity.product_id}, Farm: ${farmEntity?.farm_id}`);
+        //         this.logger.log(`[gRPC Logic - GetListProducts] Processing product: ${pEntity.product_id}, address: ${JSON.stringify(addressEntity, null, 2)}`);
+        //         this.logger.log(`[gRPC Logic - GetListProducts] Processing product: ${pEntity.product_id}, identification: ${JSON.stringify(identificationEntity, null, 2)}`);
+
+
+        //         return ProductMapper.toGrpcProductResponse(
+        //             pEntity,
+        //             farmEntity,
+        //         );
+        //     });
+
+        //     const finalResponse = ProductMapper.toGrpcGetListProductsResponse(grpcProductResponseItems);
+        //     this.logger.log(`[gRPC Out - GetListProducts] Successfully processed. Returning ${finalResponse.products_found.length} products.`);
+        //     return finalResponse;
+
+        // } catch (error) {
+        //     this.logger.error(`[gRPC In - GetListProducts] Error fetching products for IDs ${JSON.stringify(productIdsToFetch)}: ${error.message}`, error.stack);
+        //     if (error instanceof RpcException) {
+        //         throw error;
+        //     }
+        //     throw new RpcException(`Error processing GetListProducts request: ${error.message}`);
+        // }
+    }
+
+
     // Farm methods
-    // verified
     async createFarm(request: CreateFarmRequest): Promise<CreateFarmResponse> {
         try {
             const result = await this.farmsService.farmRegister(FarmMapper.fromGrpcCreateFarmRequest(request), request.user_id);
@@ -132,7 +345,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
-    // verified
     @GrpcStreamMethod()
     verifyFarm(request: Observable<VerifyFarmRequest>): Observable<VerifyFarmResponse> {
         const subject = new Subject<VerifyFarmResponse>();
@@ -277,7 +489,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         return subject.asObservable();
     }
 
-    // verified
     async getFarm(request: GetFarmRequest): Promise<GetFarmResponse> {
         try {
             const farmEntity = await this.farmsService.findFarmById(request.farm_id);
@@ -290,7 +501,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
-    // verified
     async getFarmByUser(request: GetFarmByUserRequest): Promise<GetFarmByUserResponse> {
         try {
             const farmEntity = await this.farmsService.findByUserID(request.user_id);
@@ -315,7 +525,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
             );
             return {
                 farms: farms.data.map((value) => FarmMapper.toGrpcFarm(value)),
-                pagination: farms.meta ? PaginationMapper.toGrpcPaginationResponse(farms.meta) : undefined,
+                pagination: PaginationMapper.toGrpcPaginationResponse(farms.meta),
             }
         }
         catch (err) {
@@ -340,7 +550,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
             )
             return {
                 farms: farms.data.map((value) => FarmMapper.toGrpcFarm(value)),
-                pagination: farms.meta ? PaginationMapper.toGrpcPaginationResponse(farms.meta) : undefined,
+                pagination: PaginationMapper.toGrpcPaginationResponse(farms.meta)
             }
         }
         catch (err) {
@@ -380,106 +590,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
-    // Product methods
-    async getProduct(
-        request: GetProductRequest,
-    ): Promise<GetProductResponse> {
-        throw new RpcException("");
-        // if (!request || !request.product_id) {
-        //     this.logger.error('[gRPC In - GetProduct] Invalid request: product_id is required.');
-        //     throw new RpcException('Invalid request: product_id is required.');
-        // }
-        // this.logger.log(`[gRPC In - GetProduct] Received request for product_id: ${request.product_id}`);
-        // try {
-        //     const productEntity = await this.productsService.findProductById(request.product_id, {
-        //         includeFarm: true,
-        //         includeSubcategoryDetails: true, // Bật nếu cần thông tin subcategory
-        //         includeCategory: true, // Bật nếu cần thông tin category
-        //         includeAddress: true, // Bật nếu cần thông tin address
-        //         includeAddressGhn: true, // Bật nếu cần thông tin address GHN
-        //     });
-        //     if (!productEntity) {
-        //         this.logger.warn(`[gRPC Logic - GetProduct] No product found for ID: ${request.product_id}`);
-        //         throw new RpcException(`No product found for ID: ${request.product_id}`);
-        //     }
-        //     this.logger.log(`[gRPC Logic - GetProduct] Successfully fetched product: ${productEntity.product_id}`);
-        //     const result = ProductMapper.toGrpcGetProductResponse(productEntity);
-        //     this.logger.log(`[gRPC Out - GetProduct] Returning product: ${JSON.stringify(result)}`);
-        //     return result;
-        // } catch (error) {
-        //     this.logger.error(`[gRPC In - GetProduct] Error fetching product with ID ${request.product_id}: ${error.message}`, error.stack);
-        //     if (error instanceof RpcException) {
-        //         throw error;
-        //     }
-        //     throw new RpcException(`Error processing GetProduct request: ${error.message}`);
-        // }
-    }
-    async getListProducts(
-        request: GetListProductsRequest,
-    ): Promise<GetListProductsResponse> {
-        // this.logger.log(`[gRPC In - GetListProducts] Received request: ${JSON.stringify(request)}`);
-        throw new RpcException("");
-        // if (!request.products || request.products.length === 0) {
-        //     // this.logger.log('[gRPC In - GetListProducts] Request "products_requested" array is empty. Returning empty list.');
-        //     return ProductMapper.toGrpcGetListProductsResponse([]);
-        // }
-
-        // const productIdsToFetch: number[] = request.products
-        //     .map(pReq => pReq.product_id)
-        //     .filter(id => id !== undefined && id !== null); // Lọc ID hợp lệ
-
-        // if (productIdsToFetch.length === 0) {
-        //     return ProductMapper.toGrpcGetListProductsResponse([]);
-        // }
-
-        // try {
-        //     this.logger.log(`[gRPC In - GetListProducts] Fetching products for IDs: ${JSON.stringify(productIdsToFetch)}`);
-        //     const productEntitiesWithDetails: ProductEntity[] = await this.productsService.findProductsByIds(
-        //         productIdsToFetch,
-        //         {
-        //             includeFarm: true,
-        //             //includeSubcategoryDetails:false,
-        //             // includeCategory: false,
-        //             includeAddress: true,
-        //             includeAddressGhn: true,
-        //             includeIdentification: true, // Bật nếu cần thông tin identification
-        //         }
-        //     );
-
-        //     if (!productEntitiesWithDetails || productEntitiesWithDetails.length === 0) {
-
-        //         this.logger.log('[gRPC Logic - GetListProducts] No products found for the given IDs.');
-        //         return ProductMapper.toGrpcGetListProductsResponse([]);
-        //     }
-
-        //     const grpcProductResponseItems = productEntitiesWithDetails.map(pEntity => {
-        //         const farmEntity = pEntity.farm;
-        //         const addressEntity = farmEntity?.address; // Sử dụng optional chaining
-        //         const identificationEntity = farmEntity?.identification;
-        //         this.logger.log(`[gRPC Logic - GetListProducts] Processing product: ${pEntity.product_id}, Farm: ${farmEntity?.farm_id}`);
-        //         this.logger.log(`[gRPC Logic - GetListProducts] Processing product: ${pEntity.product_id}, address: ${JSON.stringify(addressEntity, null, 2)}`);
-        //         this.logger.log(`[gRPC Logic - GetListProducts] Processing product: ${pEntity.product_id}, identification: ${JSON.stringify(identificationEntity, null, 2)}`);
-
-
-        //         return ProductMapper.toGrpcProductResponse(
-        //             pEntity,
-        //             farmEntity,
-        //         );
-        //     });
-
-        //     const finalResponse = ProductMapper.toGrpcGetListProductsResponse(grpcProductResponseItems);
-        //     this.logger.log(`[gRPC Out - GetListProducts] Successfully processed. Returning ${finalResponse.products_found.length} products.`);
-        //     return finalResponse;
-
-        // } catch (error) {
-        //     this.logger.error(`[gRPC In - GetListProducts] Error fetching products for IDs ${JSON.stringify(productIdsToFetch)}: ${error.message}`, error.stack);
-        //     if (error instanceof RpcException) {
-        //         throw error;
-        //     }
-        //     throw new RpcException(`Error processing GetListProducts request: ${error.message}`);
-        // }
-    }
-
     // Category methods
     async getAllCategoryWithSubcategory(request: GetAllCategoryWithSubcategoryRequest): Promise<GetAllCategoryWithSubcategoryResponse> {
         try {
@@ -489,7 +599,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
             this.logger.debug(`[gRPC Logic - GetAllCategoryWithSubcategory] Successfully fetched ${categories.data.length} categories with subcategories.`);
             return {
                 category: categories.data.map((value) => CategoryMapper.toGrpcCategoryWithSubs(value)),
-                pagination: categories.meta ? PaginationMapper.toGrpcPaginationResponse(categories.meta) : undefined,
+                pagination: PaginationMapper.toGrpcPaginationResponse(categories.meta)
             }
 
         }
@@ -507,7 +617,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
             this.logger.debug(`[gRPC Logic - GetAllCategoryWithSubcategory] Successfully fetched ${categories.data.length} categories with subcategories.`);
             return {
                 category: categories.data.map((value) => CategoryMapper.toGrpcCategoryWithSubs(value)),
-                pagination: categories.meta ? PaginationMapper.toGrpcPaginationResponse(categories.meta) : undefined,
+                pagination: PaginationMapper.toGrpcPaginationResponse(categories.meta)
             }
         }
         catch (err) {
@@ -515,7 +625,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
-    // verified
     async createCategory(request: CreateCategoryRequest): Promise<CreateCategoryResponse> {
         try {
             const categoryData = await this.categoriesService.createCategory({
@@ -532,7 +641,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
-    // verified
     async getCategory(request: GetCategoryRequest): Promise<GetCategoryResponse> {
         try {
             const category = await this.categoriesService.getCategoryById(request.category_id);
@@ -545,7 +653,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
-    // verified
     async createSubcategory(request: CreateSubcategoryRequest): Promise<CreateSubcategoryResponse> {
         try {
             const req: CreateSubcategoryDto = {
@@ -564,7 +671,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
-    // verified
     async getSubcategory(request: GetSubcategoryRequest): Promise<GetSubcategoryResponse> {
         try {
             const subcategory = await this.categoriesService.getSubcategoryById(request.subcategory_id);
@@ -577,7 +683,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
-    // verified
     async getCategoryTree(request: GetCategoryTreeRequest): Promise<GetCategoryTreeResponse> {
         try {
             const result = await this.categoriesService.getSubCategoryTree(request.category_id);
@@ -591,7 +696,6 @@ export class ProductGrpcServerController implements ProductsServiceController {
         }
     }
 
-    // verified
     // Review methods
     async createReview(request: CreateReviewRequest): Promise<CreateReviewResponse> {
         try {

@@ -1,19 +1,12 @@
 import {
   Body,
-  Request,
   Controller,
   Post,
-  UseInterceptors,
-  UploadedFiles,
-  BadRequestException,
   Get,
   Param,
   Delete,
   UnauthorizedException,
   Patch,
-  Query,
-  DefaultValuePipe,
-  ParseIntPipe,
   Headers,
   Logger,
 } from '@nestjs/common';
@@ -21,12 +14,8 @@ import {
 import { Role } from "src/common/enums/role.enum";
 import { ProductsService } from "./products.service";
 import { CreateProductDto } from "./dto/create-product.dto";
-import { FileFieldsInterceptor } from "@nestjs/platform-express";
-import { ProductStatus } from "src/common/enums/product-status.enum";
 import { UpdateProductDto } from "./dto/update-product.dto";
-import { ResponseProductDto } from "./dto/response/response-product.dto";
 import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString } from "class-validator";
-import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 
 
 

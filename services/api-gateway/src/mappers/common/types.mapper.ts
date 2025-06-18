@@ -1,4 +1,5 @@
-import { GeoLocation as GrpcGeoLocation, Timestamp as GrpcTimestamp } from "@farmera/grpc-proto/dist/common/types"
+import { Timestamp as GrpcTimestamp, ProductOptions as GrpcProductOptions } from "@farmera/grpc-proto/dist/common/types"
+import { ProductOptions } from "src/product/product/dto/product-options.dto";
 
 export class TypesMapper {
     // Convert Date to GrpcTimestamp
@@ -26,5 +27,14 @@ export class TypesMapper {
         return new Date(
             timestamp.value.seconds * 1000 + timestamp.value.nanos / 1000000,
         );
+    }
+
+    static toGrpcProductOptions(value?: ProductOptions): GrpcProductOptions | undefined {
+        if (!value) return undefined;
+        return {
+            include_farm: value.include_farm,
+            include_categories: value.include_categories,
+            include_processes: value.include_processes,
+        }
     }
 }
