@@ -8,13 +8,13 @@ import { ProductMapper } from 'src/mappers/product/product.mapper';
 import { ErrorMapper } from 'src/mappers/common/error.mapper';
 import { ProductOptions } from './dto/product-options.dto';
 import { TypesMapper } from 'src/mappers/common/types.mapper';
-import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
 import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
 import { GetProductByFarmDto } from './dto/get-by-farm.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchProductsDto } from './dto/search-products.dto';
 import { EnumMapper } from 'src/mappers/common/enum.mapper';
+import { ProductStatus } from 'src/common/enums/product/product-status.enum';
 
 @Injectable()
 export class ProductService {
@@ -47,7 +47,7 @@ export class ProductService {
             return ProductMapper.fromGrpcProduct(result.product);
         }
         catch (err) {
-            this.logger.error(err.message);
+            this.logger.error(`[createProduct] ${err.message}`);
             throw ErrorMapper.fromGrpcError(err);
         }
     }
@@ -60,7 +60,7 @@ export class ProductService {
             }));
             return ProductMapper.fromGrpcProduct(result.product);
         } catch (err) {
-            this.logger.error(err.message);
+            this.logger.error(`[getProductById] ${err.message}`);
             throw ErrorMapper.fromGrpcError(err);
         }
     }
@@ -83,12 +83,12 @@ export class ProductService {
                 pagination: PaginationMapper.fromGrpcPaginationResponse(result.pagination)
             }
         } catch (err) {
-            this.logger.error(err.message);
+            this.logger.error(`[getProductsByFarm] ${err.message}`);
             throw ErrorMapper.fromGrpcError(err);
         }
     }
 
-    async deleteProduct(productId: number, userId: string): Promise<Boolean> {
+    async deleteProduct(productId: number, userId: string): Promise<boolean> {
         try {
             const result = await firstValueFrom(this.productGrpcService.deleteProduct({
                 product_id: productId,
@@ -97,7 +97,7 @@ export class ProductService {
             return result.success;
         }
         catch (err) {
-            this.logger.error(err.message);
+            this.logger.error(`[deleteProduct] ${err.message}`);
             throw ErrorMapper.fromGrpcError(err);
         }
     }
@@ -121,7 +121,7 @@ export class ProductService {
             }
         }
         catch (err) {
-            this.logger.error(err.message);
+            this.logger.error(`[getProductsByCategory] ${err.message}`);
             throw ErrorMapper.fromGrpcError(err);
         }
     }
@@ -145,7 +145,7 @@ export class ProductService {
             }
         }
         catch (err) {
-            this.logger.error(err.message);
+            this.logger.error(`[getProductsByCategory] ${err.message}`);
             throw ErrorMapper.fromGrpcError(err);
         }
     }
@@ -167,7 +167,7 @@ export class ProductService {
             return ProductMapper.fromGrpcProduct(result.product);
         }
         catch (err) {
-            this.logger.error(err.message);
+            this.logger.error(`[updateProduct] ${err.message}`);
             throw ErrorMapper.fromGrpcError(err);
         }
     }
@@ -202,7 +202,36 @@ export class ProductService {
             }
         }
         catch (err) {
-            this.logger.error(err.message);
+            this.logger.error(`[searchProducts] ${err.message}`);
+            throw ErrorMapper.fromGrpcError(err);
+        }
+    }
+
+    async updateProductStatus(userId: string, productId: number, status: ProductStatus): Promise<boolean> {
+        try {
+            const result = await firstValueFrom(this.productGrpcService.updateProductStatus({
+                product_id: productId,
+                user_id: userId,
+                status: EnumMapper.toGrpcProductStatus(status),
+            }));
+            return result.success;
+        }
+        catch (err) {
+            this.logger.error(`[updateProductStatus] ${err.message}`);
+            throw ErrorMapper.fromGrpcError(err);
+        }
+    }
+
+    async openProductForSale(userId: string, productId: number): Promise<string> {
+        try {
+            const result = await firstValueFrom(this.productGrpcService.openProductForSale({
+                product_id: productId,
+                user_id: userId,
+            }));
+            return result.qr_code;
+        }
+        catch (err) {
+            this.logger.error(`[openProductForSale] ${err.message}`);
             throw ErrorMapper.fromGrpcError(err);
         }
     }

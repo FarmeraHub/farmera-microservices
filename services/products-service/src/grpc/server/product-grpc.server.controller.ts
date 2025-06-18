@@ -77,6 +77,8 @@ import {
     GetProductsBySubCategoryResponse,
     UpdateProductStatusRequest,
     UpdateProductStatusResponse,
+    OpenProductForSaleRequest,
+    OpenProductForSaleResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
@@ -88,7 +90,7 @@ import { VerifyStatusCode } from '@farmera/grpc-proto/dist/common/enums';
 import { Readable } from 'stream';
 import { CategoryMapper } from './mappers/product/category.mapper';
 import { ReviewsService } from 'src/reviews/reviews.service';
-import { ReviewMapper } from './mappers/review/review.mapper';
+import { ReviewMapper } from './mappers/product/review.mapper';
 import { ProcessService } from 'src/process/process.service';
 import { TypesMapper } from './mappers/common/types.mapper';
 import { ProcessMapper } from './mappers/product/process.mapper';
@@ -262,7 +264,24 @@ export class ProductGrpcServerController implements ProductsServiceController {
     }
 
     async updateProductStatus(request: UpdateProductStatusRequest): Promise<UpdateProductStatusResponse> {
-        throw new Error();
+        try {
+            const status = EnumsMapper.fromGrpcProductStatus(request.status);
+            if (!status) {
+                throw new BadRequestException("Trạng thái không hợp lệ");
+            }
+            const result = await this.productsService.updateProductStatus(
+                request.user_id,
+                request.product_id,
+                status
+            );
+
+            return {
+                success: result
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
     async getListProducts(
@@ -331,6 +350,17 @@ export class ProductGrpcServerController implements ProductsServiceController {
         // }
     }
 
+    async openProductForSale(request: OpenProductForSaleRequest): Promise<OpenProductForSaleResponse> {
+        try {
+            const result = await this.productsService.openProductForSale(request.user_id, request.product_id);
+            return {
+                qr_code: result
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
 
     // Farm methods
     async createFarm(request: CreateFarmRequest): Promise<CreateFarmResponse> {
@@ -537,6 +567,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
     async searchFarm(request: SearchFarmRequest): Promise<SearchFarmResponse> {
         try {
             const geoLocation = TypesMapper.fromGrpcGeoLocation(request.location_filter)
+            const pagination = PaginationMapper.fromGrpcPaginationRequest(request.pagination)
             const farms = await this.farmsService.searchFarm(
                 {
                     query: request.search_query,
@@ -544,9 +575,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
                     latitude: geoLocation?.latitude,
                     longitude: geoLocation?.longitude,
                     radius_km: geoLocation?.radius_km,
-                    skip: 0,
                 },
-                PaginationMapper.fromGrpcPaginationRequest(request.pagination)
+                pagination
             )
             return {
                 farms: farms.data.map((value) => FarmMapper.toGrpcFarm(value)),

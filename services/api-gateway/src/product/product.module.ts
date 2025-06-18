@@ -14,6 +14,7 @@ import { ProcessController } from './process/process.controller';
 import { ProcessService } from './process/process.service';
 import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
+import { RedirectController } from './redirect/redirect.controller';
 
 @Module({
     imports: [
@@ -43,7 +44,7 @@ import { AdminService } from './admin/admin.service';
         ]),
 
     ],
-    controllers: [ProductController, FarmController, CategoryController, ReviewController, ProcessController, AdminController],
+    controllers: [ProductController, FarmController, CategoryController, ReviewController, ProcessController, AdminController, RedirectController],
     providers: [ProductService, FarmService, CategoryService, ReviewService, ProcessService, AdminService],
     exports: [ProductService],
 })

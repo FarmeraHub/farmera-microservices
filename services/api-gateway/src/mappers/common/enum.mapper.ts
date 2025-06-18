@@ -66,15 +66,23 @@ export class EnumMapper {
         }
     }
 
-    static toGrpcProductStatus(value: ProductStatus): GrpcProductStatus {
-        switch (value) {
-            case ProductStatus.PRE_ORDER: return GrpcProductStatus.PRODUCT_STATUS_PRE_ORDER;
-            case ProductStatus.NOT_YET_OPEN: return GrpcProductStatus.PRODUCT_STATUS_NOT_YET_OPEN;
-            case ProductStatus.OPEN_FOR_SALE: return GrpcProductStatus.PRODUCT_STATUS_OPEN_FOR_SALE;
-            case ProductStatus.SOLD_OUT: return GrpcProductStatus.PRODUCT_STATUS_SOLD_OUT;
-            case ProductStatus.CLOSED: return GrpcProductStatus.PRODUCT_STATUS_CLOSED;
-            case ProductStatus.DELETED: return GrpcProductStatus.PRODUCT_STATUS_DELETED;
-            default: return GrpcProductStatus.PRODUCT_STATUS_UNSPECIFIED;
+    static toGrpcProductStatus(status: ProductStatus): GrpcProductStatus | undefined {
+        if (!status) return undefined;
+        switch (status) {
+            case ProductStatus.PRE_ORDER:
+                return GrpcProductStatus.PRODUCT_STATUS_PRE_ORDER;
+            case ProductStatus.NOT_YET_OPEN:
+                return GrpcProductStatus.PRODUCT_STATUS_NOT_YET_OPEN;
+            case ProductStatus.OPEN_FOR_SALE:
+                return GrpcProductStatus.PRODUCT_STATUS_OPEN_FOR_SALE;
+            case ProductStatus.SOLD_OUT:
+                return GrpcProductStatus.PRODUCT_STATUS_SOLD_OUT;
+            case ProductStatus.CLOSED:
+                return GrpcProductStatus.PRODUCT_STATUS_CLOSED;
+            case ProductStatus.DELETED:
+                return GrpcProductStatus.PRODUCT_STATUS_DELETED;
+            default:
+                return GrpcProductStatus.PRODUCT_STATUS_UNSPECIFIED;
         }
     }
 }

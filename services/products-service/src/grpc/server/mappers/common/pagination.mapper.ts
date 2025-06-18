@@ -1,6 +1,4 @@
 import { PaginationRequest, PaginationResponse } from "@farmera/grpc-proto/dist/common/pagination";
-import { BadRequestException } from "@nestjs/common";
-import { plainToInstance } from "class-transformer";
 import { PaginationMeta } from "src/pagination/dto/pagination-meta.dto";
 import { Order, PaginationOptions } from "src/pagination/dto/pagination-options.dto";
 import { EnumsMapper } from "./enums.mapper";
@@ -21,7 +19,7 @@ export class PaginationMapper {
             order: EnumsMapper.fromGrpcPaginationOrder(pagination.order),
             all: pagination.all ?? false,
             sort_by: pagination.sort_by,
-            skip: 0
+            skip: ((pagination.page ?? 1) - 1) * (pagination.limit ?? 10)
         }
     }
 

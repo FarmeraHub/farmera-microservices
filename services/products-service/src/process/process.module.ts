@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ProcessController } from './process.controller';
 import { ProcessService } from './process.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,10 +10,10 @@ import { ProductsModule } from 'src/products/products.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Process]),
-    ProductsModule
+    forwardRef(() => ProductsModule),
   ],
   controllers: [ProcessController],
   providers: [ProcessService, PinataStorageService, BlockchainService],
-  exports: [ProcessService]
+  exports: [ProcessService, TypeOrmModule]
 })
 export class ProcessModule { }

@@ -3,7 +3,7 @@ import { IsBoolean, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsOptional, I
 import { PaginationOptions } from "src/pagination/dto/pagination-options.dto";
 
 
-export class SearchFarmDto extends PaginationOptions {
+export class SearchFarmDto {
     @IsOptional()
     @IsString({ message: "Từ khóa không hợp lệ" })
     query?: string;

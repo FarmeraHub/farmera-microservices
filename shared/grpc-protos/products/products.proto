@@ -21,6 +21,7 @@ service ProductsService {
   rpc GetProductsByCategory(GetProductsByCategoryRequest) returns (GetProductsByCategoryResponse);
   rpc GetProductsBySubCategory(GetProductsBySubCategoryRequest) returns (GetProductsBySubCategoryResponse);
   rpc UpdateProductStatus(UpdateProductStatusRequest) returns (UpdateProductStatusResponse);
+  rpc OpenProductForSale(OpenProductForSaleRequest) returns (OpenProductForSaleResponse);
   
   // Farm management
   rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
@@ -218,6 +219,15 @@ message UpdateProductStatusRequest {
 
 message UpdateProductStatusResponse {
   bool success = 1;
+}
+
+message OpenProductForSaleRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message OpenProductForSaleResponse {
+  string qr_code = 1;
 }
 
 // ==================================Farm==================================

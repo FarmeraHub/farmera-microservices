@@ -1,24 +1,36 @@
 import { Subcategory } from 'src/categories/entities/subcategory.entity';
 import { Farm } from './../farms/entities/farm.entity';
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException, OnModuleInit, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Product } from "./entities/product.entity";
 import { In, Not, Repository } from "typeorm";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FarmStatus } from 'src/common/enums/farm-status.enum';
-import { ProductStatus } from 'src/common/enums/product-status.enum';
+import { ProductStatus, ProductStatusOrder } from 'src/common/enums/product-status.enum';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
 import { PaginationMeta } from 'src/pagination/dto/pagination-meta.dto';
 import { ProductOptions } from './dto/product-options.dto';
 import { AzureBlobService } from 'src/services/azure-blob.service';
-import { swapCid } from 'pinata';
 import { Process } from 'src/process/entities/process.entity';
+import * as QRCode from 'qrcode';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class ProductsService {
+export class ProductsService implements OnModuleInit {
     private readonly logger = new Logger(ProductsService.name);
+
+    private appUrl: string; // use for generating QR code deep link
+
+    onModuleInit() {
+        const appUrl = this.configService.get<string>('APP_URL');
+        if (!appUrl) {
+            throw new Error('APP_URL environment variable is not defined');
+        }
+        this.appUrl = appUrl;
+    }
+
     constructor(
         @InjectRepository(Product)
         private readonly productsRepository: Repository<Product>,
@@ -29,6 +41,7 @@ export class ProductsService {
         @InjectRepository(Process)
         private readonly processRepository: Repository<Process>,
         private readonly fileStorageService: AzureBlobService,
+        private readonly configService: ConfigService,
     ) { }
 
     async create(createProductDto: CreateProductDto, userId: string): Promise<Product> {
@@ -160,8 +173,8 @@ export class ProductsService {
             return rest;
         }
         catch (err) {
-            this.logger.error(err.message);
             if (err instanceof NotFoundException || err instanceof UnauthorizedException) throw err;
+            this.logger.error(err.message);
             throw new InternalServerErrorException("Không thể cập nhật sản phẩm");
         }
     }
@@ -189,15 +202,6 @@ export class ProductsService {
             } else {
                 queryBuilder.leftJoin("product.subcategories", "subcategory")
             }
-
-            queryBuilder.andWhere("product.status IN (:...allowedStatuses)", {
-                allowedStatuses: [
-                    ProductStatus.PRE_ORDER,
-                    ProductStatus.NOT_YET_OPEN,
-                    ProductStatus.OPEN_FOR_SALE,
-                    ProductStatus.SOLD_OUT,
-                ],
-            });
 
             // Apply filters
             if (filters?.subCategoryId != undefined) {
@@ -247,6 +251,16 @@ export class ProductsService {
                     status: filters.status,
                 });
             }
+            else {
+                queryBuilder.andWhere("product.status IN (:...allowedStatuses)", {
+                    allowedStatuses: [
+                        ProductStatus.PRE_ORDER,
+                        ProductStatus.NOT_YET_OPEN,
+                        ProductStatus.OPEN_FOR_SALE,
+                        ProductStatus.SOLD_OUT,
+                    ],
+                });
+            }
 
             // Add sorting
             if (paginationOptions.sort_by) {
@@ -287,6 +301,7 @@ export class ProductsService {
 
             // If all=true, return all results without pagination
             if (paginationOptions.all) {
+
                 const products = await queryBuilder.getMany();
                 if (!products || products.length === 0) {
                     this.logger.error('Không tìm thấy danh mục nào.');
@@ -323,8 +338,8 @@ export class ProductsService {
             return new PaginationResult(products, meta);
         }
         catch (err) {
-            this.logger.error(err.message);
             if (err instanceof BadRequestException || err instanceof NotFoundException) throw err;
+            this.logger.error(err.message);
             throw new InternalServerErrorException("Không thể tìm kiếm sản phẩm");
         }
     }
@@ -348,8 +363,8 @@ export class ProductsService {
             return product;
         }
         catch (err) {
-            this.logger.error(err.message);
             if (err instanceof NotFoundException) throw err;
+            this.logger.error(err.message);
             throw new InternalServerErrorException("Không thể tìm kiếm sản phẩm");
         }
     }
@@ -456,8 +471,8 @@ export class ProductsService {
             return new PaginationResult(products, meta);
         }
         catch (err) {
-            this.logger.error(err.message);
             if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
+            this.logger.error(err.message);
             throw new InternalServerErrorException("Không thể tìm kiếm sản phẩm");
         }
     }
@@ -568,48 +583,80 @@ export class ProductsService {
             return new PaginationResult(products, meta);
         }
         catch (err) {
-            this.logger.error(err.message);
             if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
+            this.logger.error(err.message);
             throw new InternalServerErrorException("Không thể tìm kiếm sản phẩm");
         }
     }
 
-    async updateProductStatus(userId: string, productId: number, status: ProductStatus): Promise<Boolean> {
+    async updateProductStatus(userId: string, productId: number, newStatus: ProductStatus): Promise<boolean> {
         try {
-            const validUser = await this.productsRepository.exists({ where: { farm: { user_id: userId } } });
-            if (!validUser) throw new UnauthorizedException("Người dùng không có quyền cập nhật sản phẩm");
+            // check valid status
+            const validStatus = [ProductStatus.PRE_ORDER, ProductStatus.SOLD_OUT, ProductStatus.CLOSED, ProductStatus.DELETED];
+            if (!validStatus.includes(newStatus)) throw new BadRequestException("Trạng thái cập nhật không hợp lệ");
 
-            switch (status) {
-                case ProductStatus.OPEN_FOR_SALE:
-                    return await this.validProductProcess(productId, status);
-                case ProductStatus.UNSPECIFIED:
-                    throw new BadRequestException("Trạng thái không hợp lệ");
-                default:
-                    return await this.updateStatus(productId, status);
+            // check valid user
+            if (!await this.isProductUserValid(userId, productId)) throw new UnauthorizedException("Người dùng không có quyền thao tác trên sản phẩm");
+
+            // update status
+            const productCurrentStatus = await this.productsRepository.findOne({ where: { product_id: productId }, select: ["status"] });
+            if (!productCurrentStatus) throw new NotFoundException(`Không tìm thấy sản phẩm ID: ${productId}.`);
+            if (ProductStatusOrder[productCurrentStatus.status] > ProductStatusOrder[newStatus]) throw new BadRequestException("Trạng thái không hợp lệ");
+
+            const result = await this.productsRepository.update({ product_id: productId }, { status: newStatus });
+            if (result.affected === 0) {
+                throw new NotFoundException(`Không tìm thấy sản phẩm ID: ${productId}.`);
             }
+            return true;
         }
         catch (err) {
-            this.logger.error(err.message);
             if (err instanceof UnauthorizedException || err instanceof BadRequestException || err instanceof NotFoundException) throw err;
+            this.logger.error(err.message);
             throw new InternalServerErrorException("Không thể cập nhật trạng thái sản phẩm");
         }
     }
 
-    private async validProductProcess(productId: number, status: ProductStatus): Promise<Boolean> {
+    async openProductForSale(userId: string, productId: number): Promise<string> {
+        try {
+            // check valid user
+            if (!await this.isProductUserValid(userId, productId))
+                throw new UnauthorizedException("Người dùng không có quyền thao tác trên sản phẩm");
+
+            // validate product processes
+            // if (!await this.validProductProcess(productId))
+            //     throw new BadRequestException("Quy trình sản xuất của sản phẩm không hợp lệ");
+
+            // generate QR code
+            const deepLink = `${this.appUrl}/redirect/product/${productId}`;
+            const qrCode = await QRCode.toDataURL(deepLink);
+
+            // update open for sale if the processes is valid
+            const result = await this.productsRepository.update(
+                { product_id: productId }, { status: ProductStatus.OPEN_FOR_SALE }
+            );
+            if (result.affected === 0) {
+                throw new NotFoundException(`Không tìm thấy sản phẩm ID: ${productId}.`);
+            }
+            return qrCode;
+        }
+        catch (err) {
+            if (err instanceof UnauthorizedException || err instanceof BadRequestException || err instanceof NotFoundException) throw err;
+            this.logger.error(err.message);
+            throw new InternalServerErrorException("Không thể mở bán sản phẩm");
+        }
+    }
+
+    private async validProductProcess(productId: number): Promise<boolean> {
         const processes = await this.processRepository.find({ where: { product: { product_id: productId } } });
         if (processes.length > 5) {
             return true;
         }
-        throw new BadRequestException('Quy trình sản xuất của sản phẩm không hợp lệ');
+        return false;
     }
 
-    private async updateStatus(productId: number, newStatus: ProductStatus): Promise<Boolean> {
-        const result = await this.productsRepository.update({ product_id: productId }, { status: newStatus });
-        if (result.affected === 0) {
-            throw new NotFoundException(
-                `Không tìm thấy sản phẩm ID ${productId} để xóa trong transaction.`,
-            );
-        }
+    private async isProductUserValid(userId: string, productId: number): Promise<boolean> {
+        const validUser = await this.productsRepository.exists({ where: { farm: { user_id: userId }, product_id: productId } });
+        if (!validUser) return false;
         return true;
     }
 }

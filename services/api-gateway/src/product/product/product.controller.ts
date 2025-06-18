@@ -1,14 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query, Req, Res } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { User } from 'src/common/decorators/user.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductOptions } from './dto/product-options.dto';
 import { Public } from 'src/common/decorators/public.decorator';
-import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 import { GetProductByFarmDto } from './dto/get-by-farm.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchProductsDto } from './dto/search-products.dto';
+import { UpdateProductStatusDto } from './dto/update-product-status';
+import { Response } from 'express';
 
 @Controller('product')
 export class ProductController {
@@ -25,6 +26,16 @@ export class ProductController {
     @Put()
     async updateProduct(@User() user: UserInterface, @Body() updateProductDto: UpdateProductDto) {
         return await this.productService.updateProduct(user.id, updateProductDto);
+    }
+
+    @Patch("status/:product_id")
+    async updateProductStatus(@User() user: UserInterface, @Param("product_id", ParseIntPipe) productId: number, @Body() status: UpdateProductStatusDto) {
+        return await this.productService.updateProductStatus(user.id, productId, status.status);
+    }
+
+    @Post("open-for-sale/:product_id")
+    async openProductForSale(@User() user: UserInterface, @Param("product_id", ParseIntPipe) productId: number) {
+        return await this.productService.openProductForSale(user.id, productId);
     }
 
     @Delete(":product_id")
@@ -55,8 +66,6 @@ export class ProductController {
     async getProductsByCategory(@Param("category_id", ParseIntPipe) categoryId: number, @Query() getProductByFarmDto?: GetProductByFarmDto) {
         return await this.productService.getProductsByCategory(categoryId, getProductByFarmDto);
     }
-
-    async updateProductStatus() { }
 
     @Public()
     @Get(":product_id")

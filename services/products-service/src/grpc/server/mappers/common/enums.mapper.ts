@@ -84,7 +84,7 @@ export class EnumsMapper {
             case "PRODUCT_STATUS_SOLD_OUT": return ProductStatus.SOLD_OUT;
             case "PRODUCT_STATUS_CLOSED": return ProductStatus.CLOSED;
             case "PRODUCT_STATUS_DELETED": return ProductStatus.DELETED;
-            default: return undefined;
+            default: return ProductStatus.UNSPECIFIED;
         }
     }
 }
