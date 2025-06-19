@@ -16,6 +16,7 @@ import { AzureBlobService } from 'src/services/azure-blob.service';
 import { Process } from 'src/process/entities/process.entity';
 import * as QRCode from 'qrcode';
 import { ConfigService } from '@nestjs/config';
+import { ProcessStage } from 'src/common/enums/process-stage.enum';
 
 @Injectable()
 export class ProductsService implements OnModuleInit {
@@ -623,8 +624,8 @@ export class ProductsService implements OnModuleInit {
                 throw new UnauthorizedException("Người dùng không có quyền thao tác trên sản phẩm");
 
             // validate product processes
-            // if (!await this.validProductProcess(productId))
-            //     throw new BadRequestException("Quy trình sản xuất của sản phẩm không hợp lệ");
+            if (!await this.validProductProcess(productId))
+                throw new BadRequestException("Quy trình sản xuất của sản phẩm không hợp lệ");
 
             // generate QR code
             const deepLink = `${this.appUrl}/redirect/product/${productId}`;
@@ -647,11 +648,12 @@ export class ProductsService implements OnModuleInit {
     }
 
     private async validProductProcess(productId: number): Promise<boolean> {
-        const processes = await this.processRepository.find({ where: { product: { product_id: productId } } });
-        if (processes.length > 5) {
-            return true;
-        }
-        return false;
+        const stages = await this.processRepository.find({ where: { product: { product_id: productId } }, select: ["stage_name"] });
+        const hasStart = stages.some(p => p.stage_name === ProcessStage.START);
+        const hasProduction = stages.some(p => p.stage_name === ProcessStage.PRODUCTION);
+        const hasCompletion = stages.some(p => p.stage_name === ProcessStage.COMPLETION);
+
+        return hasStart && hasProduction && hasCompletion;
     }
 
     private async isProductUserValid(userId: string, productId: number): Promise<boolean> {
