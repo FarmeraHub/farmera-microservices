@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -29,6 +30,7 @@ export class SimpleCursorPagination {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   cursor?: string;
 }
 

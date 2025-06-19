@@ -1,7 +1,9 @@
+import { ProcessStage } from "src/common/enums/product/process-stage.enum";
+
 export class Process {
     process_id: number;
     product_id?: number;
-    stage_name: string;
+    stage_name: ProcessStage;
     description: Record<string, string>;
     image_urls: string[];
     video_urls: string[] | null;

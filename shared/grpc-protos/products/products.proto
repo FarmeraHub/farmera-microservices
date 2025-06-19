@@ -584,7 +584,7 @@ message ApproveReviewResponse {
 message ProductProcess {
   int32 process_id = 1;
   int32 product_id = 2;
-  string stage_name = 3;
+  farmera.common.ProcessStage stage_name = 3;
   map<string, string> description = 4;
   repeated string image_urls = 5;
   optional farmera.common.StringList video_urls = 6;
@@ -598,7 +598,7 @@ message ProductProcess {
 // without product mapping
 message ProductProcessLite {
   int32 process_id = 1;
-  string stage_name = 2;
+  farmera.common.ProcessStage stage_name = 2;
   map<string, string> description = 3;
   repeated string image_urls = 4;
   optional farmera.common.StringList video_urls = 5;
@@ -611,7 +611,7 @@ message ProductProcessLite {
 
 message CreateProcessRequest {
   int32 product_id = 1;
-  string stage_name = 2;
+  farmera.common.ProcessStage stage_name = 2;
   map<string, string> description = 3;
   farmera.common.Timestamp start_date = 4;
   farmera.common.Timestamp end_date = 5;

@@ -1,9 +1,11 @@
-import { FarmStatus as GrpcFarmStatus, MessageType as GrpcMessageType, IdentificationStatus as GrpcIdentificationStatus, IdentificationMethod as GrpcIdentificationMethod, ProductStatus as GrpcProductStatus, PaginationOrder } from "@farmera/grpc-proto/dist/common/enums";
+import { FarmStatus as GrpcFarmStatus, MessageType as GrpcMessageType, IdentificationStatus as GrpcIdentificationStatus, IdentificationMethod as GrpcIdentificationMethod, ProductStatus as GrpcProductStatus, PaginationOrder, ProcessStage as GrpcProcessStage } from "@farmera/grpc-proto/dist/common/enums";
 import { MessageType } from "src/communication/enums/message-type.enums";
 import { FarmStatus } from "src/common/enums/product/farm-status.enum";
 import { ProductStatus } from "src/common/enums/product/product-status.enum";
 import { IdentificationMethod, IdentificationStatus } from "src/product/farm/entities/identification.entity";
 import { Order } from "src/pagination/dto/pagination-options.dto";
+import { ProcessStage } from "src/common/enums/product/process-stage.enum";
+import { BadRequestException } from "@nestjs/common";
 
 export class EnumMapper {
     static fromGrpcIdentificationMethod(value: GrpcIdentificationMethod): IdentificationMethod {
@@ -83,6 +85,25 @@ export class EnumMapper {
                 return GrpcProductStatus.PRODUCT_STATUS_DELETED;
             default:
                 return GrpcProductStatus.PRODUCT_STATUS_UNSPECIFIED;
+        }
+    }
+
+    static toGrpcProcessStage(stage: ProcessStage): GrpcProcessStage | undefined {
+        if (!stage) return undefined;
+        switch (stage) {
+            case ProcessStage.START: return GrpcProcessStage.PROCESS_STAGE_START;
+            case ProcessStage.PRODUCTION: return GrpcProcessStage.PROCESS_STAGE_PRODUCTION;
+            case ProcessStage.COMPLETION: return GrpcProcessStage.PROCESS_STAGE_COMPLETION;
+            default: return GrpcProcessStage.PROCESS_STAGE_UNSPECIFIED;
+        }
+    }
+
+    static fromGrpcProcessStage(value: GrpcProcessStage): ProcessStage {
+        switch (value.toString()) {
+            case "PROCESS_STAGE_START": return ProcessStage.START;
+            case "PROCESS_STAGE_PRODUCTION": return ProcessStage.PRODUCTION;
+            case "PROCESS_STAGE_COMPLETION": return ProcessStage.COMPLETION;
+            default: throw new BadRequestException("Invalid process stage");
         }
     }
 }

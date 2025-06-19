@@ -1,6 +1,7 @@
 import { ProductProcess, ProductProcessLite } from "@farmera/grpc-proto/dist/products/products";
 import { Process } from "src/product/process/entities/process.entity";
 import { TypesMapper } from "../common/types.mapper";
+import { EnumMapper } from "../common/enum.mapper";
 
 export class ProcessMapper {
     static fromGrpcProcess(value: ProductProcess): Process | undefined {
@@ -8,7 +9,7 @@ export class ProcessMapper {
         return {
             process_id: value.process_id,
             product_id: value.product_id,
-            stage_name: value.stage_name,
+            stage_name: EnumMapper.fromGrpcProcessStage(value.stage_name),
             description: value.description,
             image_urls: value.image_urls,
             video_urls: value.video_urls ? value.video_urls.list : undefined,
@@ -24,7 +25,7 @@ export class ProcessMapper {
         if (!value) return undefined;
         return {
             process_id: value.process_id,
-            stage_name: value.stage_name,
+            stage_name: EnumMapper.fromGrpcProcessStage(value.stage_name),
             description: value.description,
             image_urls: value.image_urls,
             video_urls: value.video_urls ? value.video_urls.list : undefined,
@@ -35,4 +36,5 @@ export class ProcessMapper {
             created: TypesMapper.fromGrpcTimestamp(value.created),
         }
     }
+
 }

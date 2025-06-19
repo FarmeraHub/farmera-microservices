@@ -822,7 +822,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
             const result = await this.processService.createProcess(
                 {
                     product_id: request.product_id,
-                    stage_name: request.stage_name,
+                    stage_name: EnumsMapper.fromGrpcProcessStage(request.stage_name),
                     description: request.description,
                     start_date: TypesMapper.fromGrpcTimestamp(request.start_date),
                     end_date: TypesMapper.fromGrpcTimestamp(request.end_date),

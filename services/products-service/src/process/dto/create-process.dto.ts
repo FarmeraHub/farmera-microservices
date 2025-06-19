@@ -1,14 +1,14 @@
 import { Type } from "class-transformer";
-import { IsArray, IsDate, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString, IsUUID } from "class-validator";
+import { IsArray, IsDate, IsEnum, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString, IsUUID } from "class-validator";
+import { ProcessStage } from "src/common/enums/process-stage.enum";
 
 export class CreateProcessDto {
     @IsNumber()
     @IsPositive()
     product_id: number;
 
-    @IsString()
-    @IsNotEmpty()
-    stage_name: string;
+    @IsEnum(ProcessStage)
+    stage_name: ProcessStage;
 
     @Type(() => Object)
     @IsObject()

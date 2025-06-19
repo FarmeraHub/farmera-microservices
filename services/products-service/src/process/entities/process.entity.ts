@@ -1,3 +1,4 @@
+import { ProcessStage } from "src/common/enums/process-stage.enum";
 import { Product } from "src/products/entities/product.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
@@ -7,10 +8,16 @@ export class Process {
     process_id: number;
 
     @ManyToOne(() => Product, (product) => product.processes)
+    @JoinColumn({ name: "product_id" })
     product: Product;
 
-    @Column({ type: "text", nullable: false, name: "stage_name" })
-    stage_name: string;
+    @Column({
+        type: "enum",
+        enum: ProcessStage,
+        nullable: false,
+        name: "stage_name"
+    })
+    stage_name: ProcessStage;
 
     @Column({ type: "jsonb", nullable: false, name: "description" })
     description: Record<string, string>;

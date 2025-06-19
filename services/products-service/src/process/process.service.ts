@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { CreateProcessDto } from './dto/create-process.dto';
 import { Product } from 'src/products/entities/product.entity';
 import { Order } from 'src/pagination/dto/pagination-options.dto';
+import { ProcessStage, ProcessStageOrder } from 'src/common/enums/process-stage.enum';
 
 @Injectable()
 export class ProcessService {
@@ -18,19 +19,59 @@ export class ProcessService {
     ) { }
 
     async createProcess(createProcessDto: CreateProcessDto, userId: string) {
-        const product = await this.productRepository.findOne({ where: { farm: { user_id: userId } } });
-        if (!product) {
-            throw new UnauthorizedException("Người dùng không sở hữu sản phẩm");
-        }
-
         try {
-            const process = this.processRepository.create(createProcessDto);
-            process.product = product;
+            const product = await this.productRepository.findOne({ where: { farm: { user_id: userId }, product_id: createProcessDto.product_id } });
+            if (!product) {
+                throw new UnauthorizedException("Người dùng không sở hữu sản phẩm");
+            }
+            // Get latest stage
+            const rawStage = await this.processRepository.createQueryBuilder("process")
+                .select("process.stage_name", "stage_name")
+                .where("process.product_id = :productId", { productId: createProcessDto.product_id })
+                .orderBy(`
+                    CASE
+                        WHEN process.stage_name = '${ProcessStage.START}' THEN 1
+                        WHEN process.stage_name = '${ProcessStage.PRODUCTION}' THEN 2
+                        WHEN process.stage_name = '${ProcessStage.COMPLETION}' THEN 3 
+                    END
+                `, "DESC")
+                .limit(1)
+                .getRawOne();
+            const latestStage = rawStage?.stage_name as ProcessStage;
+
+            // Validate input stage
+            if (latestStage === ProcessStage.COMPLETION) {
+                throw new BadRequestException("Trạng thái không hợp lệ, sản phẩm đã hoàn thành");
+            }
+
+            if (createProcessDto.stage_name === ProcessStage.START) {
+                if (latestStage) throw new BadRequestException("Trạng thái không hợp lệ, giai đoạn START đã tồn tại");
+            }
+
+            if (createProcessDto.stage_name === ProcessStage.PRODUCTION) {
+                if (!latestStage) throw new BadRequestException("Trạng thái không hợp lệ, giai đoạn đầu tiên phải là START");
+            }
+
+            if (createProcessDto.stage_name === ProcessStage.COMPLETION) {
+                if (!latestStage)
+                    throw new BadRequestException("Trạng thái không hợp lệ, giai đoạn đầu tiên phải là START");
+                if (latestStage === ProcessStage.START)
+                    throw new BadRequestException("Trạng thái không hợp lệ, phải có ít nhất một PRODUCTION trước COMPLETION");
+            }
+
+            // Create process
+            const process = this.processRepository.create({
+                ...createProcessDto,
+                product: product
+            });
             return await this.processRepository.save(process);
         }
         catch (error) {
+            if (error instanceof BadRequestException || error instanceof UnauthorizedException) {
+                throw error;
+            }
             this.logger.error(`Error in createProcess: ${error}`);
-            throw new InternalServerErrorException(`Không thể quy trình sản xuất`);
+            throw new InternalServerErrorException(`Không thể tạo quy trình sản xuất`);
         }
     }
 

@@ -4,7 +4,7 @@ import { ClientGrpc } from '@nestjs/microservices';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { Review } from './entities/review.entity';
 import { firstValueFrom } from 'rxjs';
-import { ReviewMapper } from 'src/mappers/review/review.mapper';
+import { ReviewMapper } from 'src/mappers/product/review.mapper';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { ReviewReply } from './entities/review-reply.entity';
 import { UpdateReviewDto } from './dto/update-review.dto';

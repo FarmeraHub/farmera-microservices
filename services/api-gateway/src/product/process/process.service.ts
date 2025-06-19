@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
 import { ErrorMapper } from 'src/mappers/common/error.mapper';
 import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
+import { EnumMapper } from 'src/mappers/common/enum.mapper';
 
 @Injectable()
 export class ProcessService {
@@ -25,7 +26,7 @@ export class ProcessService {
         try {
             const result = await firstValueFrom(this.productGrpcService.createProcess({
                 product_id: createProcessDto.product_id,
-                stage_name: createProcessDto.stage_name,
+                stage_name: EnumMapper.toGrpcProcessStage(createProcessDto.stage_name),
                 description: createProcessDto.description,
                 start_date: TypesMapper.toGrpcTimestamp(createProcessDto.start_date),
                 end_date: TypesMapper.toGrpcTimestamp(createProcessDto.end_date),

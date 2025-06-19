@@ -1,6 +1,7 @@
 import { Type } from "class-transformer";
-import { IsArray, IsDate, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString, IsUUID } from "class-validator";
+import { IsArray, IsDate, IsEnum, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString, IsUUID } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProcessStage } from "src/common/enums/product/process-stage.enum";
 
 export class CreateProcessDto {
     @ApiProperty({ description: 'ID of the product', example: 1 })
@@ -8,10 +9,9 @@ export class CreateProcessDto {
     @IsPositive()
     product_id: number;
 
-    @ApiProperty({ description: 'Name of the process stage', example: 'Harvesting' })
-    @IsString()
-    @IsNotEmpty()
-    stage_name: string;
+    @ApiProperty({ description: 'Stage of the process', example: ProcessStage.PRODUCTION })
+    @IsEnum(ProcessStage)
+    stage_name: ProcessStage;
 
     @ApiProperty({ description: 'Description object for the process', example: { en: 'Harvesting stage', vi: 'Giai đoạn thu hoạch' } })
     @Type(() => Object)

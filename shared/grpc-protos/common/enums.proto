@@ -206,3 +206,10 @@ enum PaginationOrder {
   DESC = 1;
   ASC = 2;
 }
+
+enum ProcessStage {
+  PROCESS_STAGE_UNSPECIFIED = 0;
+  PROCESS_STAGE_START = 1;
+  PROCESS_STAGE_PRODUCTION = 2;
+  PROCESS_STAGE_COMPLETION = 3;
+}
