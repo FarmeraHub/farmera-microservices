@@ -22,12 +22,12 @@ export class Address {
   @Column()
   coordinate: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: "timestamptz" })
   created: Date;
 
   @OneToOne(() => Farm, (farm) => farm.address)
-  @JoinColumn({ name: 'farm_id' })
   farm: Farm;
+
   @OneToOne(() => AddressGHN, (addressGHN) => addressGHN.id)
   @JoinColumn({ name: 'address_ghn_id' })
   address_ghn: AddressGHN;

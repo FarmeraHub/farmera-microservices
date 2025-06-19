@@ -4,27 +4,18 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { GetReviewsDto } from './dto/get-review.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
 
 @Controller('reviews')
 export class ReviewsController {
     constructor(private readonly reviewService: ReviewsService) { }
 
     @Post()
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: "review_images", maxCount: 5 },
-            { name: "review_videos", maxCount: 5 },
-        ])
-    )
     async createReview(
         @Headers("x-user-id") userId: string,
         @Body() createReviewDto: CreateReviewDto,
-        @UploadedFiles() files: {
-            review_images?: Express.Multer.File[],
-            review_videos?: Express.Multer.File[]
-        }
     ) {
-        return await this.reviewService.createReview(createReviewDto, userId, files);
+        return await this.reviewService.createReview(createReviewDto, userId);
     }
 
     @Post("/reply")
@@ -40,8 +31,8 @@ export class ReviewsController {
         @Query() query: GetReviewsDto
     ) {
         return await this.reviewService.getReviewsByCursor(
-            query.productId,
-            query.sortBy,
+            query.product_id,
+            query.sort_by,
             query.order,
             query.limit,
             query.cursor
@@ -53,8 +44,8 @@ export class ReviewsController {
         @Query() query: GetReviewsDto
     ) {
         return await this.reviewService.getReviewsByOffset(
-            query.productId,
-            query.sortBy,
+            query.product_id,
+            query.sort_by,
             query.order,
             query.limit,
             query.page
@@ -84,22 +75,12 @@ export class ReviewsController {
     }
 
     @Patch(":id")
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: "review_images", maxCount: 5 },
-            { name: "review_videos", maxCount: 5 },
-        ])
-    )
     async updateReview(
         @Headers("x-user-id") userId: string,
         @Param("id") id: number,
-        @Body() body: { comment: string },
-        @UploadedFiles() files: {
-            review_images?: Express.Multer.File[],
-            review_videos?: Express.Multer.File[]
-        }
+        @Body() updateReviewDto: UpdateReviewDto
     ) {
-        return await this.reviewService.updateReview(id, body.comment, userId, files);
+        return await this.reviewService.updateReview(id, updateReviewDto, userId);
     }
 
     @Patch("/reply/:id")

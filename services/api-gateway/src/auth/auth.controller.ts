@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Post,
+  Put,
   Req,
   Res,
   Param,
@@ -27,6 +29,8 @@ import {
   RegisterDto,
   VerifyEmailDto,
   SendVerificationEmailDto,
+  SendVerificationPhoneDto,
+  VerifyPhoneDto,
 } from './dto';
 import { User } from '../common/decorators/user.decorator';
 import { User as UserInterface } from '../common/interfaces/user.interface';
@@ -151,41 +155,53 @@ export class AuthController {
     return await this.authService.verifyEmail(req);
   }
 
-  @Get('profile')
-  @ResponseMessage('User profile retrieved successfully')
-  @ApiOperation({ summary: 'Get user profile' })
+  @Public()
+  @Post('send-verification-phone')
+  @ResponseMessage('Verification SMS sent')
+  @ApiOperation({ summary: 'Send phone verification code via SMS' })
+  @ApiBody({ type: SendVerificationPhoneDto })
   @ApiResponse({
     status: 200,
-    description: 'User profile retrieved successfully',
+    description: 'Verification SMS sent',
     schema: {
       type: 'object',
       properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid phone number' })
+  async sendVerificationPhone(@Body() req: SendVerificationPhoneDto) {
+    return await this.authService.sendVerificationPhone(req);
+  }
+
+  @Public()
+  @Post('verify-phone')
+  @ResponseMessage('Phone verified successfully')
+  @ApiOperation({ summary: 'Verify phone with SMS code' })
+  @ApiBody({ type: VerifyPhoneDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Phone verified successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
         user: {
           type: 'object',
           properties: {
             id: { type: 'string' },
-            email: { type: 'string' },
-            first_name: { type: 'string' },
-            last_name: { type: 'string' },
-            role: { type: 'string' },
-            status: { type: 'string' },
-          },
-        },
-        stats: {
-          type: 'object',
-          properties: {
-            total_orders: { type: 'number' },
-            total_reviews: { type: 'number' },
-            loyalty_points: { type: 'number' },
-            member_since: { type: 'string', format: 'date-time' },
+            phone: { type: 'string' },
+            verified: { type: 'boolean' },
           },
         },
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getUserProfile(@User() user: UserInterface) {
-    return await this.authService.getUserProfile(user.id);
+  @ApiResponse({ status: 400, description: 'Invalid verification code' })
+  async verifyPhone(@Body() req: VerifyPhoneDto) {
+    return await this.authService.verifyPhone(req);
   }
 
   @Public()

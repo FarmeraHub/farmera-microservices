@@ -53,22 +53,23 @@ export class BlockchainService {
 
     async addProcess(process: Process) {
         try {
-            this.logger.log(`Adding process ${process.processId} for product ${process.productId}`);
+            this.logger.log(`Adding process ${process.process_id} for product ${process.process_id}`);
 
             // Hash the process data
-            const { processId, productId, stageName, description, imageCids, videoCids, startDate, endDate } = process;
+            const { process_id, stage_name, description, image_urls, video_urls, start_date, end_date } = process;
+            const product_id = process.product.product_id;
             const processData = {
-                processId, productId, stageName, description, imageCids, videoCids,
-                startDate: new Date(startDate).toISOString().split('T')[0],
-                endDate: new Date(endDate).toISOString().split('T')[0]
+                process_id, product_id, stage_name, description, image_urls, video_urls,
+                startDate: new Date(start_date).toISOString().split('T')[0],
+                endDate: new Date(end_date).toISOString().split('T')[0]
             };
             const dataHash = createHash('sha256').update(JSON.stringify(processData)).digest('hex');
             const geoHash = geohash.encode_int(process.latitude, process.longitude, BIT_DEPTH);
 
             // Add process to blockchain
             const result = await this.contract.addProcess(
-                process.productId,
-                process.processId,
+                product_id,
+                process.process_id,
                 Math.floor(process.created.getTime() / 1000),
                 geoHash,
                 dataHash
@@ -78,7 +79,7 @@ export class BlockchainService {
             return result.hash;
 
         } catch (error) {
-            this.logger.error(`Error adding process ${process.processId} for product ${process.productId}: ${error}`);
+            this.logger.error(`Error adding process ${process.process_id} for product ${process.product.product_id}: ${error}`);
             throw error;
         }
     }
@@ -111,14 +112,15 @@ export class BlockchainService {
 
     async verifyProcess(process: Process): Promise<VerificationResult> {
         try {
-            const onChainProcess = await this.getProcess(process.processId);
+            const onChainProcess = await this.getProcess(process.process_id);
 
             // Hash the process data
-            const { processId, productId, stageName, description, imageCids, videoCids, startDate, endDate } = process;
+            const { process_id, stage_name, description, image_urls, video_urls, start_date, end_date } = process;
+            const product_id = process.product.product_id;
             const processData = {
-                processId, productId, stageName, description, imageCids, videoCids,
-                startDate: new Date(startDate).toISOString().split('T')[0],
-                endDate: new Date(endDate).toISOString().split('T')[0]
+                process_id, product_id, stage_name, description, image_urls, video_urls,
+                startDate: new Date(start_date).toISOString().split('T')[0],
+                endDate: new Date(end_date).toISOString().split('T')[0]
             };
             const dataHash = createHash('sha256').update(JSON.stringify(processData)).digest('hex');
             const geoHash = geohash.encode_int(process.latitude, process.longitude, BIT_DEPTH);
@@ -127,21 +129,21 @@ export class BlockchainService {
             if (dataHash !== onChainProcess.dataHash) {
                 return {
                     isValid: false,
-                    error: `Data hash mismatch for process ${processId}`,
+                    error: `Data hash mismatch for process ${process_id}`,
                 };
             }
 
             if (geoHash !== Number(onChainProcess.location)) {
                 return {
                     isValid: false,
-                    error: `Location mismatch for process ${processId}`,
+                    error: `Location mismatch for process ${process_id}`,
                 };
             }
 
             if (BigInt(Math.floor(process.created.getTime() / 1000)) !== onChainProcess.timestamp) {
                 return {
                     isValid: false,
-                    error: `Timestamp mismatch for process ${processId}`,
+                    error: `Timestamp mismatch for process ${process_id}`,
                 };
             }
 
@@ -150,7 +152,7 @@ export class BlockchainService {
         catch (error) {
             return {
                 isValid: false,
-                error: `Process ${process.processId} not found on blockchain`,
+                error: `Process ${process.process_id} not found on blockchain`,
             };
         }
     }

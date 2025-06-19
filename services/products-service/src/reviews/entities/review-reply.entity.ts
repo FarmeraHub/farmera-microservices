@@ -8,7 +8,7 @@ export class ReviewReply {
     id: number;
 
     @Column({ type: "uuid", name: "user_id", nullable: false })
-    userId: string;
+    user_id: string;
 
     @Column({ type: "text", nullable: false })
     @IsString()
@@ -19,7 +19,7 @@ export class ReviewReply {
     created: Date;
 
     @Column({ default: false, name: "is_deleted", nullable: false })
-    isDeleted: boolean;
+    is_deleted: boolean;
 
     @ManyToOne(() => Review, (review) => review.replies)
     review: Review;

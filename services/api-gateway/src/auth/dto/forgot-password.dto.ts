@@ -26,26 +26,3 @@ export class VerifyForgotPasswordDto {
   @IsNotEmpty()
   code: string;
 }
-
-export class UpdateNewPasswordDto {
-  @ApiProperty({
-    example: 'user@farmera.com',
-    description: 'Email address',
-  })
-  @IsNotEmpty()
-  email: string;
-
-  @ApiProperty({
-    example: '123456',
-    description: 'Verification code from email',
-  })
-  @IsNotEmpty()
-  verification_code: string;
-
-  @ApiProperty({
-    example: 'newPassword123',
-    description: 'New password to set',
-  })
-  @IsNotEmpty()
-  newPassword: string;
-}

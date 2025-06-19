@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, Matches } from "class-validator";
 
 export class FarmRegistrationDto {
     @IsString()
@@ -39,5 +39,9 @@ export class FarmRegistrationDto {
 
     @IsString()
     @IsNotEmpty()
+    @Matches(
+        /^-?([1-8]?\d(\.\d+)?|90(\.0+)?):-?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/,
+        { message: 'coordinate must be a valid string in the format "lat:lng"' }
+    )
     coordinate: string;
 }

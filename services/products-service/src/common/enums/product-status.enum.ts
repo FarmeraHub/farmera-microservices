@@ -7,3 +7,13 @@ export enum ProductStatus {
   CLOSED = 'CLOSED',
   DELETED = 'DELETED',
 }
+
+export const ProductStatusOrder: Record<ProductStatus, number> = {
+  [ProductStatus.UNSPECIFIED]: 0,
+  [ProductStatus.NOT_YET_OPEN]: 1,
+  [ProductStatus.PRE_ORDER]: 2,
+  [ProductStatus.OPEN_FOR_SALE]: 3,
+  [ProductStatus.SOLD_OUT]: 4,
+  [ProductStatus.CLOSED]: 5,
+  [ProductStatus.DELETED]: 6,
+};

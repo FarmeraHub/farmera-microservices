@@ -7,6 +7,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { GuardsModule } from './guards/guards.module';
 import { HealthModule } from './health/health.module';
@@ -14,7 +15,6 @@ import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ProductModule } from './product/product.module';
 import { CommunicationModule } from './communication/communication.module';
-import { CommunicationGateway } from './communication/communication.gateway';
 
 @Module({
   imports: [
@@ -60,6 +60,7 @@ import { CommunicationGateway } from './communication/communication.gateway';
 
     // Custom modules
     AuthModule,
+    UserModule,
     GuardsModule,
     HealthModule,
     MediaModule,
