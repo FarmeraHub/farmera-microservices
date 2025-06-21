@@ -1,5 +1,5 @@
 use actix_multipart::form::tempfile::TempFileConfig;
-use actix_web::{web, App, HttpServer};
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use communication_service::{
     app::AppState,
     controllers::{
@@ -16,6 +16,10 @@ use farmera_grpc_proto::communication::communication_service_server::Communicati
 use std::env;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+
+async fn health_check() -> impl Responder {
+    HttpResponse::Ok().body("OK")
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -72,6 +76,8 @@ async fn main() -> std::io::Result<()> {
             // server states
             .app_data(app_data.clone())
             .app_data(chat_server_handler.clone())
+            // health check
+            .route("/health", web::get().to(health_check))
             //
             .app_data(TempFileConfig::default().directory("./uploads/tmp"))
             // route configurations
