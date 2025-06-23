@@ -1,13 +1,14 @@
 import { Type } from "class-transformer";
-import { IsDate, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsPositive, IsString, IsUUID } from "class-validator";
+import { IsArray, IsDate, IsEnum, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString, IsUUID } from "class-validator";
+import { ProcessStage } from "src/common/enums/process-stage.enum";
 
 export class CreateProcessDto {
-    @IsUUID()
-    productId: string;
+    @IsNumber()
+    @IsPositive()
+    product_id: number;
 
-    @IsString()
-    @IsNotEmpty()
-    stageName: string;
+    @IsEnum(ProcessStage)
+    stage_name: ProcessStage;
 
     @Type(() => Object)
     @IsObject()
@@ -15,11 +16,11 @@ export class CreateProcessDto {
 
     @Type(() => Date)
     @IsDate()
-    startDate: Date;
+    start_date: Date;
 
     @Type(() => Date)
     @IsDate()
-    endDate: Date;
+    end_date: Date;
 
     @IsLatitude()
     @Type(() => Number)
@@ -28,4 +29,13 @@ export class CreateProcessDto {
     @IsLongitude()
     @Type(() => Number)
     longitude: number;
+
+    @IsArray()
+    @IsString({ each: true })
+    image_urls: string[];
+
+    @IsArray()
+    @IsOptional()
+    @IsString({ each: true })
+    video_urls?: string[];
 }

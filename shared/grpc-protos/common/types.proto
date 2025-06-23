@@ -31,8 +31,7 @@ message Location {
 message GeoLocation {
   double latitude = 1;
   double longitude = 2;
-  string geohash = 3;
-  double radius_km = 4;
+  double radius_km = 3;
 }
 
 // Money/Currency representation
@@ -68,14 +67,6 @@ message Video {
   string thumbnail_url = 3;
   int32 duration_seconds = 4;
   string format = 5;
-}
-
-// Contact information
-message ContactInfo {
-  string email = 1;
-  string phone = 2;
-  string website = 3;
-  repeated string social_media = 4;
 }
 
 // Audit trail
@@ -149,6 +140,21 @@ message NotificationAttachmentList {
   repeated NotificationAttachment attachments = 1;
 }
 
+message ProductOptions {
+  optional bool include_farm = 1;
+  optional bool include_processes = 2;
+  optional bool include_categories = 3;
+}
+
+// List
 message StringMap {
   map<string, string> values = 1;
+}
+
+message StringList {
+  repeated string list = 1;
+}
+
+message IntList {
+  repeated int32 list = 1;
 }

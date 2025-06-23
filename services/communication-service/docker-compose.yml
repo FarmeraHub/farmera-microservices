@@ -4,25 +4,17 @@ services:
       context: ../..
       dockerfile: ./services/communication-service/Dockerfile
     depends_on:
-      - postgres
       - redis
     environment:
       - SERVER_ADDRESS=0.0.0.0
       - SERVER_PORT=3005
       - GRPC_SERVER_ADDRESS=0.0.0.0
       - GRPC_PORT=50055
-      - PG_DATABASE_URL=postgresql://postgres:123@postgres:5432/communication
+      - PG_DATABASE_URL=postgresql://postgres:123@host.docker.internal/communication
       - REDIS_URL=redis://redis:6379
     ports:
       - "3005:3005"
       - "50055:50055"
-
-  postgres:
-    image: postgres:latest
-    environment:
-      POSTGRES_DB: communication
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123
 
   redis:
     image: redis:latest

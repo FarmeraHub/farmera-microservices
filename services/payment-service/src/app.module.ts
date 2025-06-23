@@ -9,6 +9,8 @@ import productServiceConfig from './config/product-service.config';
 import { PaymentModule } from './payments/payment.module';
 import { DiscountModule } from './discounts/discount.module';
 import { DeliveryModule } from './delivery/delivery.module';
+import { PaymentGrpcServerModule } from './grpc/server/payment-grpc.server.module';
+import { PaymentGrpcClientModule } from './grpc/client/grpc-client.module';
 import { NotificationModule } from './clients/notification/notification.module';
 
 @Module({
@@ -23,6 +25,8 @@ import { NotificationModule } from './clients/notification/notification.module';
     PaymentModule,
     DiscountModule,
     DeliveryModule,
+    PaymentGrpcServerModule,
+    PaymentGrpcClientModule, ,
     NotificationModule
 
   ],

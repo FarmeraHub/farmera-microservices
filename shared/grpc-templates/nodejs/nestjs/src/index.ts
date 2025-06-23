@@ -8,5 +8,4 @@ export * as timestamp from "./google/protobuf/timestamp";
 export * as notification from "./notification/notification";
 export * as payment from "./payment/payment";
 export * as products from "./products/products";
-export * as sample from "./sample/hello";
 export * as users from "./users/users";

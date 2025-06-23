@@ -4,12 +4,10 @@ import { Review } from './entities/review.entity';
 import { Repository } from 'typeorm';
 import { ReviewReply } from './entities/review-reply.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { FileStorageService } from 'src/file-storage/file-storage.service';
-import { SavedFileResult } from 'src/file-storage/storage.strategy.interface';
 import { CreateReplyDto } from './dto/create-reply.dto';
-import { firstValueFrom } from 'rxjs';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
+import { AzureBlobService } from 'src/services/azure-blob.service';
+import { UpdateReviewDto } from './dto/update-review.dto';
+import { ErrorMapper } from 'src/grpc/server/mappers/common/error.mapper';
 
 @Injectable()
 export class ReviewsService {
@@ -19,38 +17,14 @@ export class ReviewsService {
     constructor(
         @InjectRepository(Review) private readonly reviewRepository: Repository<Review>,
         @InjectRepository(ReviewReply) private readonly replyRepository: Repository<ReviewReply>,
-        private readonly fileStorageService: FileStorageService,
-        private httpService: HttpService,
-        private readonly configService: ConfigService,
+        private readonly fileStorageService: AzureBlobService,
     ) { }
 
     async createReview(
         createReviewDto: CreateReviewDto,
         userId: string,
-        files?: {
-            review_images?: Express.Multer.File[],
-            review_videos?: Express.Multer.File[]
-        }
     ): Promise<Review> {
-        let savedImageResults: SavedFileResult[] = [];
-        let savedVideoResults: SavedFileResult[] = [];
-
         try {
-            // validate images & videos
-            if (files?.review_images?.length) {
-                savedImageResults = await this.fileStorageService.saveFiles(files.review_images, 'review_images');
-            }
-
-            if (files?.review_videos?.length) {
-                savedVideoResults = await this.fileStorageService.saveFiles(files.review_videos, 'review_videos');
-            }
-
-            // get images & videos result urls, or null if none
-            const imageUrls = savedImageResults.length > 0 ? savedImageResults.map(r => r.url) : null;
-            const videoUrls = savedVideoResults.length > 0 ? savedVideoResults.map(r => r.url) : null;
-
-            this.logger.debug(imageUrls, videoUrls);
-
             // !TODO()
             // cache
 
@@ -72,26 +46,15 @@ export class ReviewsService {
             const orderDetailId = 0;
 
             const review = this.reviewRepository.create(createReviewDto);
-            review.userId = userId;
-            review.imageUrls = imageUrls;
-            review.videoUrls = videoUrls;
-            review.orderDetailId = orderDetailId;
+
+            review.user_id = userId;
+            review.order_detailId = orderDetailId;
             review.created = new Date();
 
             return await this.reviewRepository.save(review);
+
         } catch (error) {
             this.logger.error(error);
-
-            // clean up files
-            const resultsToCleanup = [...savedImageResults, ...savedVideoResults];
-            if (resultsToCleanup.length > 0) {
-                await this.fileStorageService.cleanupFiles(resultsToCleanup);
-            }
-
-            if (error instanceof NotFoundException || error instanceof BadRequestException) {
-                throw error;
-            }
-
             throw new InternalServerErrorException(`Không thể đánh giá`);
         }
     }
@@ -103,7 +66,7 @@ export class ReviewsService {
     ): Promise<ReviewReply> {
         try {
             const review = await this.reviewRepository.findOne({
-                where: { reviewId: createReplyDto.reviewId }
+                where: { review_id: createReplyDto.review_id }
             });
 
             if (review) {
@@ -114,7 +77,7 @@ export class ReviewsService {
                 const reply = this.replyRepository.create({
                     reply: createReplyDto.reply,
                     review: review,
-                    userId: userId
+                    user_id: userId
                 });
 
                 return await this.replyRepository.save(reply);
@@ -152,15 +115,16 @@ export class ReviewsService {
         }
 
         if (cursor) {
+            const decoded = this.decodeCursor(cursor);
             if (sortBy === 'created') {
                 if (order === 'DESC') {
-                    qb.andWhere('review.created < :cursor', { cursor });
+                    qb.andWhere('review.created < :decoded', { decoded });
                 } else {
-                    qb.andWhere('review.created > :cursor', { cursor });
+                    qb.andWhere('review.created > :decoded', { decoded });
                 }
             } else {
                 // cursor: "<rating>_<created>"
-                const [ratingStr, created] = cursor.split('_');
+                const [ratingStr, created] = decoded.split('_');
                 const rating = parseInt(ratingStr);
 
                 if (order === 'DESC') {
@@ -190,10 +154,14 @@ export class ReviewsService {
             }
         }
 
+        if (nextCursor) {
+            nextCursor = this.encodeCursor(nextCursor);
+        }
+
         return {
             data: {
                 reviews,
-                nextCursor,
+                nextCursor
             },
         };
     }
@@ -241,130 +209,126 @@ export class ReviewsService {
     }
 
     async deleteReview(reviewId: number, userId: string) {
-        const result = await this.reviewRepository.update({ reviewId: reviewId, userId: userId }, { isDeleted: true });
-        if (result.affected == 0) {
-            throw new NotFoundException(`Không tìm thấy review`);
+        try {
+            const result = await this.reviewRepository.update({ review_id: reviewId, user_id: userId }, { is_deleted: true });
+            if (result.affected == 0) {
+                throw new NotFoundException(`Không tìm thấy review`);
+            }
+            return true;
         }
-
-        return {
-            message: 'Xoá thành công',
-            data: null,
-        };
-
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
     async deleteReply(replyId: number, userId: string) {
-        const result = await this.replyRepository.update({ id: replyId, userId: userId }, { isDeleted: true });
-        if (result.affected == 0) {
-            throw new NotFoundException(`Không tìm thấy reply`);
+        try {
+            const result = await this.replyRepository.update({ id: replyId, user_id: userId }, { is_deleted: true });
+            if (result.affected == 0) {
+                throw new NotFoundException(`Không tìm thấy reply`);
+            }
+            return true;
         }
-
-        return {
-            message: 'Xoá thành công',
-            data: null,
-        };
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
     async approveReview(reviewId: number, approve: boolean) {
-        const result = await this.reviewRepository.update({ reviewId: reviewId }, { sellerApproved: approve });
-        if (result.affected == 0) {
-            throw new NotFoundException(`Không tìm thấy reply`);
+        try {
+            const result = await this.reviewRepository.update({ review_id: reviewId }, { seller_approved: approve });
+            if (result.affected == 0) {
+                throw new NotFoundException(`Không tìm thấy review`);
+            }
+            return true
         }
-
-        return {
-            message: 'Thành công',
-            data: null,
-        };
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
     }
 
-    async updateReview(
-        reviewId: number,
-        comment: string,
-        userId: string,
-        files?: {
-            review_images?: Express.Multer.File[],
-            review_videos?: Express.Multer.File[]
-        }
-    ) {
-        let savedImageResults: SavedFileResult[] = [];
-        let savedVideoResults: SavedFileResult[] = [];
-
+    async updateReview(reviewId: number, updateReviewDto: UpdateReviewDto, userId: string) {
         try {
             const existingReview = await this.reviewRepository.findOneBy({
-                reviewId,
-                userId,
+                review_id: reviewId,
+                user_id: userId,
             });
+
 
             if (!existingReview) {
                 throw new NotFoundException('Không tìm thấy review');
             }
 
-            // validate images & videos
-            if (files?.review_images?.length) {
-                savedImageResults = await this.fileStorageService.saveFiles(files.review_images, 'review_images');
+            const deleteImgUrls = existingReview.image_urls?.filter((value) => !updateReviewDto.image_urls?.includes(value));
+            const deleteVideoUrls = existingReview.video_urls?.filter((value) => !updateReviewDto.video_urls?.includes(value));
+
+            const failedDeletes: string[] = [];
+
+            // delete images
+            if (deleteImgUrls?.length) {
+                const imgResults = await Promise.allSettled(
+                    deleteImgUrls.map((url) => this.fileStorageService.deleteFile(url))
+                );
+
+                imgResults.forEach((result, index) => {
+                    if (result.status === 'rejected') {
+                        this.logger.error(`Failed to delete image: ${deleteImgUrls[index]}`);
+                        failedDeletes.push(deleteImgUrls[index]);
+                    }
+                });
             }
 
-            if (files?.review_videos?.length) {
-                savedVideoResults = await this.fileStorageService.saveFiles(files.review_videos, 'review_videos');
+            // delete videos
+            if (deleteVideoUrls?.length) {
+                const videoResults = await Promise.allSettled(
+                    deleteVideoUrls.map((url) => this.fileStorageService.deleteFile(url))
+                );
+
+                videoResults.forEach((result, index) => {
+                    if (result.status === 'rejected') {
+                        this.logger.error(`Failed to delete video: ${deleteVideoUrls[index]}`);
+                        failedDeletes.push(deleteVideoUrls[index]);
+                    }
+                });
             }
 
-            // get images & videos result urls, or null if none
-            const imageUrls = savedImageResults.length > 0
-                ? savedImageResults.map(r => r.url)
-                : existingReview.imageUrls;
+            existingReview.rating = updateReviewDto.rating;
+            existingReview.comment = updateReviewDto.comment;
+            existingReview.image_urls = updateReviewDto.image_urls ? updateReviewDto.image_urls : null;
+            existingReview.video_urls = updateReviewDto.video_urls ? updateReviewDto.video_urls : null;
 
-            const videoUrls = savedVideoResults.length > 0
-                ? savedVideoResults.map(r => r.url)
-                : existingReview.videoUrls;
+            const result = await this.reviewRepository.save(existingReview);
 
-            const result = await this.reviewRepository.update(
-                { reviewId: reviewId, userId: userId },
-                {
-                    comment,
-                    imageUrls,
-                    videoUrls,
-                }
-            );
+            return result;
 
-
-            if (result.affected == 0) {
-                throw new NotFoundException(`Không tìm thấy reply`);
-            }
-
-            return {
-                message: 'Thành công',
-                data: null,
-            };
         } catch (error) {
-            this.logger.error(error);
-
-            // clean up files
-            const resultsToCleanup = [...savedImageResults, ...savedVideoResults];
-            if (resultsToCleanup.length > 0) {
-                await this.fileStorageService.cleanupFiles(resultsToCleanup);
-            }
-
-            if (error instanceof NotFoundException || error instanceof BadRequestException) {
+            this.logger.error(error.message);
+            if (error instanceof NotFoundException) {
                 throw error;
             }
-
-            throw new InternalServerErrorException(`Không thể đánh giá`);
+            throw new InternalServerErrorException(`Không cập nhật thể đánh giá`);
         }
     }
 
-    async updateReply(
-        replyId: number,
-        reply: string,
-        userId: string,
-    ) {
-        const result = await this.replyRepository.update({ id: replyId, userId: userId }, { reply: reply });
-        if (result.affected == 0) {
+    async updateReply(replyId: number, reply: string, userId: string) {
+        const result = await this.replyRepository.findOne({ where: { id: replyId, user_id: userId } });
+        if (!result) {
             throw new NotFoundException(`Không tìm thấy reply`);
         }
-
-        return {
-            message: 'Thành công',
-            data: null,
-        };
+        result.reply = reply;
+        return await this.replyRepository.save(result);
     }
+
+    private encodeCursor(payload: string): string {
+        return Buffer.from(payload).toString('base64');
+    }
+
+    private decodeCursor(cursor: string): string {
+        try {
+            return Buffer.from(cursor, 'base64').toString('utf8');
+        } catch (err) {
+            throw new BadRequestException('Invalid cursor');
+        }
+    }
+
 }

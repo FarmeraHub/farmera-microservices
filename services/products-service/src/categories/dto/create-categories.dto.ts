@@ -7,4 +7,6 @@ export class CreateCategoriesDto {
     @IsString()
     @IsOptional()
     description?: string;
+    @IsString()
+    image_url?: string;
 }
