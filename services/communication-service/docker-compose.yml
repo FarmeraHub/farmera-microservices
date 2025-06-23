@@ -4,7 +4,6 @@ services:
       context: ../..
       dockerfile: ./services/communication-service/Dockerfile
     depends_on:
-      - postgres
       - redis
     environment:
       - SERVER_ADDRESS=0.0.0.0
