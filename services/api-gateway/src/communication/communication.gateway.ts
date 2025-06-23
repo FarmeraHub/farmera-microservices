@@ -99,7 +99,7 @@ export class CommunicationGateway implements OnModuleInit {
 
     // handle errors
     this.comm_client.on("error", (error) => {
-      this.logger.error("Communication websocket error: ", error);
+      this.logger.error(`Communication websocket error: ${error.message}`,);
     });
 
     this.comm_client.on("close", () => {
