@@ -13,6 +13,8 @@ export class CommunicationGateway implements OnModuleInit {
   private readonly logger: Logger = new Logger("Websocket Gateway");
   private comm_client: WebSocket;
 
+  private userConnections: Map<string, { comm_client: WebSocket }>;
+
   constructor(
     private readonly configService: ConfigService,
     private readonly httpAdapterHost: HttpAdapterHost,
@@ -21,6 +23,8 @@ export class CommunicationGateway implements OnModuleInit {
 
   onModuleInit() {
     const httpServer = this.httpAdapterHost.httpAdapter.getHttpServer();
+
+    this.userConnections = new Map();
 
     this.server = new WebSocketServer({ server: httpServer });
 
@@ -62,7 +66,8 @@ export class CommunicationGateway implements OnModuleInit {
       });
 
       client.on('close', () => {
-        this.logger.log('Client disconnected');
+        this.disconnectUser(user.id);
+        this.logger.log(`Client ${user.id} disconnected`);
       });
 
       this.connect(user);
@@ -79,8 +84,11 @@ export class CommunicationGateway implements OnModuleInit {
       }
     });
 
+    this.userConnections.set(user.id, { comm_client: this.comm_client });
+
     this.comm_client.on("open", () => {
       this.logger.log('Connected to Communication WebSocket server');
+
     });
 
     // handle received messages
@@ -111,5 +119,18 @@ export class CommunicationGateway implements OnModuleInit {
         }
       });
     });
+  }
+
+  private disconnectUser(userId: string) {
+    const connection = this.userConnections.get(userId);
+    if (connection) {
+      // Close the comm_client if open
+      if (connection.comm_client.readyState === WebSocket.OPEN) {
+        connection.comm_client.close(1000, 'User disconnected');
+      }
+      // Remove from map
+      this.userConnections.delete(userId);
+      this.logger.log(`Cleaned up connections for user ${userId}`);
+    }
   }
 }
