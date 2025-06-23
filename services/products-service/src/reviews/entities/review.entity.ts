@@ -5,13 +5,13 @@ import { ReviewReply } from "./review-reply.entity";
 @Entity("reviews")
 export class Review {
     @PrimaryGeneratedColumn("increment", { name: "review_id" })
-    reviewId: number;
+    review_id: number;
 
     @Column({ name: "product_id", nullable: false })
-    productId: number;
+    product_id: number;
 
     @Column({ type: "uuid", name: "user_id", nullable: false })
-    userId: string;
+    user_id: string;
 
     @Column({ nullable: false })
     @Min(1)
@@ -24,22 +24,22 @@ export class Review {
     comment: string;
 
     @Column("text", { array: true, name: "image_urls", nullable: true })
-    imageUrls: string[] | null;
+    image_urls: string[] | null;
 
     @Column("text", { array: true, name: "video_urls", nullable: true })
-    videoUrls: string[] | null;
+    video_urls: string[] | null;
 
     @Column({ default: false, name: "seller_approved", nullable: false })
-    sellerApproved: boolean;
+    seller_approved: boolean;
 
     @CreateDateColumn({ type: "timestamptz", nullable: false })
     created: Date;
 
     @Column({ default: false, name: "is_deleted", nullable: false })
-    isDeleted: boolean;
+    is_deleted: boolean;
 
     @Column({ name: "order_detail_id", nullable: false })
-    orderDetailId: number;
+    order_detailId: number;
 
     @OneToMany(() => ReviewReply, (reply) => reply.review)
     replies: ReviewReply[];

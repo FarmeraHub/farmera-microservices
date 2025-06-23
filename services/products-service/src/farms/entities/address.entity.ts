@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Farm } from "./farm.entity";
+import { AddressGHN } from "./address-ghn.entity";
 
 @Entity()
 export class Address {
@@ -21,13 +22,13 @@ export class Address {
   @Column()
   coordinate: string;
 
-  @Column({ nullable: true })
-  province: string;
-
-  @CreateDateColumn()
+  @CreateDateColumn({ type: "timestamptz" })
   created: Date;
 
   @OneToOne(() => Farm, (farm) => farm.address)
-  @JoinColumn({ name: 'farm_id' })
   farm: Farm;
+
+  @OneToOne(() => AddressGHN, (addressGHN) => addressGHN.id)
+  @JoinColumn({ name: 'address_ghn_id' })
+  address_ghn: AddressGHN;
 }

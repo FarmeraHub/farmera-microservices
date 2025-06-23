@@ -2,7 +2,7 @@ import { Type } from "class-transformer";
 import { ArrayNotEmpty, IsArray, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString } from "class-validator";
 import { ProductStatus } from "src/common/enums/product-status.enum";
 
-export class CreateProductDto{
+export class CreateProductDto {
 
   @IsNotEmpty()
   @IsString()
@@ -11,10 +11,6 @@ export class CreateProductDto{
   @IsOptional()
   @IsString()
   description?: string;
-
-  // @IsNotEmpty()
-  // @IsString()
-  // farm: string;
 
   @IsNotEmpty()
   @Type(() => Number)
@@ -32,11 +28,24 @@ export class CreateProductDto{
   @IsPositive()
   stock_quantity: number;
 
-  @IsEnum(ProductStatus)
-  status: ProductStatus;
+  @IsNotEmpty()
+  @Type(() => Number)
+  @IsNumber()
+  @IsPositive()
+  weight: number;
 
   @IsArray()
   @ArrayNotEmpty()
   @IsOptional()
-  subcategory_ids?: number[]; 
+  subcategory_ids?: number[];
+
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  image_urls?: string[];
+
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  video_urls?: string[];
 }

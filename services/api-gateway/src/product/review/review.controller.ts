@@ -1,0 +1,98 @@
+import { Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { ReviewService } from './review.service';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { User } from 'src/common/decorators/user.decorator';
+import { User as UserInterface } from '../../common/interfaces/user.interface';
+import { CreateReplyDto } from './dto/create-reply.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiBadRequestResponse } from '@nestjs/swagger';
+import { Review } from './entities/review.entity';
+import { ReviewReply } from './entities/review-reply.entity';
+
+@ApiTags('Review')
+@Controller('review')
+export class ReviewController {
+
+    constructor(private readonly reviewServie: ReviewService) { }
+
+    @Post()
+    @ApiOperation({ summary: 'Create a review', description: 'Creates a new review for a product.' })
+    @ApiBody({ type: CreateReviewDto })
+    @ApiResponse({ status: 201, description: 'Review created successfully', type: Review })
+    @ApiBadRequestResponse({ description: 'Invalid input or creation failed' })
+    @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async createReview(@User() user: UserInterface, @Body() createReviewDto: CreateReviewDto) {
+        return await this.reviewServie.createReview(createReviewDto, user.id);
+    }
+
+    @Post("reply")
+    @ApiOperation({ summary: 'Create a reply to a review', description: 'Creates a reply to a review.' })
+    @ApiBody({ type: CreateReplyDto })
+    @ApiResponse({ status: 201, description: 'Reply created successfully', type: ReviewReply })
+    @ApiBadRequestResponse({ description: 'Invalid input or creation failed' })
+    @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async createReply(@User() user: UserInterface, @Body() createReplyDto: CreateReplyDto) {
+        return await this.reviewServie.createReply(createReplyDto, user.id);
+    }
+
+    @Patch(":review_id")
+    @ApiOperation({ summary: 'Update a review', description: 'Updates an existing review.' })
+    @ApiParam({ name: 'review_id', description: 'ID of the review to update' })
+    @ApiBody({ type: UpdateReviewDto })
+    @ApiResponse({ status: 200, description: 'Review updated successfully', type: Review })
+    @ApiBadRequestResponse({ description: 'Invalid input or update failed' })
+    @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+    @ApiNotFoundResponse({ description: 'Review not found' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async updateReview(@User() user: UserInterface, @Param("review_id") reviewId: number, @Body() updateReviewDto: UpdateReviewDto) {
+        return await this.reviewServie.updateReview(updateReviewDto, user.id, reviewId);
+    }
+
+    @Patch("reply/:reply_id")
+    @ApiOperation({ summary: 'Update a reply', description: 'Updates an existing reply to a review.' })
+    @ApiParam({ name: 'reply_id', description: 'ID of the reply to update' })
+    @ApiBody({ schema: { type: 'object', properties: { reply: { type: 'string' } } } })
+    @ApiResponse({ status: 200, description: 'Reply updated successfully', type: ReviewReply })
+    @ApiBadRequestResponse({ description: 'Invalid input or update failed' })
+    @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+    @ApiNotFoundResponse({ description: 'Reply not found' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async updateReply(@User() user: UserInterface, @Param("reply_id") replyId: number, @Body() body: { reply: string }) {
+        return await this.reviewServie.updateReply(replyId, body.reply, user.id);
+    }
+
+    @Delete(":review_id")
+    @ApiOperation({ summary: 'Delete a review', description: 'Deletes a review.' })
+    @ApiParam({ name: 'review_id', description: 'ID of the review to delete' })
+    @ApiResponse({ status: 200, description: 'Review deleted successfully', type: Boolean })
+    @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+    @ApiNotFoundResponse({ description: 'Review not found' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async deleteReview(@User() user: UserInterface, @Param("review_id") reviewId: number) {
+        return await this.reviewServie.deleteReview(reviewId, user.id);
+    }
+
+    @Delete("reply/:reply_id")
+    @ApiOperation({ summary: 'Delete a reply', description: 'Deletes a reply to a review.' })
+    @ApiParam({ name: 'reply_id', description: 'ID of the reply to delete' })
+    @ApiResponse({ status: 200, description: 'Reply deleted successfully', type: Boolean })
+    @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+    @ApiNotFoundResponse({ description: 'Reply not found' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async deleteReply(@User() user: UserInterface, @Param("reply_id") replyId: number) {
+        return await this.reviewServie.deleteReply(replyId, user.id);
+    }
+
+    @Post("approve/:review_id")
+    @ApiOperation({ summary: 'Approve a review', description: 'Approves or disapproves a review.' })
+    @ApiParam({ name: 'review_id', description: 'ID of the review to approve/disapprove' })
+    @ApiBody({ schema: { type: 'object', properties: { approve: { type: 'boolean' } } } })
+    @ApiResponse({ status: 200, description: 'Review approval status updated', type: Boolean })
+    @ApiBadRequestResponse({ description: 'Invalid input or approval failed' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async approveReview(@Param("review_id") review_id: number, @Body() body: { approve: boolean }) {
+        return await this.reviewServie.approveReview(review_id, body.approve);
+    }
+}

@@ -5,7 +5,7 @@ export class CreateReplyDto {
     @Type(() => Number)
     @IsNumber()
     @IsPositive()
-    reviewId: number;
+    review_id: number;
 
     @IsString()
     @IsNotEmpty()

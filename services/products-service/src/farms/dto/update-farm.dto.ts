@@ -1,6 +1,4 @@
-import { Type } from 'class-transformer';
-import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUrl, ValidateNested } from 'class-validator';
-import { UpdateAddressDto } from './update-address.dto';
+import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 
 export class UpdateFarmDto {
     @IsOptional()
@@ -43,16 +41,16 @@ export class UpdateFarmDto {
     @IsNotEmpty()
     coordinate: string;
 
-     @IsOptional()
+    @IsOptional()
     @IsArray()
     @IsString({ each: true })
-    // @IsUrl({}, { each: true })
-    profile_image: string[];  
+    certificate_image_urls: string[];
+
+    @IsString()
+    avatar_url: string;
 
     @IsOptional()
     @IsArray()
     @IsString({ each: true })
-    // @IsUrl({}, { each: true })
-    certificate_image: string[];
-
+    profile_image_urls: string[];
 }
