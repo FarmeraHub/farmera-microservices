@@ -525,8 +525,13 @@ export class UsersGrpcController implements UsersServiceController {
       if (request.first_name) profileData.first_name = request.first_name;
       if (request.last_name) profileData.last_name = request.last_name;
       if (request.phone) profileData.phone = request.phone;
-      if (request.gender)
+      if (request.gender) {
+        this.logger.log(
+          `gRPC received gender: ${request.gender} (type: ${typeof request.gender})`,
+        );
         profileData.gender = EnumsMapper.fromGrpcGender(request.gender);
+        this.logger.log(`Converted gender to: ${profileData.gender}`);
+      }
       if (request.avatar_url) profileData.avatar = request.avatar_url;
       if (request.birthday)
         profileData.birthday = TypesMapper.fromGrpcTimestamp(request.birthday);

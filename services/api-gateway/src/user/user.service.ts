@@ -33,6 +33,7 @@ import {
   AddUserLocationResponse,
   UsersServiceClient,
 } from '@farmera/grpc-proto/dist/users/users';
+import { Gender } from '@farmera/grpc-proto/dist/common/enums';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -104,7 +105,16 @@ export class UserService implements OnModuleInit {
         last_name: req.last_name,
         phone: req.phone,
         gender: req.gender
-          ? this.mapGenderToEnum(req.gender.toString())
+          ? (() => {
+              this.logger.log(`API Gateway received gender: ${req.gender}`);
+              const mappedGender = this.mapGenderStringToGrpcEnum(
+                req.gender.toString(),
+              );
+              this.logger.log(
+                `API Gateway mapped gender to: ${mappedGender} (type: ${typeof mappedGender})`,
+              );
+              return mappedGender;
+            })()
           : undefined,
         birthday: req.birthday
           ? {
@@ -433,13 +443,13 @@ export class UserService implements OnModuleInit {
     }
   }
 
-  private mapGenderToEnum(gender: string): number {
-    const genderMap: { [key: string]: number } = {
-      GENDER_MALE: 1,
-      GENDER_FEMALE: 2,
-      GENDER_OTHER: 3,
-      GENDER_PREFER_NOT_TO_SAY: 4,
+  private mapGenderStringToGrpcEnum(gender: string): Gender {
+    const genderMap: { [key: string]: Gender } = {
+      GENDER_MALE: Gender.GENDER_MALE,
+      GENDER_FEMALE: Gender.GENDER_FEMALE,
+      GENDER_OTHER: Gender.GENDER_OTHER,
+      GENDER_PREFER_NOT_TO_SAY: Gender.GENDER_PREFER_NOT_TO_SAY,
     };
-    return genderMap[gender] || 0; // 0 = GENDER_UNSPECIFIED
+    return genderMap[gender] || Gender.GENDER_UNSPECIFIED;
   }
 }
