@@ -17,8 +17,17 @@ import { Type } from 'class-transformer';
 import { UserRole } from 'src/enums/roles.enum';
 import { UserStatus } from 'src/enums/status.enum';
 import { PaymentProvider } from 'src/enums/payment_method.enum';
+import { Gender } from 'src/enums/gender.enum';
 
 export class CreateLocationDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
   @IsString()
   @IsNotEmpty()
   city: string;
@@ -46,6 +55,26 @@ export class CreateLocationDto {
   @IsBoolean()
   @IsOptional()
   is_primary?: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  latitude?: number;
+
+  @IsNumber()
+  @IsOptional()
+  longitude?: number;
+
+  @IsString()
+  @IsOptional()
+  country?: string;
+
+  @IsString()
+  @IsOptional()
+  postal_code?: string;
+
+  @IsString()
+  @IsOptional()
+  state?: string;
 }
 
 export class CreatePaymentMethodDto {
@@ -134,9 +163,9 @@ export class CreateUserDto {
   @IsOptional()
   farm_id?: number;
 
-  @IsString()
+  @IsEnum(Gender)
   @IsOptional()
-  gender?: string;
+  gender?: Gender;
 
   @IsString()
   @IsOptional()

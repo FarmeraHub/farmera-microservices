@@ -17,6 +17,7 @@ import { UserRole } from 'src/enums/roles.enum';
 import { HashService } from 'src/services/hash.service';
 import { UserStatus } from 'src/enums/status.enum';
 import { PaymentProvider } from 'src/enums/payment_method.enum';
+import { Gender } from 'src/enums/gender.enum';
 import { JwtDecoded } from 'src/guards/jwt.strategy';
 
 @Injectable()
@@ -32,7 +33,7 @@ export class UsersService {
     private verificationService: VerificationService,
 
     private hashService: HashService,
-  ) { }
+  ) {}
 
   async createUserSignUp(createUserSignUpDto: CreateUserSignUpDto) {
     console.log(createUserSignUpDto);
@@ -76,7 +77,6 @@ export class UsersService {
   }
 
   async getUserById(id: string) {
-
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ['locations', 'payment_methods'],
@@ -265,6 +265,8 @@ export class UsersService {
   async addUserLocation(
     userId: string,
     locationData: {
+      name?: string;
+      phone?: string;
       address_line: string;
       city: string;
       state: string;
@@ -286,10 +288,17 @@ export class UsersService {
 
     const newLocation = this.locationsRepository.create({
       user_id: parseInt(userId),
+      name: locationData.name,
+      phone: locationData.phone,
       city: locationData.city,
       district: locationData.state,
+      state: locationData.state,
       address_line: locationData.address_line,
       street: locationData.address_line,
+      postal_code: locationData.postal_code,
+      country: locationData.country,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude,
       is_primary: locationData.is_default || false,
       created_at: new Date(),
       updated_at: new Date(),

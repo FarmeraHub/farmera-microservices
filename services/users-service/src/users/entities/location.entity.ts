@@ -6,6 +6,12 @@ export class Location {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ nullable: true })
+  name: string; // Name associated with this address (e.g., recipient name)
+
+  @Column({ nullable: true })
+  phone: string; // Phone number for this address
+
   @Column({ nullable: false })
   city: string;
 
@@ -26,6 +32,21 @@ export class Location {
 
   @Column({ default: false })
   is_primary: boolean;
+
+  @Column({ nullable: true })
+  latitude: number;
+
+  @Column({ nullable: true })
+  longitude: number;
+
+  @Column({ nullable: true })
+  country: string;
+
+  @Column({ nullable: true })
+  postal_code: string;
+
+  @Column({ nullable: true })
+  state: string;
 
   @ManyToOne(() => User, (user) => user.locations)
   user: User;

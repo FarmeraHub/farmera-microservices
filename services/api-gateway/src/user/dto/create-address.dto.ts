@@ -9,6 +9,24 @@ import {
 
 export class CreateAddressDto {
   @ApiProperty({
+    example: 'John Doe',
+    description: 'Name associated with this address (e.g., recipient name)',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiProperty({
+    example: '+84901234567',
+    description: 'Phone number for this address',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty({
     example: 'Ho Chi Minh City',
     description: 'City name',
   })

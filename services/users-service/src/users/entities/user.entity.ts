@@ -1,5 +1,6 @@
 import { UserRole } from 'src/enums/roles.enum';
 import { UserStatus } from 'src/enums/status.enum';
+import { Gender } from 'src/enums/gender.enum';
 import {
   Column,
   Entity,
@@ -46,8 +47,13 @@ export class User {
   @Column({ nullable: true })
   farm_id: number;
 
-  @Column({ nullable: true })
-  gender: string;
+  @Column({
+    type: 'enum',
+    enum: Gender,
+    default: Gender.UNSPECIFIED,
+    nullable: true,
+  })
+  gender: Gender;
 
   @Column({ nullable: true })
   avatar: string;

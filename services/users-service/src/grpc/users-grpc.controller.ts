@@ -525,7 +525,8 @@ export class UsersGrpcController implements UsersServiceController {
       if (request.first_name) profileData.first_name = request.first_name;
       if (request.last_name) profileData.last_name = request.last_name;
       if (request.phone) profileData.phone = request.phone;
-      if (request.gender) profileData.gender = request.gender;
+      if (request.gender)
+        profileData.gender = EnumsMapper.fromGrpcGender(request.gender);
       if (request.avatar_url) profileData.avatar = request.avatar_url;
       if (request.birthday)
         profileData.birthday = TypesMapper.fromGrpcTimestamp(request.birthday);
@@ -557,6 +558,8 @@ export class UsersGrpcController implements UsersServiceController {
       const location = await this.usersService.addUserLocation(
         request.user_id,
         {
+          name: request.location?.name || '',
+          phone: request.location?.phone || '',
           address_line: request.location?.address_line || '',
           city: request.location?.city || '',
           state: request.location?.state || '',
