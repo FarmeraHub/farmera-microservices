@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmAsyncConfig } from './config/typeorm.config';
-import { Or } from 'typeorm';
 import { OrdersModule } from './orders/orders.module';
 import productServiceConfig from './config/product-service.config';
 import { PaymentModule } from './payments/payment.module';
@@ -12,6 +11,7 @@ import { DiscountModule } from './discounts/discount.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { PaymentGrpcServerModule } from './grpc/server/payment-grpc.server.module';
 import { PaymentGrpcClientModule } from './grpc/client/grpc-client.module';
+import { NotificationModule } from './clients/notification/notification.module';
 
 @Module({
   imports: [
@@ -26,7 +26,8 @@ import { PaymentGrpcClientModule } from './grpc/client/grpc-client.module';
     DiscountModule,
     DeliveryModule,
     PaymentGrpcServerModule,
-    PaymentGrpcClientModule,
+    PaymentGrpcClientModule, ,
+    NotificationModule
 
   ],
   controllers: [AppController],

@@ -1,6 +1,5 @@
-import { Timestamp as GrpcTimestamp, ProductOptions as GrpcProductOptions, NotificationEmail, NotificationAttachment, StringMap } from "@farmera/grpc-proto/dist/common/types"
-import { Attachment, Email } from "src/notification/notification/entities/email.entity";
-import { ProductOptions } from "src/product/product/dto/product-options.dto";
+import { Timestamp as GrpcTimestamp, NotificationAttachment, NotificationEmail, StringMap } from "@farmera/grpc-proto/dist/common/types"
+import { Attachment, Email } from "src/clients/notification/entities/email.entity";
 
 export class TypesMapper {
     // Convert Date to GrpcTimestamp
@@ -23,20 +22,11 @@ export class TypesMapper {
 
 
     // Convert GrpcTimestamp to Date
-    static fromGrpcTimestamp(timestamp: GrpcTimestamp): Date | undefined {
+    static fromGrpcTimestamp(timestamp: GrpcTimestamp | undefined): Date | undefined {
         if (!timestamp?.value) return undefined;
         return new Date(
             timestamp.value.seconds * 1000 + timestamp.value.nanos / 1000000,
         );
-    }
-
-    static toGrpcProductOptions(value?: ProductOptions): GrpcProductOptions | undefined {
-        if (!value) return undefined;
-        return {
-            include_farm: value.include_farm,
-            include_categories: value.include_categories,
-            include_processes: value.include_processes,
-        }
     }
 
     static toGrpcStringMap(value?: { [key: string]: string }): StringMap | undefined {

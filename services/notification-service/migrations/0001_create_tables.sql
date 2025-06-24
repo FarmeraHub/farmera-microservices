@@ -4,9 +4,9 @@ DROP TABLE IF EXISTS notifications;
 
 DROP TABLE IF EXISTS templates;
 
-DROP TABLE IF EXISTS user_preferences;
-
 DROP TABLE IF EXISTS user_device_token;
+
+DROP TABLE IF EXISTS user_preferences;
 
 CREATE TABLE user_notifications (
     id BIGSERIAL PRIMARY KEY,
