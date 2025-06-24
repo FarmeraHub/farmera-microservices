@@ -44,7 +44,7 @@ export class NotificationService {
             return NotificationMapper.fromGrpcTemplate(result);
         }
         catch (err) {
-            this.logger.error(`[createUserPreferences] ${err.message}`);
+            this.logger.debug(`[createUserPreferences] ${err.message}`);
             throw ErrorMapper.fromGrpcError(err);
         }
     }

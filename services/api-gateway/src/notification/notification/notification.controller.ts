@@ -8,7 +8,7 @@ export class NotificationController {
 
     constructor(private readonly notificationService: NotificationService) { }
 
-    @Get("template:/template_id")
+    @Get("template/:template_id")
     async getTemplate(@Param("template_id") templateId: number) {
         return await this.notificationService.getTemplate(templateId);
     }

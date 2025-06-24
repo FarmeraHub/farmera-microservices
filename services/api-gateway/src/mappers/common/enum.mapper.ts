@@ -119,9 +119,9 @@ export class EnumMapper {
     }
 
     static fromGrpcNotificationChannel(value: GrpcNotificationChannel): NotificationChannel {
-        switch (value) {
-            case GrpcNotificationChannel.EMAIL: return NotificationChannel.EMAIL;
-            case GrpcNotificationChannel.PUSH: return NotificationChannel.PUSH;
+        switch (value.toString()) {
+            case "EMAIL": return NotificationChannel.EMAIL;
+            case "PUSH": return NotificationChannel.PUSH;
             default: throw new BadRequestException("Invalid Notification Channel");
         }
     }

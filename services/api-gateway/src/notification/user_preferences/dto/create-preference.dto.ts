@@ -10,14 +10,17 @@ export class CreateUserNotiPreferenceDto {
 
     @IsArray()
     @IsEnum(NotificationChannel, { each: true })
+    @IsOptional()
     transactional_channels: NotificationChannel[] = [NotificationChannel.EMAIL, NotificationChannel.PUSH];
 
     @IsArray()
     @IsEnum(NotificationChannel, { each: true })
+    @IsOptional()
     system_alert_channels: NotificationChannel[] = [NotificationChannel.EMAIL, NotificationChannel.PUSH];
 
     @IsArray()
     @IsEnum(NotificationChannel, { each: true })
+    @IsOptional()
     chat_channels: NotificationChannel[] = [NotificationChannel.PUSH];
 
     @IsOptional()

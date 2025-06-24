@@ -5,13 +5,15 @@ import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { CreateDeviceTokenDto } from './dto/create-device.dto';
 import { UserPreferencesService } from './user_preferences.service';
 import { UpdateUserNotiPreferenceDto } from './dto/update-preference.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 
 
-@Controller('user-preferences')
+@Controller('user-notification-preferences')
 export class UserPreferencesController {
 
     constructor(private readonly userPreferenceService: UserPreferencesService) { }
 
+    @Public()
     @Post()
     async createUserPreferences(@Body() createPreferenceDto: CreateUserNotiPreferenceDto) {
         return await this.userPreferenceService.createUserPreferences(createPreferenceDto);
@@ -27,11 +29,13 @@ export class UserPreferencesController {
         return await this.userPreferenceService.updateUserPreferences(user.id, updateDto);
     }
 
+    @Public()
     @Post("device")
     async registerDeviceToken(@Body() createDeviceDto: CreateDeviceTokenDto) {
         return await this.userPreferenceService.registerDevice(createDeviceDto);
     }
 
+    @Public()
     @Delete("device/:user_id/:token")
     async deleteDeviceToken(@Param("user_id") userId: string, @Param("token") token: string) {
         return await this.userPreferenceService.deleteUserDeviceToken(userId, token);

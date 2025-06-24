@@ -61,7 +61,7 @@ export class UserPreferencesService {
 
     async updateUserPreferences(userId: string, dto: UpdateUserNotiPreferenceDto): Promise<UserNotiPreference> {
         try {
-            const result = await firstValueFrom(this.notificationGrpcService.createUserPreferences({
+            const result = await firstValueFrom(this.notificationGrpcService.updateUserPreferences({
                 user_id: userId,
                 user_email: dto.user_email,
                 transactional_channels: dto.transactional_channels.map((value) => EnumMapper.toGrpcNotificationChannel(value)),
