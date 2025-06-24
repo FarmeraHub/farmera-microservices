@@ -15,16 +15,18 @@ message Timestamp {
 message Location {
   string id = 1;
   string user_id = 2;
-  string address_line = 3;
-  string city = 4;
-  string state = 5;
-  string postal_code = 6;
-  string country = 7;
-  double latitude = 8;
-  double longitude = 9;
-  bool is_default = 10;
-  Timestamp created_at = 11;
-  Timestamp updated_at = 12;
+  string name = 3;  // Name associated with this address (e.g., recipient name)
+  string phone = 4; // Phone number for this address
+  string address_line = 5;
+  string city = 6;
+  string state = 7;
+  string postal_code = 8;
+  string country = 9;
+  double latitude = 10;
+  double longitude = 11;
+  bool is_default = 12;
+  Timestamp created_at = 13;
+  Timestamp updated_at = 14;
 }
 
 // Geohash location for spatial queries

@@ -6,13 +6,7 @@ import {
   IsEnum,
   IsDateString,
 } from 'class-validator';
-
-export enum Gender {
-  MALE = 'GENDER_MALE',
-  FEMALE = 'GENDER_FEMALE',
-  OTHER = 'GENDER_OTHER',
-  PREFER_NOT_TO_SAY = 'GENDER_PREFER_NOT_TO_SAY',
-}
+import { Gender } from '../../common/enums/gender.enum';
 
 export class UpdateProfileDto {
   @ApiProperty({
