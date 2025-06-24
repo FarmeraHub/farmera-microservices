@@ -279,13 +279,13 @@ export class UsersService {
 
     if (locationData.is_default) {
       await this.locationsRepository.update(
-        { user_id: parseInt(userId) },
+        { user_id: userId },
         { is_primary: false },
       );
     }
 
     const newLocation = this.locationsRepository.create({
-      user_id: parseInt(userId),
+      user_id: userId,
       city: locationData.city,
       district: locationData.state,
       address_line: locationData.address_line,
@@ -303,7 +303,7 @@ export class UsersService {
     await this.getUserById(userId);
 
     return this.locationsRepository.find({
-      where: { user_id: parseInt(userId) },
+      where: { user_id: userId },
       order: { is_primary: 'DESC', created_at: 'DESC' },
     });
   }
@@ -340,6 +340,13 @@ export class UsersService {
     return { success: true, message: 'Location deleted successfully' };
   }
 
+  async findLocationById(locationId: number) {
+    return await this.locationsRepository.findOne({
+      where: { id: locationId },
+    });
+
+   
+  }
   // Payment Method Management
   async addPaymentMethod(
     userId: string,

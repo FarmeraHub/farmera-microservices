@@ -1,4 +1,4 @@
-import { DeliveryStatus } from "src/common/enums/delivery.enum";
+import { DeliveryStatus } from "src/common/enums/payment/delivery.enum";
 
 export class CreateDeliveryDto {
     status: DeliveryStatus;

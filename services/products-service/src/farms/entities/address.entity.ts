@@ -28,7 +28,7 @@ export class Address {
   @OneToOne(() => Farm, (farm) => farm.address)
   farm: Farm;
 
-  @OneToOne(() => AddressGHN, (addressGHN) => addressGHN.id)
+  @OneToOne(() => AddressGHN, (addressGHN) => addressGHN.address_ghn)
   @JoinColumn({ name: 'address_ghn_id' })
   address_ghn: AddressGHN;
 }

@@ -31,7 +31,7 @@ export class Location {
   user: User;
 
   @Column()
-  user_id: number;
+  user_id: string;
 
   @Column({ nullable: true })
   created_at: Date;

@@ -121,7 +121,7 @@ message GetProductResponse {
 }
 
 message GetListProductsRequest{
-  int32 product_id = 1;
+  repeated int32 product_ids = 1;
   optional farmera.common.PaginationRequest pagination = 2;
   optional farmera.common.ProductOptions options = 3;
 }

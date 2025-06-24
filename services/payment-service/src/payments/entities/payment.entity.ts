@@ -1,6 +1,6 @@
-import { PaymentMethod, PaymentStatus } from "src/common/enums/payment.enum";
+import { PaymentMethod, PaymentStatus } from "src/common/enums/payment/payment.enum";
 import { Order } from "src/orders/entities/order.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne,  OneToOne,  PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('payment')
 export class Payment {
@@ -24,7 +24,7 @@ export class Payment {
         enum: PaymentStatus,
         default: PaymentStatus.PENDING,
     })
-    status: PaymentStatus; 
+    status: PaymentStatus;
     @Column()
     transaction_id: string;
     @Column()

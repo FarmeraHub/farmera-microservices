@@ -42,7 +42,7 @@ import { GrpcModule } from './grpc/grpc.module';
         database: configService.get<string>('DB_NAME'),
         entities: [join(__dirname, '**', '*.entity{.ts,.js}')],
         synchronize: configService.get<boolean>('DB_SYNC'),
-        ssl: configService.get<boolean>('DB_SSL', true),
+        // ssl: configService.get<boolean>('DB_SSL', true),
       }),
     }),
     AuthModule,
@@ -78,7 +78,7 @@ import { GrpcModule } from './grpc/grpc.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class GrpcAppModule {}
+export class GrpcAppModule { }
 
 async function bootstrap() {
   const logger = new Logger('GrpcMain');

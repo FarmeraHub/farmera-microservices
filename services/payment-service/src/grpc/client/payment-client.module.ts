@@ -1,8 +1,10 @@
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { Module } from "@nestjs/common";
 import { join } from "path";
-import { PaymentGrpcClientService } from "./payment-grpc.client.service";
+import { ProductsGrpcClientService } from "./product.service";
 import { PaymentGrpcClientController } from "./payment-grpc.client.controller";
+import { TestController } from "./test.controller";
+import { UserGrpcClientService } from "./user.service";
 
 @Module({
     imports: [
@@ -40,13 +42,13 @@ import { PaymentGrpcClientController } from "./payment-grpc.client.controller";
                         includeDirs: [join(__dirname, '../../../../../shared/grpc-protos')],
                     },
                 },
-            
+
             }
         ]),
     ],
-    controllers: [PaymentGrpcClientController],
-    providers: [PaymentGrpcClientService],
-    exports: [],
+    controllers: [PaymentGrpcClientController,TestController],
+    providers: [ProductsGrpcClientService, UserGrpcClientService],
+    exports: [ProductsGrpcClientService, UserGrpcClientService],
 
 })
-export class PaymentGrpcClientModule { }
+export class PaymentClientModule { }

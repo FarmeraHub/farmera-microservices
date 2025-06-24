@@ -370,6 +370,40 @@ export class ProductsService implements OnModuleInit {
         }
     }
 
+    async findProductsByIds(productIds: number[], productOptions?: ProductOptions): Promise<Product[]> {
+        try {
+            const relationsToLoads: string[] = [];
+            if (productOptions?.include_farm) {
+                relationsToLoads.push(...[
+                    'farm',
+                    'farm.address',
+                    'farm.address.address_ghn'
+                ]);
+            }
+            if (productOptions?.include_categories) relationsToLoads.push('subcategories');
+            if (productOptions?.include_processes) relationsToLoads.push('processes');
+
+            this.logger.log(`(relationsToLoads) Đang tải các quan hệ: ${relationsToLoads.join(', ')}`);
+            const products = await this.productsRepository.find({
+                where: { product_id: In(productIds), status: Not(ProductStatus.DELETED) },
+                relations: relationsToLoads,
+            });
+
+            if (!products || products.length === 0) {
+                this.logger.error(`(findProductsByIds) Không tìm thấy sản phẩm với ID: ${productIds.join(', ')}`);
+                throw new NotFoundException("Không tìm thấy sản phẩm");
+            }
+            this.logger.log(`(findProductsByIds) Tìm thấy ${products.length} sản phẩm với ID: ${productIds.join(', ')}`);
+            this.logger.log(`(Products) ${JSON.stringify(products, null, 2)}`);
+            return products;
+        }
+        catch (err) {
+            if (err instanceof NotFoundException) throw err;
+            this.logger.error(err.message);
+            throw new InternalServerErrorException("Không thể tìm kiếm sản phẩm");
+        }
+    }
+
     async findProductsByFarmId(farmId: string, productOptions?: ProductOptions, paginationOptions?: PaginationOptions): Promise<PaginationResult<Product>> {
         try {
             if (!paginationOptions) {

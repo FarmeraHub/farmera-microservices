@@ -1,4 +1,4 @@
-import { DiscountStatus, DiscountType } from "src/common/enums/discount.enum";
+import { DiscountStatus, DiscountType } from "src/common/enums/payment/discount.enum";
 import { DiscountUsage } from "src/discounts/entities/discount-usage.entity";
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 

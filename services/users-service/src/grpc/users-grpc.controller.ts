@@ -13,6 +13,8 @@ import {
   DeleteUserResponse,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
+  GetLocationByIdRequest,
+  GetLocationByIdResponse,
   GetPaymentMethodsRequest,
   GetPaymentMethodsResponse,
   GetUserLocationsRequest,
@@ -79,7 +81,7 @@ export class UsersGrpcController implements UsersServiceController {
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
     private readonly verificationService: VerificationService,
-  ) {}
+  ) { }
 
   @Public()
   async login(request: LoginRequest): Promise<LoginResponse> {
@@ -341,8 +343,8 @@ export class UsersGrpcController implements UsersServiceController {
         filters.created_date_range = {
           start_time: request.created_date_range.start_time
             ? TypesMapper.fromGrpcTimestamp(
-                request.created_date_range.start_time,
-              )
+              request.created_date_range.start_time,
+            )
             : undefined,
           end_time: request.created_date_range.end_time
             ? TypesMapper.fromGrpcTimestamp(request.created_date_range.end_time)
@@ -813,5 +815,34 @@ export class UsersGrpcController implements UsersServiceController {
         message: error.message || 'Failed to get user locations',
       });
     }
+  }
+
+  @Public()
+  async getLocationById(request: GetLocationByIdRequest): Promise<GetLocationByIdResponse> {
+    
+    try {
+      this.logger.log(`gRPC GetLocationById request for location: ${request.id}`);
+
+      const location = await this.usersService.findLocationById(Number(request.id));
+
+      if (!location) {
+        throw new RpcException({
+          code: status.NOT_FOUND,
+          message: 'Location not found',
+        });
+      }
+
+      return {
+        location: LocationMapper.toGrpcLocation(location),
+      };
+      
+    } catch (error) {
+      this.logger.error(`GetLocationByUser error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to get user location',
+      });
+    }
+  
   }
 }

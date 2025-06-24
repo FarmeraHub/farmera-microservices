@@ -42,6 +42,7 @@ service UsersService {
   rpc UpdateUserLocation(UpdateUserLocationRequest) returns (UpdateUserLocationResponse);
   rpc DeleteUserLocation(DeleteUserLocationRequest) returns (DeleteUserLocationResponse);
   rpc GetUserLocations(GetUserLocationsRequest) returns (GetUserLocationsResponse);
+  rpc GetLocationById(GetLocationByIdRequest) returns (GetLocationByIdResponse);
   
   // Payment methods
   rpc AddPaymentMethod(AddPaymentMethodRequest) returns (AddPaymentMethodResponse);
@@ -410,3 +411,10 @@ message UserStatistics {
   int32 verified_users = 7;
   int32 unverified_users = 8;
 } 
+
+message GetLocationByIdRequest{
+  string id  = 1;
+}
+message GetLocationByIdResponse{
+  farmera.common.Location location = 1;
+}
