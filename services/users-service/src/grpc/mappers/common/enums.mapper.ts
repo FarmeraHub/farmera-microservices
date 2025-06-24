@@ -31,7 +31,24 @@ export class EnumsMapper {
     }
   }
 
-  static fromGrpcGender(grpcGender: GrpcGender): Gender {
+  static fromGrpcGender(grpcGender: GrpcGender | string): Gender {
+    // Handle both enum values and string values that might come through gRPC
+    if (typeof grpcGender === 'string') {
+      switch (grpcGender.toLowerCase()) {
+        case 'gender_male':
+          return Gender.MALE;
+        case 'gender_female':
+          return Gender.FEMALE;
+        case 'gender_other':
+          return Gender.OTHER;
+        case 'gender_prefer_not_to_say':
+          return Gender.PREFER_NOT_TO_SAY;
+        default:
+          return Gender.UNSPECIFIED;
+      }
+    }
+
+    // Handle enum values (numbers)
     switch (grpcGender) {
       case GrpcGender.GENDER_MALE:
         return Gender.MALE;

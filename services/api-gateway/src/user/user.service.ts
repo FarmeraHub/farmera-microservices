@@ -113,6 +113,9 @@ export class UserService implements OnModuleInit {
               this.logger.log(
                 `API Gateway mapped gender to: ${mappedGender} (type: ${typeof mappedGender})`,
               );
+              this.logger.log(
+                `Gender enum values: GENDER_MALE=${Gender.GENDER_MALE}, GENDER_FEMALE=${Gender.GENDER_FEMALE}`,
+              );
               return mappedGender;
             })()
           : undefined,
@@ -129,6 +132,10 @@ export class UserService implements OnModuleInit {
         preferences: {}, // Can be extended
         avatar_url: req.avatar_url,
       };
+
+      this.logger.log(
+        `Final gRPC request object: ${JSON.stringify(grpcRequest, null, 2)}`,
+      );
 
       const result = await firstValueFrom(
         this.usersGrpcService.updateUserProfile(grpcRequest),
