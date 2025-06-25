@@ -25,4 +25,7 @@ FROM alpine:latest
 COPY --from=builder /app/services/communication-service/target/x86_64-unknown-linux-musl/release/grpc-server /usr/local/bin
 COPY --from=builder /app/services/communication-service/migrations ./migrations
 
+EXPOSE 3005
+EXPOSE 50055
+
 ENTRYPOINT ["/usr/local/bin/grpc-server"]

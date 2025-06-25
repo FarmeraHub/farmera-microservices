@@ -74,6 +74,7 @@ import { ErrorMapper } from './mappers/common/error.mapper';
 import { CreateLocationDto } from 'src/users/dto/create-location.dto';
 import { Observable } from 'rxjs';
 import { UpdateAddressDto } from 'src/users/dto/update-address.dto';
+import { UpdatePaymentMethodDto } from 'src/users/dto/payment-method.dto';
 
 @Controller()
 @UsersServiceControllerMethods()
@@ -520,6 +521,7 @@ export class UsersGrpcController implements UsersServiceController {
   ): Promise<DeleteUserLocationResponse> {
     try {
       const result = await this.usersService.deleteUserLocation(
+        request.user_id,
         request.location_id,
       );
 
@@ -590,6 +592,59 @@ export class UsersGrpcController implements UsersServiceController {
     } catch (error) {
       this.logger.error(`AddPaymentMethod error: ${error.message}`);
       throw ErrorMapper.toRpcException(error);
+    }
+  }
+
+  async updatePaymentMethod(
+    request: UpdatePaymentMethodRequest,
+  ): Promise<UpdatePaymentMethodResponse> {
+    try {
+      this.logger.log(
+        `gRPC UpdatePaymentMethod request for user: ${request.user_id}, payment method: ${request.id}`,
+      );
+
+      if (!request.id) {
+        throw new RpcException({
+          code: status.INVALID_ARGUMENT,
+          message: 'Payment method data is required',
+        });
+      }
+
+      const paymentData: UpdatePaymentMethodDto = {
+        provider: EnumsMapper.fromGrpcPaymentProvider(request.provider),
+        external_id: request.external_id,
+        last_four: request.last_four,
+        cardholder_name: request.cardholder_name,
+        is_default: request.is_default,
+        expiry_date: request.expiry_date,
+        card_type: request.card_type,
+        billing_address: request.billing_address,
+        token: request.token,
+        is_active: request.is_active,
+      };
+
+      const paymentMethod = await this.usersService.updatePaymentMethod(
+        request.user_id,
+        request.id,
+        paymentData,
+      );
+
+      if (!paymentMethod) {
+        throw new RpcException({
+          code: status.NOT_FOUND,
+          message: 'Payment method not found',
+        });
+      }
+
+      return {
+        payment_method: PaymentMapper.toGrpcPaymentMethod(paymentMethod),
+      };
+    } catch (error) {
+      this.logger.error(`UpdatePaymentMethod error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to update payment method',
+      });
     }
   }
 

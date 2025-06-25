@@ -50,4 +50,9 @@ export class CreatePaymentDto {
     @IsBoolean()
     @IsOptional()
     is_default?: boolean = true;
+
+    @ApiProperty({ example: true, description: 'Is this the active payment method?', required: false })
+    @IsBoolean()
+    @IsOptional()
+    is_active?: boolean = true;
 }

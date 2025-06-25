@@ -28,29 +28,16 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    env_file:
+      - ./.env
     environment:
-      - SERVER_ADDRESS=0.0.0.0
-      - SERVER_PORT=3004
-      - GRPC_SERVER_ADDRESS=0.0.0.0
-      - GRPC_PORT=50054
-      - BROKERS=kafka:9092
-      - PG_DATABASE_URL=postgresql://postgres:123@postgres:5432/notification
       - GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json
-      - FCM_PROJECT_ID=<project_id>
-      - SENDGRID_API_KEY=<key>
     volumes:
-      - <path to GOOGLE APPLICATION CREDENTIALS json file>:/app/creds.json
+      - ./fmcdemo-32a22-e1c2cd5a5769.json:/app/creds.json
     ports:
       - "3004:3004"
       - "50054:50054"
     networks:
       - notification-network
+    restart: unless-stopped
 
-  postgres:
-    image: postgres:latest
-    environment:
-      - POSTGRES_DB=notification
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=123
-    networks:
-      - notification-network

@@ -46,7 +46,7 @@ service UsersService {
   
   // Payment methods
   rpc AddPaymentMethod(AddPaymentMethodRequest) returns (AddPaymentMethodResponse);
-  // rpc UpdatePaymentMethod(UpdatePaymentMethodRequest) returns (UpdatePaymentMethodResponse);
+  rpc UpdatePaymentMethod(UpdatePaymentMethodRequest) returns (UpdatePaymentMethodResponse);
   rpc DeletePaymentMethod(DeletePaymentMethodRequest) returns (DeletePaymentMethodResponse);
   rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
   
@@ -327,7 +327,8 @@ message UpdateUserLocationResponse {
 }
 
 message DeleteUserLocationRequest {
-  int32 location_id = 1;
+  string user_id = 1;
+  int32 location_id = 2;
 }
 
 message DeleteUserLocationResponse {
@@ -362,8 +363,17 @@ message AddPaymentMethodResponse {
 
 message UpdatePaymentMethodRequest {
   string user_id = 1;
-  string payment_method_id = 2;
-  PaymentMethod payment_method = 3;
+  int32 id = 2;
+  farmera.common.PaymentProvider provider = 3;
+  string external_id = 4;
+  string last_four = 5;
+  string card_type = 6;
+  string expiry_date = 7;
+  string cardholder_name = 8;
+  string billing_address = 9;
+  string token = 10;
+  bool is_default = 11;
+  bool is_active = 12;
 }
 
 message UpdatePaymentMethodResponse {

@@ -27,6 +27,21 @@ export class Location {
   @Column({ default: false })
   is_primary: boolean;
 
+  @Column({ nullable: true })
+  latitude: number;
+
+  @Column({ nullable: true })
+  longitude: number;
+
+  @Column({ nullable: true })
+  country: string;
+
+  @Column({ nullable: true })
+  postal_code: string;
+
+  @Column({ nullable: true })
+  state: string;
+
   @ManyToOne(() => User, (user) => user.locations)
   @JoinColumn({ name: 'user_id' })
   user: User;

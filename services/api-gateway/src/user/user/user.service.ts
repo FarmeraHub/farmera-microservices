@@ -22,6 +22,7 @@ import { UpdateAddressDto } from './dto/update-address.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentMapper } from 'src/mappers/users/payment.mapper';
 import { PaymentMethod } from './entities/payment_method.entity';
+import { UpdatePaymentMethodDto } from './dto/update-payment.dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -150,10 +151,11 @@ export class UserService implements OnModuleInit {
     }
   }
 
-  async deleteUserAddress(locationId: number): Promise<boolean> {
+  async deleteUserAddress(userId: string, locationId: number): Promise<boolean> {
     try {
       const result = await firstValueFrom(
         this.usersGrpcService.deleteUserLocation({
+          user_id: userId,
           location_id: locationId,
         }),
       );
@@ -219,6 +221,40 @@ export class UserService implements OnModuleInit {
       return result.payment_methods.map(paymentMethod => PaymentMapper.fromGrpcPaymentMethod(paymentMethod));
     } catch (error) {
       this.logger.error(`Get user payment methods failed: ${error.message}`);
+      throw ErrorMapper.fromGrpcError(error);
+    }
+  }
+
+  async updatePaymentMethod(userId: string, paymentMethodId: number, req: UpdatePaymentMethodDto) {
+    try {
+      if (!userId) {
+        throw new UnauthorizedException('User not authenticated');
+      }
+
+      this.logger.log(
+        `Updating payment method for user: ${userId}, payment method: ${paymentMethodId}`,
+      );
+
+      const result = await firstValueFrom(
+        this.usersGrpcService.updatePaymentMethod({
+          user_id: userId,
+          id: paymentMethodId,
+          provider: EnumMapper.toGrpcPaymentProvider(req.provider),
+          external_id: req.external_id,
+          last_four: req.last_four,
+          card_type: req.card_type,
+          expiry_date: req.expiry_date,
+          cardholder_name: req.cardholder_name,
+          billing_address: req.billing_address,
+          token: req.token,
+          is_default: req.is_default,
+          is_active: req.is_active,
+        }),
+      );
+
+      return PaymentMapper.fromGrpcPaymentMethod(result.payment_method);
+    } catch (error) {
+      this.logger.error(`Update payment method failed: ${error.message}`);
       throw ErrorMapper.fromGrpcError(error);
     }
   }

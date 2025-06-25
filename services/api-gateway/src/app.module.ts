@@ -14,6 +14,7 @@ import { MediaModule } from './media/media.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ProductModule } from './product/product.module';
 import { CommunicationModule } from './communication/communication.module';
+import { NotificationModule } from './notification/notification.module';
 import { PaymentModule } from './payment/payment.module';
 
 @Module({
@@ -66,6 +67,7 @@ import { PaymentModule } from './payment/payment.module';
     ProxyModule,
     ProductModule,
     CommunicationModule,
+    NotificationModule,
     PaymentModule,
   ],
   controllers: [AppController],

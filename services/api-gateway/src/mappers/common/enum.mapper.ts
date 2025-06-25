@@ -1,4 +1,4 @@
-import { FarmStatus as GrpcFarmStatus, MessageType as GrpcMessageType, IdentificationStatus as GrpcIdentificationStatus, IdentificationMethod as GrpcIdentificationMethod, ProductStatus as GrpcProductStatus, PaginationOrder, ProcessStage as GrpcProcessStage, Gender as GrpcGender, UserRole as GrpcUserRole, UserStatus as GrpcUserStatus, PaymentProvider as GrpcPaymentProvider } from "@farmera/grpc-proto/dist/common/enums";
+import { FarmStatus as GrpcFarmStatus, MessageType as GrpcMessageType, IdentificationStatus as GrpcIdentificationStatus, IdentificationMethod as GrpcIdentificationMethod, ProductStatus as GrpcProductStatus, PaginationOrder, ProcessStage as GrpcProcessStage, Gender as GrpcGender, UserRole as GrpcUserRole, UserStatus as GrpcUserStatus, PaymentProvider as GrpcPaymentProvider, NotificationChannel as GrpcNotificationChannel, NotificationType as GrpcNotificationType } from "@farmera/grpc-proto/dist/common/enums";
 import { MessageType } from "src/communication/enums/message-type.enums";
 import { FarmStatus } from "src/common/enums/product/farm-status.enum";
 import { ProductStatus } from "src/common/enums/product/product-status.enum";
@@ -6,6 +6,8 @@ import { IdentificationMethod, IdentificationStatus } from "src/product/farm/ent
 import { Order } from "src/pagination/dto/pagination-options.dto";
 import { ProcessStage } from "src/common/enums/product/process-stage.enum";
 import { BadRequestException } from "@nestjs/common";
+import { NotificationChannel } from "src/common/enums/notification/notification-channel.enum";
+import { NotificationType } from "src/common/enums/notification/notification_type";
 import { Gender } from "src/common/enums/user/gender.enum";
 import { UserRole } from "src/common/enums/user/roles.enum";
 import { UserStatus } from "src/common/enums/user/status.enum";
@@ -108,6 +110,42 @@ export class EnumMapper {
             case "PROCESS_STAGE_PRODUCTION": return ProcessStage.PRODUCTION;
             case "PROCESS_STAGE_COMPLETION": return ProcessStage.COMPLETION;
             default: throw new BadRequestException("Invalid process stage");
+        }
+    }
+
+    static toGrpcNotificationChannel(value: NotificationChannel): GrpcNotificationChannel {
+        if (!value) return undefined;
+        switch (value) {
+            case NotificationChannel.EMAIL: return GrpcNotificationChannel.EMAIL;
+            case NotificationChannel.PUSH: return GrpcNotificationChannel.PUSH;
+            default: return GrpcNotificationChannel.CHANNEL_UNSPECIFIED;
+        }
+    }
+
+    static fromGrpcNotificationChannel(value: GrpcNotificationChannel): NotificationChannel {
+        switch (value.toString()) {
+            case "EMAIL": return NotificationChannel.EMAIL;
+            case "PUSH": return NotificationChannel.PUSH;
+            default: throw new BadRequestException("Invalid Notification Channel");
+        }
+    }
+
+    static toGrpcNotificationType(value: NotificationType): GrpcNotificationType {
+        switch (value) {
+            case NotificationType.TRANSACTIONAL: return GrpcNotificationType.TRANSACTIONAL;
+            case NotificationType.SYSTEM_ALERT: return GrpcNotificationType.SYSTEM_ALERT;
+            case NotificationType.CHAT: return GrpcNotificationType.CHAT;
+            default: return GrpcNotificationType.NOTIFICATION_TYPE_UNSPECIFIED;
+        }
+    }
+
+    static fromGrpcNotificationType(value: GrpcNotificationType | undefined): NotificationType {
+        if (!value) return NotificationType.NOTIFICATION_TYPE_UNSPECIFIED;
+        switch (value.toString()) {
+            case "TRANSACTIONAL": return NotificationType.TRANSACTIONAL;
+            case "SYSTEM_ALERT": return NotificationType.SYSTEM_ALERT;
+            case "CHAT": return NotificationType.CHAT;
+            default: return NotificationType.NOTIFICATION_TYPE_UNSPECIFIED;
         }
     }
 

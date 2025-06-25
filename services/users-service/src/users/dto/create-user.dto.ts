@@ -17,6 +17,7 @@ import { UserRole } from 'src/enums/roles.enum';
 import { UserStatus } from 'src/enums/status.enum';
 import { CreateLocationDto } from './create-location.dto';
 import { CreatePaymentDto } from './create-payment.dto';
+import { Gender } from 'src/enums/gender.enum';
 
 
 export class CreateUserDto {
@@ -59,9 +60,9 @@ export class CreateUserDto {
   @IsOptional()
   farm_id?: number;
 
-  @IsString()
+  @IsEnum(Gender)
   @IsOptional()
-  gender?: string;
+  gender?: Gender;
 
   @IsString()
   @IsOptional()

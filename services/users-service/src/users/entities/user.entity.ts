@@ -38,7 +38,12 @@ export class User {
   @Column({ nullable: true })
   farm_id?: string;
 
-  @Column({ nullable: true, enum: Gender })
+  @Column({
+    type: 'enum',
+    enum: Gender,
+    default: Gender.UNSPECIFIED,
+    nullable: true,
+  })
   gender: Gender;
 
   @Column({ nullable: true })

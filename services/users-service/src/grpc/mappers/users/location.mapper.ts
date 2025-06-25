@@ -3,18 +3,18 @@ import { UserLocation as GrpcUserLocation } from "@farmera/grpc-proto/dist/commo
 import { TypesMapper } from "../common/types.mapper";
 
 export class LocationMapper {
-    static toGrpcLocation(location: Location): GrpcUserLocation {
-        return {
-            id: location.location_id,
-            city: location.city,
-            district: location.district,
-            ward: location.ward,
-            street: location.street,
-            address_line: location.address_line,
-            type: location.type,
-            is_primary: location.is_primary,
-            created_at: TypesMapper.toGrpcTimestamp(location.created_at),
-            updated_at: TypesMapper.toGrpcTimestamp(location.updated_at),
-        };
-    }
+  static toGrpcLocation(location: Location): GrpcUserLocation {
+    return {
+      id: location.location_id,
+      city: location.city,
+      district: location.district,
+      ward: location.ward,
+      street: location.street,
+      address_line: location.address_line,
+      type: location.type,
+      is_primary: location.is_primary,
+      created_at: TypesMapper.toGrpcTimestamp(location.created_at),
+      updated_at: TypesMapper.toGrpcTimestamp(location.updated_at),
+    };
+  }
 }

@@ -1,6 +1,6 @@
 use std::{pin::pin, time::Duration};
 
-use actix_ws::AggregatedMessage;
+use actix_ws::{AggregatedMessage, CloseCode, CloseReason};
 use futures_util::{
     future::{select, Either},
     StreamExt,
@@ -53,7 +53,15 @@ impl WSHandler {
                     .await;
                 id
             }
-            None => return,
+            None => {
+                let _ = session
+                    .close(Some(CloseReason {
+                        code: CloseCode::Error,
+                        description: Some("Unable to establish connection".into()),
+                    }))
+                    .await;
+                return;
+            }
         };
 
         // set limits and customize how data is proccessed

@@ -17,6 +17,7 @@ import { JwtDecoded } from 'src/guards/jwt.strategy';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
+import { UpdatePaymentMethodDto } from './dto/payment-method.dto';
 
 @Injectable()
 export class UsersService {
@@ -304,6 +305,14 @@ export class UsersService {
       throw new NotFoundException(`Location with ID ${locationId} not found`);
     }
 
+    // If setting this as primary, unset other primary locations for this user
+    if (locationData.is_primary) {
+      await this.locationsRepository.update(
+        { user: { id: userId } },
+        { is_primary: false, updated_at: new Date() },
+      );
+    }
+
     await this.locationsRepository.update(locationId, {
       ...locationData,
       updated_at: new Date(),
@@ -314,9 +323,9 @@ export class UsersService {
     });
   }
 
-  async deleteUserLocation(locationId: number) {
+  async deleteUserLocation(userId: string, locationId: number) {
     const location = await this.locationsRepository.findOne({
-      where: { location_id: locationId },
+      where: { location_id: locationId, user: { id: userId } },
     });
 
     if (!location) {
@@ -358,6 +367,39 @@ export class UsersService {
     return this.paymentMethodsRepository.find({
       where: { user: { id: userId }, is_active: true },
       order: { is_default: 'DESC', created_at: 'DESC' },
+    });
+  }
+
+  async updatePaymentMethod(
+    userId: string,
+    paymentMethodId: number,
+    paymentData: UpdatePaymentMethodDto,
+  ): Promise<PaymentMethod> {
+    const paymentMethod = await this.paymentMethodsRepository.findOne({
+      where: { payment_method_id: paymentMethodId, user: { id: userId } },
+    });
+
+    if (!paymentMethod) {
+      throw new NotFoundException(
+        `Payment method with ID ${paymentMethodId} not found`,
+      );
+    }
+
+    // If setting this as default, unset other default payment methods for this user
+    if (paymentData.is_default) {
+      await this.paymentMethodsRepository.update(
+        { user: { id: userId } },
+        { is_default: false },
+      );
+    }
+
+    await this.paymentMethodsRepository.update(paymentMethodId, {
+      ...paymentData,
+      updated_at: new Date(),
+    });
+
+    return await this.paymentMethodsRepository.findOne({
+      where: { payment_method_id: paymentMethodId },
     });
   }
 
