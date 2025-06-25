@@ -7,7 +7,7 @@ import {
   IsNumber,
 } from 'class-validator';
 
-export class UpdateAddressDto {
+export class UpdateLocationDto {
   @ApiProperty({
     example: 'John Doe',
     description: 'Name associated with this address (e.g., recipient name)',
@@ -135,10 +135,10 @@ export class UpdateAddressDto {
   state?: string;
 }
 
-export class UpdateAddressParamsDto {
+export class UpdateLocationParamsDto {
   @ApiProperty({
     example: '123',
-    description: 'Address/Location ID to update',
+    description: 'Location ID to update',
   })
   @IsNotEmpty()
   @IsString()

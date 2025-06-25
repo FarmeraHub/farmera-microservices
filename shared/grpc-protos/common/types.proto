@@ -20,13 +20,16 @@ message Location {
   string address_line = 5;
   string city = 6;
   string state = 7;
-  string postal_code = 8;
-  string country = 9;
-  double latitude = 10;
-  double longitude = 11;
-  bool is_default = 12;
-  Timestamp created_at = 13;
-  Timestamp updated_at = 14;
+  string district = 8; // Administrative district
+  string ward = 9;     // Smallest administrative division (commune/ward)
+  string street = 10;  // Street name
+  string postal_code = 11;
+  string country = 12;
+  double latitude = 13;
+  double longitude = 14;
+  bool is_default = 15;
+  Timestamp created_at = 16;
+  Timestamp updated_at = 17;
 }
 
 // Geohash location for spatial queries

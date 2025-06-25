@@ -37,11 +37,10 @@ export class CreateAddressDto {
   @ApiProperty({
     example: 'District 1',
     description: 'District name',
-    required: false,
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  district?: string;
+  district: string;
 
   @ApiProperty({
     example: 'Ward 1',
@@ -55,19 +54,19 @@ export class CreateAddressDto {
   @ApiProperty({
     example: 'Nguyen Hue Street',
     description: 'Street name',
-    required: false,
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  street?: string;
+  street: string;
 
   @ApiProperty({
     example: '123 Nguyen Hue Street, Building A, Floor 5',
     description: 'Complete address line',
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  address_line: string;
+  address_line?: string;
 
   @ApiProperty({
     example: 'home',

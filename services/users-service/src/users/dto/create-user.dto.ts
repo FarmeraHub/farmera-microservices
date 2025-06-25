@@ -18,114 +18,15 @@ import { UserRole } from 'src/enums/roles.enum';
 import { UserStatus } from 'src/enums/status.enum';
 import { PaymentProvider } from 'src/enums/payment_method.enum';
 import { Gender } from 'src/enums/gender.enum';
+import { CreateLocationDto } from './location.dto';
+import { CreatePaymentMethodDto as PaymentMethodDTO } from './payment-method.dto';
 
-export class CreateLocationDto {
-  @IsString()
-  @IsOptional()
-  name?: string;
+// Re-export for backward compatibility
+export { CreateLocationDto } from './location.dto';
 
-  @IsString()
-  @IsOptional()
-  phone?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  city: string;
-
-  @IsString()
-  @IsNotEmpty()
-  district: string;
-
-  @IsString()
-  @IsOptional()
-  ward?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  street: string;
-
-  @IsString()
-  @IsOptional()
-  address_line?: string;
-
-  @IsString()
-  @IsOptional()
-  type?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  is_primary?: boolean;
-
-  @IsNumber()
-  @IsOptional()
-  latitude?: number;
-
-  @IsNumber()
-  @IsOptional()
-  longitude?: number;
-
-  @IsString()
-  @IsOptional()
-  country?: string;
-
-  @IsString()
-  @IsOptional()
-  postal_code?: string;
-
-  @IsString()
-  @IsOptional()
-  state?: string;
-}
-
-export class CreatePaymentMethodDto {
-  @IsEnum(PaymentProvider)
-  @IsNotEmpty()
-  provider: PaymentProvider;
-
-  @IsString()
-  @IsNotEmpty()
-  external_id: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(4)
-  last_four?: string;
-
-  @IsString()
-  @IsOptional()
-  card_type?: string;
-
-  @IsString()
-  @IsOptional()
-  @Matches(/^(0[1-9]|1[0-2])\/\d{2}$/, {
-    message: 'Expiry date should be in MM/YY format',
-  })
-  expiry_date?: string;
-
-  @IsString()
-  @IsOptional()
-  cardholder_name?: string;
-
-  @IsString()
-  @IsOptional()
-  billing_address?: string;
-
-  @IsString()
-  @IsOptional()
-  token?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  is_default?: boolean;
-
-  @IsString()
-  @IsOptional()
-  metadata?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  is_active?: boolean;
-}
+// Moved to separate file: ./payment-method.dto.ts
+// Re-export for backward compatibility
+export { CreatePaymentMethodDto } from './payment-method.dto';
 
 export class CreateUserDto {
   @IsEmail()
@@ -197,8 +98,8 @@ export class CreateUserDto {
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
-  @Type(() => CreatePaymentMethodDto)
-  payment_methods?: CreatePaymentMethodDto[];
+  @Type(() => PaymentMethodDTO)
+  payment_methods?: PaymentMethodDTO[];
 }
 
 export class CreateUserSignUpDto {
