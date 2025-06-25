@@ -8,6 +8,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, Between } from 'typeorm';
 import { CreateUserDto, CreateUserSignUpDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateLocationDto, UpdateLocationDto } from './dto/location.dto';
+import {
+  CreatePaymentMethodDto,
+  UpdatePaymentMethodDto,
+} from './dto/payment-method.dto';
 import { User } from './entities/user.entity';
 import { Location } from './entities/location.entity';
 import { PaymentMethod } from './entities/payment_method.entity';
@@ -262,44 +267,31 @@ export class UsersService {
   }
 
   // Location Management
-  async addUserLocation(
-    userId: string,
-    locationData: {
-      name?: string;
-      phone?: string;
-      address_line: string;
-      city: string;
-      state: string;
-      postal_code?: string;
-      country: string;
-      latitude?: number;
-      longitude?: number;
-      is_default?: boolean;
-    },
-  ) {
+  async addUserLocation(userId: string, locationData: CreateLocationDto) {
     const user = await this.getUserById(userId);
 
-    if (locationData.is_default) {
+    if (locationData.is_primary) {
       await this.locationsRepository.update(
-        { user_id: parseInt(userId) },
+        { user_id: userId },
         { is_primary: false },
       );
     }
 
     const newLocation = this.locationsRepository.create({
-      user_id: parseInt(userId),
+      user_id: userId,
       name: locationData.name,
       phone: locationData.phone,
       city: locationData.city,
-      district: locationData.state,
+      district: locationData.district,
+      ward: locationData.ward,
       state: locationData.state,
       address_line: locationData.address_line,
-      street: locationData.address_line,
+      street: locationData.street,
       postal_code: locationData.postal_code,
       country: locationData.country,
       latitude: locationData.latitude,
       longitude: locationData.longitude,
-      is_primary: locationData.is_default || false,
+      is_primary: locationData.is_primary || false,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -312,12 +304,15 @@ export class UsersService {
     await this.getUserById(userId);
 
     return this.locationsRepository.find({
-      where: { user_id: parseInt(userId) },
+      where: { user_id: userId },
       order: { is_primary: 'DESC', created_at: 'DESC' },
     });
   }
 
-  async updateUserLocation(locationId: string, locationData: any) {
+  async updateUserLocation(
+    locationId: string,
+    locationData: UpdateLocationDto,
+  ) {
     const location = await this.locationsRepository.findOne({
       where: { id: parseInt(locationId) },
     });
@@ -350,40 +345,30 @@ export class UsersService {
   }
 
   // Payment Method Management
-  async addPaymentMethod(
-    userId: string,
-    paymentData: {
-      type: string;
-      display_name: string;
-      last_four_digits?: string;
-      provider: string;
-      is_default?: boolean;
-      expires_at?: Date;
-      metadata?: any;
-    },
-  ) {
+  async addPaymentMethod(userId: string, paymentData: CreatePaymentMethodDto) {
     const user = await this.getUserById(userId);
 
     if (paymentData.is_default) {
       await this.paymentMethodsRepository.update(
-        { user_id: parseInt(userId) },
+        { user_id: userId },
         { is_default: false },
       );
     }
 
     const newPaymentMethod = new PaymentMethod();
-    newPaymentMethod.user_id = parseInt(userId);
-    newPaymentMethod.provider = paymentData.provider as PaymentProvider;
-    newPaymentMethod.external_id = `ext_${Date.now()}`;
-    // newPaymentMethod.last_four = paymentData.last_four_digits;
-    // newPaymentMethod.cardholder_name = paymentData.display_name;
-    // newPaymentMethod.is_default = paymentData.is_default || false;
-    // newPaymentMethod.expiry_date = paymentData.expires_at
-    //   ? this.formatExpiryDate(paymentData.expires_at)
-    //   : null;
-    // newPaymentMethod.metadata = paymentData.metadata
-    //   ? JSON.stringify(paymentData.metadata)
-    //   : null;
+    newPaymentMethod.user_id = userId;
+    newPaymentMethod.provider = paymentData.provider;
+    newPaymentMethod.external_id = paymentData.external_id;
+    newPaymentMethod.last_four = paymentData.last_four || null;
+    newPaymentMethod.card_type = paymentData.card_type || null;
+    newPaymentMethod.expiry_date = paymentData.expiry_date || null;
+    newPaymentMethod.cardholder_name = paymentData.cardholder_name || null;
+    newPaymentMethod.billing_address = paymentData.billing_address || null;
+    newPaymentMethod.token = paymentData.token || null;
+    newPaymentMethod.is_default = paymentData.is_default || false;
+    newPaymentMethod.metadata = paymentData.metadata || null;
+    newPaymentMethod.is_active =
+      paymentData.is_active !== undefined ? paymentData.is_active : true;
     newPaymentMethod.created_at = new Date();
     newPaymentMethod.updated_at = new Date();
 
@@ -396,7 +381,7 @@ export class UsersService {
     await this.getUserById(userId);
 
     return this.paymentMethodsRepository.find({
-      where: { user_id: parseInt(userId), is_active: true },
+      where: { user_id: userId, is_active: true },
       order: { is_default: 'DESC', created_at: 'DESC' },
     });
   }

@@ -7,7 +7,7 @@ import {
   IsNumber,
 } from 'class-validator';
 
-export class UpdateAddressDto {
+export class CreateLocationDto {
   @ApiProperty({
     example: 'John Doe',
     description: 'Name associated with this address (e.g., recipient name)',
@@ -29,20 +29,18 @@ export class UpdateAddressDto {
   @ApiProperty({
     example: 'Ho Chi Minh City',
     description: 'City name',
-    required: false,
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  city?: string;
+  city: string;
 
   @ApiProperty({
     example: 'District 1',
     description: 'District name',
-    required: false,
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  district?: string;
+  district: string;
 
   @ApiProperty({
     example: 'Ward 1',
@@ -56,11 +54,10 @@ export class UpdateAddressDto {
   @ApiProperty({
     example: 'Nguyen Hue Street',
     description: 'Street name',
-    required: false,
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  street?: string;
+  street: string;
 
   @ApiProperty({
     example: '123 Nguyen Hue Street, Building A, Floor 5',
@@ -133,14 +130,4 @@ export class UpdateAddressDto {
   @IsOptional()
   @IsString()
   state?: string;
-}
-
-export class UpdateAddressParamsDto {
-  @ApiProperty({
-    example: '123',
-    description: 'Address/Location ID to update',
-  })
-  @IsNotEmpty()
-  @IsString()
-  locationId: string;
 }

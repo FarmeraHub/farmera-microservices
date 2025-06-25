@@ -42,7 +42,7 @@ export class PaymentMethod {
   user: User;
 
   @Column()
-  user_id: number;
+  user_id: string;
 
   @Column({ nullable: true })
   metadata: string;

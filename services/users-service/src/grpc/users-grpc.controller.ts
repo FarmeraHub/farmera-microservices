@@ -567,12 +567,15 @@ export class UsersGrpcController implements UsersServiceController {
           phone: request.location?.phone || '',
           address_line: request.location?.address_line || '',
           city: request.location?.city || '',
+          district: request.location?.district || '',
+          ward: request.location?.ward || '',
+          street: request.location?.street || '',
           state: request.location?.state || '',
           postal_code: request.location?.postal_code || '',
           country: request.location?.country || '',
           latitude: request.location?.latitude || 0,
           longitude: request.location?.longitude || 0,
-          is_default: request.location?.is_default || false,
+          is_primary: request.location?.is_default || false,
         },
       );
 
@@ -604,17 +607,24 @@ export class UsersGrpcController implements UsersServiceController {
       const paymentMethod = await this.usersService.addPaymentMethod(
         request.user_id,
         {
-          type: EnumsMapper.fromGrpcPaymentMethodType(
-            request.payment_method.type,
-          ),
-          display_name: request.payment_method.display_name,
-          last_four_digits: request.payment_method.last_four_digits,
-          provider: request.payment_method.provider,
+          provider: request.payment_method.provider as any, // Convert string to enum
+          external_id: request.payment_method.id || `grpc_${Date.now()}`, // Required field
+          last_four: request.payment_method.last_four_digits,
+          cardholder_name: request.payment_method.display_name,
           is_default: request.payment_method.is_default,
-          expires_at: request.payment_method.expires_at
-            ? TypesMapper.fromGrpcTimestamp(request.payment_method.expires_at)
+          expiry_date: request.payment_method.expires_at
+            ? (() => {
+                const date = TypesMapper.fromGrpcTimestamp(
+                  request.payment_method.expires_at,
+                );
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear().toString().slice(-2);
+                return `${month}/${year}`;
+              })()
             : undefined,
-          metadata: request.payment_method.metadata,
+          metadata: request.payment_method.metadata
+            ? JSON.stringify(request.payment_method.metadata)
+            : undefined,
         },
       );
 
