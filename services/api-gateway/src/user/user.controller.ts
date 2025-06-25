@@ -287,4 +287,88 @@ export class UserController {
   ) {
     return await this.userService.deleteUserAddress(user.id, locationId);
   }
+
+  // Payment Method Management Endpoints
+  @Get('payment-methods')
+  @ResponseMessage('Payment methods retrieved successfully')
+  @ApiOperation({ summary: 'Get all user payment methods' })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment methods retrieved successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getUserPaymentMethods(@User() user: UserInterface) {
+    return await this.userService.getUserPaymentMethods(user.id);
+  }
+
+  @Post('payment-method')
+  @ResponseMessage('Payment method created successfully')
+  @ApiOperation({ summary: 'Create new user payment method' })
+  @ApiResponse({
+    status: 201,
+    description: 'Payment method created successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid payment method data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async createPaymentMethod(
+    @User() user: UserInterface,
+    @Body() req: any, // TODO: Import CreatePaymentMethodDto
+  ) {
+    return await this.userService.createPaymentMethod(user.id, req);
+  }
+
+  @Put('payment-method/:paymentMethodId')
+  @ResponseMessage('Payment method updated successfully')
+  @ApiOperation({ summary: 'Update user payment method' })
+  @ApiParam({
+    name: 'paymentMethodId',
+    description: 'Payment method ID to update',
+    example: '123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment method updated successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid payment method data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Payment method not found' })
+  async updatePaymentMethod(
+    @User() user: UserInterface,
+    @Param('paymentMethodId') paymentMethodId: string,
+    @Body() req: any, // TODO: Import UpdatePaymentMethodDto
+  ) {
+    return await this.userService.updatePaymentMethod(
+      user.id,
+      paymentMethodId,
+      req,
+    );
+  }
+
+  @Delete('payment-method/:paymentMethodId')
+  @ResponseMessage('Payment method deleted successfully')
+  @ApiOperation({ summary: 'Delete user payment method' })
+  @ApiParam({
+    name: 'paymentMethodId',
+    description: 'Payment method ID to delete',
+    example: '123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment method deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Payment method not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deletePaymentMethod(
+    @User() user: UserInterface,
+    @Param('paymentMethodId') paymentMethodId: string,
+  ) {
+    return await this.userService.deletePaymentMethod(user.id, paymentMethodId);
+  }
 }

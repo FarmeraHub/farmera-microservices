@@ -19,7 +19,7 @@ export class LocationMapper {
       country: location.country || 'VN', // Default country code
       latitude: location.latitude || 0,
       longitude: location.longitude || 0,
-      is_default: location.is_primary,
+      is_primary: location.is_primary,
       created_at: TypesMapper.toGrpcTimestamp(location.created_at),
       updated_at: TypesMapper.toGrpcTimestamp(location.updated_at),
     };
