@@ -10,8 +10,10 @@ import { PaymentModule } from './payments/payment.module';
 import { DiscountModule } from './discounts/discount.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { PaymentGrpcServerModule } from './grpc/server/payment-grpc.server.module';
-import { PaymentGrpcClientModule } from './grpc/client/grpc-client.module';
+import { PaymentClientModule } from './grpc/client/payment-client.module';
 import { NotificationModule } from './clients/notification/notification.module';
+import { BusinessValidationModule } from './business-validation/business-validation.module';
+import { GhnModule } from './ghn/ghn.module';
 
 @Module({
   imports: [
@@ -26,8 +28,10 @@ import { NotificationModule } from './clients/notification/notification.module';
     DiscountModule,
     DeliveryModule,
     PaymentGrpcServerModule,
-    PaymentGrpcClientModule, ,
-    NotificationModule
+    PaymentClientModule,
+    NotificationModule,
+    BusinessValidationModule,
+    GhnModule,
 
   ],
   controllers: [AppController],

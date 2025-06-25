@@ -6,7 +6,6 @@ import {
   IsEnum,
   IsNumber,
   IsDate,
-  IsBoolean,
   MinLength,
   MaxLength,
   IsArray,
@@ -16,22 +15,19 @@ import {
 import { Type } from 'class-transformer';
 import { UserRole } from 'src/enums/roles.enum';
 import { UserStatus } from 'src/enums/status.enum';
-import { PaymentProvider } from 'src/enums/payment_method.enum';
+import { CreateLocationDto } from './create-location.dto';
+import { CreatePaymentDto } from './create-payment.dto';
 import { Gender } from 'src/enums/gender.enum';
-import { CreateLocationDto } from './location.dto';
-import { CreatePaymentMethodDto as PaymentMethodDTO } from './payment-method.dto';
 
-// Re-export for backward compatibility
-export { CreateLocationDto } from './location.dto';
-
-// Moved to separate file: ./payment-method.dto.ts
-// Re-export for backward compatibility
-export { CreatePaymentMethodDto } from './payment-method.dto';
 
 export class CreateUserDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
 
   @IsString()
   @IsNotEmpty()
@@ -81,10 +77,6 @@ export class CreateUserDto {
   @IsNotEmpty()
   role: UserRole;
 
-  @IsNumber()
-  @IsOptional()
-  points?: number;
-
   @IsEnum(UserStatus)
   @IsOptional()
   status?: UserStatus;
@@ -98,8 +90,8 @@ export class CreateUserDto {
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
-  @Type(() => PaymentMethodDTO)
-  payment_methods?: PaymentMethodDTO[];
+  @Type(() => CreatePaymentDto)
+  payment_methods?: CreatePaymentDto[];
 }
 
 export class CreateUserSignUpDto {

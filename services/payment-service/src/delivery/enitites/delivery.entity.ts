@@ -1,13 +1,13 @@
-import { DeliveryStatus } from "src/common/enums/delivery.enum";
+import { DeliveryStatus } from "src/common/enums/payment/delivery.enum";
 import { SubOrder } from "src/orders/entities/sub-order.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('delivery')
-export class Delivery { 
+export class Delivery {
     @PrimaryGeneratedColumn('increment')
     delivery_id: number;
     @Column({
-        type:'enum',
+        type: 'enum',
         enum: DeliveryStatus,
         default: DeliveryStatus.PENDING,
     })
@@ -24,7 +24,7 @@ export class Delivery {
     created: Date;
     @UpdateDateColumn()
     updated: Date;
-    @OneToOne(() => SubOrder) 
+    @OneToOne(() => SubOrder)
     @JoinColumn({ name: 'sub_order_id' })
     sub_order_id: SubOrder;
 }

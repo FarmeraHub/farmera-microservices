@@ -32,6 +32,19 @@ message Location {
   Timestamp updated_at = 17;
 }
 
+message UserLocation {
+  int32 id = 1;
+  string city = 2;
+  string district = 3;
+  string ward = 4;
+  string street = 5;
+  string address_line = 6;
+  string type = 7;
+  bool is_primary = 8;
+  Timestamp created_at = 9;
+  Timestamp updated_at = 10;
+}
+
 // Geohash location for spatial queries
 message GeoLocation {
   double latitude = 1;

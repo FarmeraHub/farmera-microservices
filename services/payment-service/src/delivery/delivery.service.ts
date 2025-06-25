@@ -12,12 +12,14 @@ import { GhnCreatedOrderDataDto, GhnCreateOrderResponseDto } from "./dto/ghn-ord
 import { CreateGhnOrderDto } from "./dto/ghnn-create-delivery.dto";
 import { CancelDeliveryDto, GhnCancelDeliveryDto, GhnCancelResponseDto } from "./dto/cancel-delivery.dto";
 import { SubOrder } from "src/orders/entities/sub-order.entity";
-import { DeliveryStatus } from "src/common/enums/delivery.enum";
-
-export enum GhnServiceTypeId {
-    HANG_NHE = 2, // Hàng nhẹ
-    HANG_NANG = 5, // Hàng nặng
-}
+import { DeliveryStatus } from "src/common/enums/payment/delivery.enum";
+import { GhnServiceTypeId } from "src/common/enums/payment/ghn.enum";
+import { BusinessValidationService } from 'src/business-validation/business-validation.service';
+import { GhnService } from 'src/ghn/ghn.service';
+import { ItemDto } from "src/business-validation/dto/list-product.dto";
+import { CheckAvailabilityResult, OrderDetail } from "src/business-validation/dto/validate-response.dto";
+import { UserGrpcClientService } from "src/grpc/client/user.service";
+import { Location } from "src/user/entities/location.entity";
 
 
 export interface CreatePendingDeliveryInternalDto {
@@ -44,6 +46,9 @@ export class DeliveryService {
         private readonly deliveryRepository: Repository<Delivery>,
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
+        private readonly businessValidationService: BusinessValidationService,
+        private readonly ghnService: GhnService,
+        private readonly userGrpcClientService: UserGrpcClientService,
     ) {
         const GHN_TOKEN = this.configService.get<string>('GHN_TOKEN');
         const GHN_SHOP_ID = this.configService.get<number>('GHN_SHOP_ID');
@@ -446,4 +451,58 @@ export class DeliveryService {
             throw new InternalServerErrorException(`Lỗi khi tạo thông tin giao hàng: ${error.message}`);
         }
     }
+
+    async CalculateShippingFee(userRequestList: ItemDto[], orderDetails: OrderDetail): Promise<any> {
+        try {
+            const checkOrderValidation: CheckAvailabilityResult = await this.businessValidationService.validateOrder(userRequestList, orderDetails);
+            if (!checkOrderValidation.isValidOrder) {
+                return checkOrderValidation;
+            }
+            const userLocation: Location = await this.userGrpcClientService.getLocationById(orderDetails.address_id);
+            if (!userLocation) {
+                this.logger.warn(`[Delivery Service] User location not found for address ID: ${orderDetails.address_id}`);
+                throw new BadRequestException('Địa chỉ giao hàng không hợp lệ hoặc không tồn tại.');
+            }
+
+            const user_ghn_province_id = await this.ghnService.getIdProvince(userLocation.city);
+            if (!user_ghn_province_id) {
+                this.logger.warn(`[Delivery Service] GHN Province ID not found for city: ${userLocation.city}`);
+                throw new BadRequestException('Không tìm thấy tỉnh thành tương ứng với địa chỉ giao hàng.');
+            }
+            const user_ghn_district_id = await this.ghnService.getIdDistrict(userLocation.state, user_ghn_province_id);
+            if (!user_ghn_district_id) {
+                this.logger.warn(`[Delivery Service] GHN District ID not found for district: ${userLocation.state}`);
+                throw new BadRequestException('Không tìm thấy quận huyện tương ứng với địa chỉ giao hàng.');
+            }
+            const user_ghn_ward_id = await this.ghnService.getIdWard(userLocation.district, user_ghn_district_id);
+            if (!user_ghn_ward_id) {
+                this.logger.warn(`[Delivery Service] GHN Ward ID not found for ward: ${userLocation.district}`);
+                throw new BadRequestException('Không tìm thấy phường xã tương ứng với địa chỉ giao hàng.');
+            }
+            // chưa giải giải quyết được vấn đề tách ra từng farm ( để gọi 1 lân) trả về response như nào để thể hiện cho từng farm....
+            // const calculateDto: CalculateShippingFeeDto = {
+            //     from_district_id: this.ghnService.getIdDistrictByName('Huyện Củ Chi', 1), // GHN Shop ID 1
+            //     to_district_id: user_ghn_district_id,
+            //     to_ward_code: user_ghn_ward_id,
+            //     to_province_id: user_ghn_province_id,
+            //     length: 10, // GHN yêu cầu chiều dài tối thiểu là 10cm
+            //     width: 10, // GHN yêu cầu chiều rộng tối thiểu là 10cm
+            //     height: 10, // GHN yêu cầu chiều cao tối thiểu là 10cm
+            //     weight: 1000, // GHN yêu cầu trọng lượng tối thiểu là 1000g
+            //     items: userRequestList.map(item => ({
+            //         product_id: item.product_id,
+            //         quantity: item.quantity,
+            //         weight: item.weight || 1000, // Mặc định nếu không có trọng lượng
+            //         name: item.name || 'Sản phẩm không tên',
+            //     })),
+            // };
+
+        }
+        catch (error) {
+            this.logger.error(`[Delivery Service] Error calculating shipping fee: ${error.message}`, error.stack);
+            throw new InternalServerErrorException(`Lỗi khi tính phí vận chuyển: ${error.message}`);
+        }
+
+    }
+
 }

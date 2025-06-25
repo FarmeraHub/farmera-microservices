@@ -1,24 +1,17 @@
-import { Location } from 'src/users/entities/location.entity';
-import { Location as GrpcLocation } from '@farmera/grpc-proto/dist/common/types';
-import { TypesMapper } from '../common/types.mapper';
+import { Location } from "src/users/entities/location.entity";
+import { UserLocation as GrpcUserLocation } from "@farmera/grpc-proto/dist/common/types";
+import { TypesMapper } from "../common/types.mapper";
 
 export class LocationMapper {
-  static toGrpcLocation(location: Location): GrpcLocation {
+  static toGrpcLocation(location: Location): GrpcUserLocation {
     return {
-      id: location.id.toString(),
-      user_id: location.user_id,
-      name: location.name || '',
-      phone: location.phone || '',
-      address_line: location.address_line || '',
+      id: location.location_id,
       city: location.city,
-      state: location.state || '',
-      district: location.district || '',
-      ward: location.ward || '',
-      street: location.street || '',
-      postal_code: location.postal_code || '',
-      country: location.country || 'VN', // Default country code
-      latitude: location.latitude || 0,
-      longitude: location.longitude || 0,
+      district: location.district,
+      ward: location.ward,
+      street: location.street,
+      address_line: location.address_line,
+      type: location.type,
       is_primary: location.is_primary,
       created_at: TypesMapper.toGrpcTimestamp(location.created_at),
       updated_at: TypesMapper.toGrpcTimestamp(location.updated_at),

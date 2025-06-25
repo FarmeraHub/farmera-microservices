@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Request, Response } from 'express';
-import * as ms from 'ms';
+import  ms from 'ms';
 import { UserStatus } from 'src/enums/status.enum';
 import { HashService } from 'src/services/hash.service';
 import { User } from 'src/users/entities/user.entity';

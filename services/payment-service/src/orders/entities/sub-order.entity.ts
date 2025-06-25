@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne, Or, PrimaryGeneratedColumn } from "typeorm";
 import { Order } from "./order.entity";
-import { SubOrderStatus } from "src/common/enums/sub-order-status.enum";
+import { SubOrderStatus } from "src/common/enums/payment/sub-order-status.enum";
 import { Delivery } from "src/delivery/enitites/delivery.entity";
 
 @Entity('sub_order')

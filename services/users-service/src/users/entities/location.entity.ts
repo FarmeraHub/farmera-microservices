@@ -1,16 +1,10 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity({ name: 'locations' })
 export class Location {
   @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ nullable: true })
-  name: string; // Name associated with this address (e.g., recipient name)
-
-  @Column({ nullable: true })
-  phone: string; // Phone number for this address
+  location_id: number;
 
   @Column({ nullable: false })
   city: string;
@@ -49,14 +43,12 @@ export class Location {
   state: string;
 
   @ManyToOne(() => User, (user) => user.locations)
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
-  user_id: string;
-
-  @Column({ nullable: true })
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @Column({ nullable: true })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 }
