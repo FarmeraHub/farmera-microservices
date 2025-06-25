@@ -321,6 +321,14 @@ export class UsersService {
       throw new NotFoundException(`Location with ID ${locationId} not found`);
     }
 
+    // If setting this as primary, unset other primary locations for this user
+    if (locationData.is_primary) {
+      await this.locationsRepository.update(
+        { user_id: location.user_id },
+        { is_primary: false },
+      );
+    }
+
     await this.locationsRepository.update(locationId, {
       ...locationData,
       updated_at: new Date(),
@@ -383,6 +391,38 @@ export class UsersService {
     return this.paymentMethodsRepository.find({
       where: { user_id: userId, is_active: true },
       order: { is_default: 'DESC', created_at: 'DESC' },
+    });
+  }
+
+  async updatePaymentMethod(
+    paymentMethodId: string,
+    paymentData: UpdatePaymentMethodDto,
+  ) {
+    const paymentMethod = await this.paymentMethodsRepository.findOne({
+      where: { id: parseInt(paymentMethodId) },
+    });
+
+    if (!paymentMethod) {
+      throw new NotFoundException(
+        `Payment method with ID ${paymentMethodId} not found`,
+      );
+    }
+
+    // If setting this as default, unset other default payment methods for this user
+    if (paymentData.is_default) {
+      await this.paymentMethodsRepository.update(
+        { user_id: paymentMethod.user_id },
+        { is_default: false },
+      );
+    }
+
+    await this.paymentMethodsRepository.update(paymentMethodId, {
+      ...paymentData,
+      updated_at: new Date(),
+    });
+
+    return this.paymentMethodsRepository.findOne({
+      where: { id: parseInt(paymentMethodId) },
     });
   }
 

@@ -575,7 +575,7 @@ export class UsersGrpcController implements UsersServiceController {
           country: request.location?.country || '',
           latitude: request.location?.latitude || 0,
           longitude: request.location?.longitude || 0,
-          is_primary: request.location?.is_default || false,
+          is_primary: request.location?.is_primary || false,
         },
       );
 
@@ -636,6 +636,67 @@ export class UsersGrpcController implements UsersServiceController {
       throw new RpcException({
         code: status.INTERNAL,
         message: error.message || 'Failed to add payment method',
+      });
+    }
+  }
+
+  @Public()
+  async updatePaymentMethod(
+    request: UpdatePaymentMethodRequest,
+  ): Promise<UpdatePaymentMethodResponse> {
+    try {
+      this.logger.log(
+        `gRPC UpdatePaymentMethod request for user: ${request.user_id}, payment method: ${request.payment_method_id}`,
+      );
+
+      if (!request.payment_method) {
+        throw new RpcException({
+          code: status.INVALID_ARGUMENT,
+          message: 'Payment method data is required',
+        });
+      }
+
+      const paymentData = {
+        provider: request.payment_method.provider as any,
+        external_id: request.payment_method.id,
+        last_four: request.payment_method.last_four_digits,
+        cardholder_name: request.payment_method.display_name,
+        is_default: request.payment_method.is_default,
+        expiry_date: request.payment_method.expires_at
+          ? (() => {
+              const date = TypesMapper.fromGrpcTimestamp(
+                request.payment_method.expires_at,
+              );
+              const month = (date.getMonth() + 1).toString().padStart(2, '0');
+              const year = date.getFullYear().toString().slice(-2);
+              return `${month}/${year}`;
+            })()
+          : undefined,
+        metadata: request.payment_method.metadata
+          ? JSON.stringify(request.payment_method.metadata)
+          : undefined,
+      };
+
+      const paymentMethod = await this.usersService.updatePaymentMethod(
+        request.payment_method_id,
+        paymentData,
+      );
+
+      if (!paymentMethod) {
+        throw new RpcException({
+          code: status.NOT_FOUND,
+          message: 'Payment method not found',
+        });
+      }
+
+      return {
+        payment_method: PaymentMapper.toGrpcPaymentMethod(paymentMethod),
+      };
+    } catch (error) {
+      this.logger.error(`UpdatePaymentMethod error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to update payment method',
       });
     }
   }
@@ -745,16 +806,20 @@ export class UsersGrpcController implements UsersServiceController {
       }
 
       const locationData = {
+        name: request.location.name,
+        phone: request.location.phone,
         city: request.location.city,
-        district: request.location.state, // Map state to district for our entity
+        district: request.location.district,
+        ward: request.location.ward,
+        street: request.location.street,
         address_line: request.location.address_line,
-        street: request.location.address_line, // Use address_line as street
-        is_primary: request.location.is_default, // Map is_default to is_primary
+        is_primary: request.location.is_primary,
         latitude: request.location.latitude,
         longitude: request.location.longitude,
         country: request.location.country,
         postal_code: request.location.postal_code,
         state: request.location.state,
+        type: undefined,
       };
 
       const location = await this.usersService.updateUserLocation(

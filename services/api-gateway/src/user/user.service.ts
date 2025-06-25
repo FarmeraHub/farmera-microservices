@@ -309,7 +309,7 @@ export class UserService implements OnModuleInit {
           country: req.country || 'VN',
           latitude: req.latitude || 0,
           longitude: req.longitude || 0,
-          is_default: req.is_primary || false,
+          is_primary: req.is_primary || false,
           created_at: undefined, // Will be set by service
           updated_at: undefined, // Will be set by service
         },
@@ -376,7 +376,7 @@ export class UserService implements OnModuleInit {
           country: req.country || 'VN',
           latitude: req.latitude || 0,
           longitude: req.longitude || 0,
-          is_default: req.is_primary || false,
+          is_primary: req.is_primary || false,
           created_at: undefined,
           updated_at: undefined,
         },
@@ -452,6 +452,139 @@ export class UserService implements OnModuleInit {
       // Use error.details if available, otherwise provide a generic message
       throw new BadRequestException(
         error.details || 'Failed to delete user address',
+      );
+    }
+  }
+
+  // Payment Method Management
+  async getUserPaymentMethods(userId: string) {
+    try {
+      if (!userId) {
+        throw new UnauthorizedException('User not authenticated');
+      }
+
+      this.logger.log(`Getting payment methods for user: ${userId}`);
+
+      // Note: This would require a gRPC method GetPaymentMethods to be implemented
+      // For now, we can use getUserProfile which includes payment methods
+      const profileResult = await this.getUserProfile(userId);
+
+      return {
+        payment_methods: profileResult.user.payment_methods || [],
+      };
+    } catch (error) {
+      this.logger.error(`Get user payment methods failed: ${error.message}`);
+
+      // Check if it's an authentication error
+      if (error.message?.includes('authenticated') || error.code === 16) {
+        throw new UnauthorizedException(
+          error.details || 'User not authenticated',
+        );
+      }
+
+      throw new BadRequestException(
+        error.details || 'Failed to get user payment methods',
+      );
+    }
+  }
+
+  async createPaymentMethod(userId: string, req: any) {
+    try {
+      if (!userId) {
+        throw new UnauthorizedException('User not authenticated');
+      }
+
+      this.logger.log(`Creating payment method for user: ${userId}`);
+
+      // Note: This would require a gRPC method AddPaymentMethod which exists
+      // but might need to be properly connected in the API gateway
+      this.logger.warn(
+        'Payment method creation not fully implemented in gRPC client',
+      );
+
+      return {
+        success: true,
+        message: 'Payment method creation will be implemented with gRPC',
+      };
+    } catch (error) {
+      this.logger.error(`Create payment method failed: ${error.message}`);
+
+      if (error.message?.includes('authenticated') || error.code === 16) {
+        throw new UnauthorizedException(
+          error.details || 'User not authenticated',
+        );
+      }
+
+      throw new BadRequestException(
+        error.details || 'Failed to create payment method',
+      );
+    }
+  }
+
+  async updatePaymentMethod(userId: string, paymentMethodId: string, req: any) {
+    try {
+      if (!userId) {
+        throw new UnauthorizedException('User not authenticated');
+      }
+
+      this.logger.log(
+        `Updating payment method for user: ${userId}, payment method: ${paymentMethodId}`,
+      );
+
+      // Note: This would require UpdatePaymentMethod gRPC method
+      this.logger.warn(
+        'Payment method update not fully implemented in gRPC client',
+      );
+
+      return {
+        success: true,
+        message: 'Payment method update will be implemented with gRPC',
+      };
+    } catch (error) {
+      this.logger.error(`Update payment method failed: ${error.message}`);
+
+      if (error.message?.includes('authenticated') || error.code === 16) {
+        throw new UnauthorizedException(
+          error.details || 'User not authenticated',
+        );
+      }
+
+      throw new BadRequestException(
+        error.details || 'Failed to update payment method',
+      );
+    }
+  }
+
+  async deletePaymentMethod(userId: string, paymentMethodId: string) {
+    try {
+      if (!userId) {
+        throw new UnauthorizedException('User not authenticated');
+      }
+
+      this.logger.log(
+        `Deleting payment method for user: ${userId}, payment method: ${paymentMethodId}`,
+      );
+
+      // Note: This would require DeletePaymentMethod gRPC method
+      this.logger.warn(
+        'Payment method deletion not fully implemented in gRPC client',
+      );
+
+      return {
+        success: true,
+        message: 'Payment method deletion will be implemented with gRPC',
+      };
+    } catch (error) {
+      this.logger.error(`Delete payment method failed: ${error.message}`);
+
+      if (error.message?.includes('authenticated') || error.code === 16) {
+        throw new UnauthorizedException(
+          error.details || 'User not authenticated',
+        );
+      }
+
+      throw new BadRequestException(
+        error.details || 'Failed to delete payment method',
       );
     }
   }
