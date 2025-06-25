@@ -15,20 +15,18 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
-import { ResponseMessage } from '../common/decorators/response-message.decorator';
-import {
-  UpdateProfileDto,
-  ChangePasswordDto,
-  UpdateAddressDto,
-  CreateAddressDto,
-} from './dto';
-import { User } from '../common/decorators/user.decorator';
-import { User as UserInterface } from '../common/interfaces/user.interface';
+import { ResponseMessage } from '../../common/decorators/response-message.decorator';
+import { User } from '../../common/decorators/user.decorator';
+import { User as UserInterface } from '../../common/interfaces/user.interface';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CreateAddressDto } from './dto/create-address.dto';
+import { UpdateAddressDto } from './dto/update-address.dto';
+import { CreatePaymentDto } from './dto/create-payment.dto';
 
 @ApiTags('User Management')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get('profile')
   @ResponseMessage('User profile retrieved successfully')
@@ -103,34 +101,6 @@ export class UserController {
     return await this.userService.updateProfile(user.id, req);
   }
 
-  @Put('change-password')
-  @ResponseMessage('Password changed successfully')
-  @ApiOperation({ summary: 'Change user password' })
-  @ApiBody({ type: ChangePasswordDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Password changed successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
-        requires_relogin: { type: 'boolean' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Current password is incorrect or invalid new password',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async changePassword(
-    @User() user: UserInterface,
-    @Body() req: ChangePasswordDto,
-  ) {
-    return await this.userService.changePassword(user.id, req);
-  }
-
   @Get('addresses')
   @ResponseMessage('Addresses retrieved successfully')
   @ApiOperation({ summary: 'Get all user addresses' })
@@ -153,11 +123,6 @@ export class UserController {
               address_line: { type: 'string' },
               type: { type: 'string' },
               is_primary: { type: 'boolean' },
-              latitude: { type: 'number' },
-              longitude: { type: 'number' },
-              country: { type: 'string' },
-              postal_code: { type: 'string' },
-              state: { type: 'string' },
               created_at: { type: 'string', format: 'date-time' },
               updated_at: { type: 'string', format: 'date-time' },
             },
@@ -192,11 +157,6 @@ export class UserController {
             address_line: { type: 'string' },
             type: { type: 'string' },
             is_primary: { type: 'boolean' },
-            latitude: { type: 'number' },
-            longitude: { type: 'number' },
-            country: { type: 'string' },
-            postal_code: { type: 'string' },
-            state: { type: 'string' },
             created_at: { type: 'string', format: 'date-time' },
             updated_at: { type: 'string', format: 'date-time' },
           },
@@ -239,11 +199,6 @@ export class UserController {
             address_line: { type: 'string' },
             type: { type: 'string' },
             is_primary: { type: 'boolean' },
-            latitude: { type: 'number' },
-            longitude: { type: 'number' },
-            country: { type: 'string' },
-            postal_code: { type: 'string' },
-            state: { type: 'string' },
           },
         },
       },
@@ -254,7 +209,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'Address not found' })
   async updateAddress(
     @User() user: UserInterface,
-    @Param('locationId') locationId: string,
+    @Param('locationId') locationId: number,
     @Body() req: UpdateAddressDto,
   ) {
     return await this.userService.updateAddress(user.id, locationId, req);
@@ -282,9 +237,43 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Address not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async deleteAddress(
-    @User() user: UserInterface,
-    @Param('locationId') locationId: string,
+    @Param('locationId') locationId: number,
   ) {
-    return await this.userService.deleteUserAddress(user.id, locationId);
+    return await this.userService.deleteUserAddress(locationId);
+  }
+
+  @Post('payment-method')
+  @ResponseMessage('Payment method added successfully')
+  @ApiOperation({ summary: 'Add a new payment method' })
+  @ApiBody({ type: CreatePaymentDto })
+  @ApiResponse({ status: 201, description: 'Payment method added successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid payment method data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async addPaymentMethod(
+    @User() user: UserInterface,
+    @Body() req: CreatePaymentDto,
+  ) {
+    return await this.userService.addPaymentMethod(user.id, req);
+  }
+
+  @Delete('payment-method/:paymentMethodId')
+  @ApiOperation({ summary: 'Delete a user payment method' })
+  @ApiParam({ name: 'paymentMethodId', description: 'Payment Method ID to delete', example: '123' })
+  @ApiResponse({ status: 200, description: 'Payment method deleted successfully', schema: { type: 'object', properties: { success: { type: 'boolean' }, message: { type: 'string' } } } })
+  @ApiResponse({ status: 400, description: 'Payment method not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deletePaymentMethod(
+    @User() user: UserInterface,
+    @Param('paymentMethodId') paymentMethodId: number,
+  ) {
+    return await this.userService.deletePaymentMethod(user.id, paymentMethodId);
+  }
+
+  @Get('payment-methods')
+  @ApiOperation({ summary: 'Get all user payment methods' })
+  @ApiResponse({ status: 200, description: 'List of user payment methods', schema: { type: 'object', properties: { paymentMethods: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, provider: { type: 'string' }, last_four: { type: 'string' }, card_type: { type: 'string' }, expiry_date: { type: 'string' }, cardholder_name: { type: 'string' }, billing_address: { type: 'string' }, is_default: { type: 'boolean' }, created_at: { type: 'string', format: 'date-time' }, updated_at: { type: 'string', format: 'date-time' } } } } } } })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getUserPaymentMethods(@User() user: UserInterface) {
+    return await this.userService.getUserPaymentMethods(user.id);
   }
 }

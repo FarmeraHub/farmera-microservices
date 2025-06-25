@@ -1,44 +1,24 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Post,
-  Put,
-  Req,
-  Res,
-  Param,
-  Query,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBody,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
-import { AuthService, REFRESH_TOKEN_COOKIES_KEY } from './auth.service';
-import { Public } from '../common/decorators/public.decorator';
-import { ResponseMessage } from '../common/decorators/response-message.decorator';
-import {
-  LoginDto,
-  ForgotPasswordDto,
-  UpdateNewPasswordDto,
-  RegisterDto,
-  VerifyEmailDto,
-  SendVerificationEmailDto,
-  SendVerificationPhoneDto,
-  VerifyPhoneDto,
-} from './dto';
-import { User } from '../common/decorators/user.decorator';
-import { User as UserInterface } from '../common/interfaces/user.interface';
+import { Body, Controller, Get, Post, Req, Res } from "@nestjs/common";
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { AuthService, REFRESH_TOKEN_COOKIES_KEY } from "./auth.service";
+import { Public } from "src/common/decorators/public.decorator";
+import { ResponseMessage } from "src/common/decorators/response-message.decorator";
+import { LoginDto } from "./dto/login.dto";
+import { Request, Response } from "express";
+import { RegisterDto } from "./dto/register.dto";
+import { SendVerificationEmailDto } from "./dto/send-verification-email.dto";
+import { VerifyEmailDto } from "./dto/verify-email.dto";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
+import { SendVerificationPhoneDto } from "./dto/send-verification-phone.dto";
+import { UpdateNewPasswordDto } from "./dto/update-new-password.dto";
+import { VerifyPhoneDto } from "./dto/verify-phone.dto";
+import { User } from '../../common/decorators/user.decorator';
+import { User as UserInterface } from '../../common/interfaces/user.interface';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Public()
   @Post('login')

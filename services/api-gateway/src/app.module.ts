@@ -6,7 +6,6 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { GuardsModule } from './guards/guards.module';
@@ -60,7 +59,6 @@ import { PaymentModule } from './payment/payment.module';
     }),
 
     // Custom modules
-    AuthModule,
     UserModule,
     GuardsModule,
     HealthModule,

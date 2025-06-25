@@ -1,7 +1,5 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
   Injectable,
   UnauthorizedException,
   Logger,
@@ -14,43 +12,31 @@ import { Response } from 'express';
 import ms from 'ms';
 import { firstValueFrom } from 'rxjs';
 import { ClientGrpc } from '@nestjs/microservices';
-import { HashService } from '../services/hash.service';
-import { Observable } from 'rxjs';
 import {
   LoginRequest,
-  LoginResponse,
   RefreshTokenRequest,
-  RefreshTokenResponse,
   ForgotPasswordRequest,
-  ForgotPasswordResponse,
   UpdatePasswordRequest,
-  UpdatePasswordResponse,
   LogoutRequest,
-  LogoutResponse,
   CreateUserRequest,
-  CreateUserResponse,
   SendVerificationEmailRequest,
-  SendVerificationEmailResponse,
   VerifyEmailRequest,
-  VerifyEmailResponse,
   SendVerificationPhoneRequest,
-  SendVerificationPhoneResponse,
   VerifyPhoneRequest,
-  VerifyPhoneResponse,
   UsersServiceClient,
 } from '@farmera/grpc-proto/dist/users/users';
-import {
-  LoginDto,
-  RegisterDto,
-  ForgotPasswordDto,
-  UpdateNewPasswordDto,
-  SendVerificationEmailDto,
-  VerifyEmailDto,
-  SendVerificationPhoneDto,
-  VerifyPhoneDto,
-} from './dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { SendVerificationEmailDto } from './dto/send-verification-email.dto';
+import { SendVerificationPhoneDto } from './dto/send-verification-phone.dto';
+import { UpdateNewPasswordDto } from './dto/update-new-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { VerifyPhoneDto } from './dto/verify-phone.dto';
+import { UserMapper } from 'src/mappers/users/user.mapper';
 
 export const REFRESH_TOKEN_COOKIES_KEY = 'refresh_token';
+export const ACCESS_TOKEN_COOKIES_KEY = 'access_token';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -61,8 +47,7 @@ export class AuthService implements OnModuleInit {
     @Inject('USERS_GRPC_PACKAGE') private readonly client: ClientGrpc,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly hashService: HashService,
-  ) {}
+  ) { }
 
   onModuleInit() {
     this.usersGrpcService =
@@ -77,7 +62,6 @@ export class AuthService implements OnModuleInit {
         email: req.email,
         password: req.password,
         remember_me: false,
-        device_info: 'API Gateway',
       };
 
       const result = await firstValueFrom(
@@ -98,7 +82,7 @@ export class AuthService implements OnModuleInit {
         });
 
         return {
-          user: result.user,
+          user: UserMapper.fromGrpcUser(result.user),
           access_token,
           refresh_token,
           expires_in,
@@ -245,6 +229,7 @@ export class AuthService implements OnModuleInit {
 
       // Clear the refresh token cookie
       res.clearCookie(REFRESH_TOKEN_COOKIES_KEY);
+      res.clearCookie(ACCESS_TOKEN_COOKIES_KEY);
 
       const grpcRequest: LogoutRequest = {
         user_id: '', // Will be resolved by users service using the token
@@ -294,10 +279,6 @@ export class AuthService implements OnModuleInit {
         password: req.password,
         first_name: req.first_name,
         last_name: req.last_name,
-        phone: '', // Optional for registration
-        role: 1, // Default user role
-        gender: 0, // Unspecified
-        birthday: undefined,
         verification_code: req.verification_code,
       };
 
@@ -308,7 +289,7 @@ export class AuthService implements OnModuleInit {
       if (result.user) {
         this.logger.log(`Registration successful for user: ${result.user.id}`);
         return {
-          user: result.user,
+          user: UserMapper.fromGrpcUser(result.user),
           verification_sent: true, // Assume verification was sent
         };
       }

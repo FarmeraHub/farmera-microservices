@@ -2,17 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsOptional,
   IsString,
-  IsPhoneNumber,
   IsEnum,
   IsDateString,
 } from 'class-validator';
-
-export enum Gender {
-  MALE = 'GENDER_MALE',
-  FEMALE = 'GENDER_FEMALE',
-  OTHER = 'GENDER_OTHER',
-  PREFER_NOT_TO_SAY = 'GENDER_PREFER_NOT_TO_SAY',
-}
+import { Gender } from 'src/common/enums/user/gender.enum';
 
 export class UpdateProfileDto {
   @ApiProperty({
@@ -32,15 +25,6 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   last_name?: string;
-
-  @ApiProperty({
-    example: '+1234567890',
-    description: 'Phone number',
-    required: false,
-  })
-  @IsOptional()
-  @IsPhoneNumber()
-  phone?: string;
 
   @ApiProperty({
     example: 'GENDER_MALE',
@@ -69,13 +53,4 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsDateString()
   birthday?: string;
-
-  @ApiProperty({
-    example: 'Passionate farmer with 10 years of experience',
-    description: 'Bio/description',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  bio?: string;
 }
