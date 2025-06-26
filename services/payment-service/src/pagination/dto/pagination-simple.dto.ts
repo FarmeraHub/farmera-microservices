@@ -4,6 +4,10 @@ import { Order } from './pagination-options.dto';
 
 export class SimpleCursorPagination {
     @IsOptional()
+    @IsString()
+    sort_by?: string;
+
+    @IsOptional()
     @IsEnum(Order)
     order? = 'DESC';
 
