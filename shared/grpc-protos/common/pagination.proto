@@ -46,6 +46,7 @@ message SimpleCursorPaginationRequest {
   optional farmera.common.PaginationOrder order = 1;
   optional int32 limit = 2;
   optional string cursor = 3;
+  optional string sort_by = 4;
 }
 
 message SimpleCursorPaginationResponse {
