@@ -15,10 +15,12 @@ import { ProcessService } from './process/process.service';
 import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
 import { RedirectController } from './redirect/redirect.controller';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
     ConfigModule,
+    UserModule,
     ClientsModule.registerAsync([
       {
         name: 'PRODUCTS_PACKAGE',

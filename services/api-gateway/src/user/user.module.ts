@@ -40,5 +40,6 @@ import { HashService } from 'src/services/hash.service';
   ],
   controllers: [UserController, AuthController],
   providers: [UserService, AuthService, HashService],
+  exports: [UserService],
 })
-export class UserModule { }
+export class UserModule {}

@@ -919,8 +919,6 @@ export class ProductsService implements OnModuleInit {
       // Generate QR code as data URL
       const qrCodeDataUrl = await QRCode.toDataURL(deepLinkUrl, {
         errorCorrectionLevel: 'M',
-        type: 'image/png',
-        quality: 0.92,
         margin: 1,
         color: {
           dark: '#000000',
