@@ -20,8 +20,6 @@ import { ItemDto } from "src/business-validation/dto/list-product.dto";
 import { CheckAvailabilityResult, OrderDetail } from "src/business-validation/dto/validate-response.dto";
 import { UserGrpcClientService } from "src/grpc/client/user.service";
 import { Location } from "src/user/entities/location.entity";
-
-
 export interface CreatePendingDeliveryInternalDto {
     shipping_fee_from_sub_order_dto: number; // Phí ship FE gửi cho sub-order này
     farm_id: string; // Để biết địa chỉ gửi
@@ -469,14 +467,14 @@ export class DeliveryService {
                 this.logger.warn(`[Delivery Service] GHN Province ID not found for city: ${userLocation.city}`);
                 throw new BadRequestException('Không tìm thấy tỉnh thành tương ứng với địa chỉ giao hàng.');
             }
-            const user_ghn_district_id = await this.ghnService.getIdDistrict(userLocation.state, user_ghn_province_id);
+            const user_ghn_district_id = await this.ghnService.getIdDistrict(userLocation.district, user_ghn_province_id);
             if (!user_ghn_district_id) {
-                this.logger.warn(`[Delivery Service] GHN District ID not found for district: ${userLocation.state}`);
+                this.logger.warn(`[Delivery Service] GHN District ID not found for district: ${userLocation.district}`);
                 throw new BadRequestException('Không tìm thấy quận huyện tương ứng với địa chỉ giao hàng.');
             }
-            const user_ghn_ward_id = await this.ghnService.getIdWard(userLocation.district, user_ghn_district_id);
+            const user_ghn_ward_id = await this.ghnService.getIdWard(userLocation.ward, user_ghn_district_id);
             if (!user_ghn_ward_id) {
-                this.logger.warn(`[Delivery Service] GHN Ward ID not found for ward: ${userLocation.district}`);
+                this.logger.warn(`[Delivery Service] GHN Ward ID not found for ward: ${userLocation.ward}`);
                 throw new BadRequestException('Không tìm thấy phường xã tương ứng với địa chỉ giao hàng.');
             }
             // chưa giải giải quyết được vấn đề tách ra từng farm ( để gọi 1 lân) trả về response như nào để thể hiện cho từng farm....

@@ -4,7 +4,7 @@ import {
     GetUserLocationsResponse
 } from "@farmera/grpc-proto/dist/users/users";
 import { ClientGrpc } from "@nestjs/microservices";
-import { Location } from "../../user/entities/location.entity";
+import { Location } from "src/user/entities/location.entity";
 import { firstValueFrom, map } from "rxjs";
 import { LocationMapper } from "src/mappers/user/location.mapper";
 import { ErrorMapper } from "src/mappers/common/error.mapper";
@@ -45,7 +45,7 @@ export class UserGrpcClientService implements OnModuleInit {
     }
     async getLocationById(LocationId: string): Promise<Location> {
         try {
-            const result = await firstValueFrom(this.userGrpcService.getLocationById({ id: LocationId }));
+            const result = await firstValueFrom(this.userGrpcService.getLocationById({ id: Number(LocationId) }));
             if (!result || !result.location) {
                 throw new Error(`Location with ID ${LocationId} not found or gRPC result is malformed`);
             }

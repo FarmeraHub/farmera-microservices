@@ -53,7 +53,7 @@ export class BusinessValidationService {
 
                 const userLocation: Location = await this.userGrpcClientService.getLocationById(orderDetails.address_id);
                 this.logger.log(`User Location: ${JSON.stringify(userLocation, null, 2)}`);
-                if (!userLocation || !userLocation.id || userLocation.user_id !== user.id || userLocation.user_id !== orderDetails.user_id) {
+                if (!userLocation || !userLocation.location_id || userLocation.user_id !== user.id || userLocation.user_id !== orderDetails.user_id) {
                     result.issues.push({
                         reason: 'INVALID_ADDRESS_ID',
                         user_id: orderDetails.user_id,
