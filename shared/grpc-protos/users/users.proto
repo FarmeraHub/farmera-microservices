@@ -304,6 +304,8 @@ message AddUserLocationRequest {
   string address_line = 6;
   string type = 7;
   bool is_primary = 8;
+  string name = 9;
+  string phone = 10;
 }
 
 message AddUserLocationResponse {
@@ -320,6 +322,8 @@ message UpdateUserLocationRequest {
   string address_line = 7;
   string type = 8;
   bool is_primary = 9;
+  string name = 10;
+  string phone = 11;
 }
 
 message UpdateUserLocationResponse {

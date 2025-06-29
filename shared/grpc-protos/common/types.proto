@@ -43,6 +43,9 @@ message UserLocation {
   bool is_primary = 8;
   Timestamp created_at = 9;
   Timestamp updated_at = 10;
+  string name = 11;  // Name associated with this address (e.g., recipient name)
+  string phone = 12; // Phone number for this address
+
 }
 
 // Geohash location for spatial queries

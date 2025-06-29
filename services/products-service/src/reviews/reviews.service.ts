@@ -7,7 +7,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { AzureBlobService } from 'src/services/azure-blob.service';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { ErrorMapper } from 'src/grpc/server/mappers/common/error.mapper';
+import { ErrorMapper } from 'src/mappers/common/error.mapper';
 
 @Injectable()
 export class ReviewsService {

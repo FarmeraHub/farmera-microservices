@@ -11,6 +11,7 @@ import {
     UserRole as GrpcUserRole,
     UserStatus as GrpcUserStatus,
     PaymentMethod as GrpcPaymentMethod,
+    PaymentProvider as GrpcPaymentProvider,
 } from "@farmera/grpc-proto/dist/common/enums";
 import { FarmStatus } from "src/common/enums/product/farm-status.enum";
 import { ProductStatus } from "src/common/enums/product/product-status.enum";
@@ -148,7 +149,7 @@ export class EnumMapper {
             default: throw new BadRequestException("Invalid User Status value");
         }
     }
-    static fromGrpcPaymentProvider(value: GrpcPaymentMethod ) :PaymentProvider {
+    static fromGrpcPaymentProvider(value: GrpcPaymentProvider ) :PaymentProvider {
         switch (value.toString()) {
             case "PAYMENT_METHOD_PAYPAL": return PaymentProvider.PAYPAL;
             case "PAYMENT_METHOD_STRIPE": return PaymentProvider.STRIPE;

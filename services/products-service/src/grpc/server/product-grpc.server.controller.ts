@@ -87,21 +87,21 @@ import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
 import { FarmStatus } from 'src/common/enums/farm-status.enum';
 import { GrpcStreamMethod, RpcException } from '@nestjs/microservices';
-import { FarmMapper } from './mappers/product/farm.mapper';
+import { FarmMapper } from '../../mappers/product/farm.mapper';
 import { VerifyStatusCode } from '@farmera/grpc-proto/dist/common/enums';
 import { Readable } from 'stream';
-import { CategoryMapper } from './mappers/product/category.mapper';
+import { CategoryMapper } from '../../mappers/product/category.mapper';
 import { ReviewsService } from 'src/reviews/reviews.service';
-import { ReviewMapper } from './mappers/product/review.mapper';
+import { ReviewMapper } from '../../mappers/product/review.mapper';
 import { ProcessService } from 'src/process/process.service';
-import { TypesMapper } from './mappers/common/types.mapper';
-import { ProcessMapper } from './mappers/product/process.mapper';
-import { EnumsMapper } from './mappers/common/enums.mapper';
+import { TypesMapper } from '../../mappers/common/types.mapper';
+import { ProcessMapper } from '../../mappers/product/process.mapper';
+import { EnumsMapper } from '../../mappers/common/enums.mapper';
 import { status } from '@grpc/grpc-js';
 import { CreateSubcategoryDto } from 'src/categories/dto/create-subcategories.dto';
-import { ErrorMapper } from './mappers/common/error.mapper';
-import { PaginationMapper } from './mappers/common/pagination.mapper';
-import { ProductMapper } from "./mappers/product/product.mapper";
+import { ErrorMapper } from '../../mappers/common/error.mapper';
+import { PaginationMapper } from '../../mappers/common/pagination.mapper';
+import { ProductMapper } from "../../mappers/product/product.mapper";
 
 @Controller()
 @ProductsServiceControllerMethods()

@@ -6,6 +6,12 @@ export class Location {
   @PrimaryGeneratedColumn()
   location_id: number;
 
+  @Column({ nullable: true })
+  name: string; // Name associated with this address (e.g., recipient name)
+
+  @Column({ nullable: true })
+  phone: string; // Phone number for this address
+
   @Column({ nullable: false })
   city: string;
 

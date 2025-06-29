@@ -3,6 +3,20 @@ import { IsOptional, IsString, IsBoolean, IsNotEmpty } from 'class-validator';
 
 export class UpdateAddressDto {
   @ApiProperty({
+    example: 'Nguyễn Văn A',
+    description: 'Name associated with this address',
+  })  
+  @IsString()
+  name: string;
+
+  @ApiProperty({
+    example: '+1234567890',
+    description: 'Phone number for this address',
+  })
+  @IsString()
+  phone: string;
+
+  @ApiProperty({
     example: 'Ho Chi Minh City',
     description: 'City name',
   })

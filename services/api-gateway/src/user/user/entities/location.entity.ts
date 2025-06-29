@@ -2,6 +2,8 @@ import { User } from "./user.entity";
 
 export class Location {
   location_id: number;
+  name: string;
+  phone: string;
   city: string;
   district: string;
   ward: string;

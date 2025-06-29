@@ -2,7 +2,7 @@ import { PaymentProvider } from 'src/common/enums/user/payment_method.enum';
 import { User } from './user.entity';
 
 export class PaymentMethod {
-  id: number;
+  payment_method_id: number;
   provider: PaymentProvider;
   external_id: string;
   last_four: string;
@@ -12,9 +12,10 @@ export class PaymentMethod {
   billing_address: string;
   token: string;
   is_default: boolean;
-  user_id: string;
-  metadata: string;
+  user?: User;
+  user_id?: string;
   is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
+  created_at?: Date;
+  updated_at?: Date;
 }
+

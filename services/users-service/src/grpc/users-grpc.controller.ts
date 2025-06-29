@@ -467,6 +467,8 @@ export class UsersGrpcController implements UsersServiceController {
       const location = await this.usersService.addUserLocation(
         request.user_id,
         {
+          name: request.name,
+          phone: request.phone,
           address_line: request.address_line,
           city: request.city,
           district: request.district,
@@ -492,6 +494,8 @@ export class UsersGrpcController implements UsersServiceController {
   ): Promise<UpdateUserLocationResponse> {
     try {
       const locationData: UpdateAddressDto = {
+        name: request.name,
+        phone: request.phone,
         city: request.city,
         district: request.district,
         address_line: request.address_line,
