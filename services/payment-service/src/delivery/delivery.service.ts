@@ -20,6 +20,10 @@ import { ItemDto } from "src/business-validation/dto/list-product.dto";
 import { CheckAvailabilityResult, OrderDetail } from "src/business-validation/dto/validate-response.dto";
 import { UserGrpcClientService } from "src/grpc/client/user.service";
 import { Location } from "src/user/entities/location.entity";
+import { CalculateShippingFeeRequestDto } from "src/orders/dto/order_dto";
+import { ItemDeliveryDto } from "./dto/item-delivery.dto";
+import { Issue, Item, ShippingFeeDetails } from "./enitites/cart.entity";
+import { User } from "src/user/entities/user.entity";
 export interface CreatePendingDeliveryInternalDto {
     shipping_fee_from_sub_order_dto: number; // Phí ship FE gửi cho sub-order này
     farm_id: string; // Để biết địa chỉ gửi
@@ -450,57 +454,76 @@ export class DeliveryService {
         }
     }
 
-    async CalculateShippingFee(userRequestList: ItemDto[], orderDetails: OrderDetail): Promise<any> {
-        try {
-            const checkOrderValidation: CheckAvailabilityResult = await this.businessValidationService.validateOrder(userRequestList, orderDetails);
-            if (!checkOrderValidation.isValidOrder) {
-                return checkOrderValidation;
-            }
-            const userLocation: Location = await this.userGrpcClientService.getLocationById(orderDetails.address_id);
-            if (!userLocation) {
-                this.logger.warn(`[Delivery Service] User location not found for address ID: ${orderDetails.address_id}`);
-                throw new BadRequestException('Địa chỉ giao hàng không hợp lệ hoặc không tồn tại.');
-            }
+    async CalculateShippingFee(order: CalculateShippingFeeRequestDto): Promise<ShippingFeeDetails | Issue[] > {
+        this.logger.log(`Starting shipping fee calculation for order: ${JSON.stringify(order)}`);
+        let allIssues: Issue[] = [];
+        const [subOrderValidationResult, orderInfoValidationResult] = await Promise.all([
+            this.businessValidationService.validateSubOrder(order.suborders),
+            this.businessValidationService.validateOrderInfoToCalculateShippingFee(order.order_info)
+        ]);
+        let validSubOrder: ShippingFeeDetails | null = null;
+        let validOrderInfo: { user: User, address: Location, province_code: number, district_code: number, ward_code: string } | null = null;
 
-            const user_ghn_province_id = await this.ghnService.getIdProvince(userLocation.city);
-            if (!user_ghn_province_id) {
-                this.logger.warn(`[Delivery Service] GHN Province ID not found for city: ${userLocation.city}`);
-                throw new BadRequestException('Không tìm thấy tỉnh thành tương ứng với địa chỉ giao hàng.');
-            }
-            const user_ghn_district_id = await this.ghnService.getIdDistrict(userLocation.district, user_ghn_province_id);
-            if (!user_ghn_district_id) {
-                this.logger.warn(`[Delivery Service] GHN District ID not found for district: ${userLocation.district}`);
-                throw new BadRequestException('Không tìm thấy quận huyện tương ứng với địa chỉ giao hàng.');
-            }
-            const user_ghn_ward_id = await this.ghnService.getIdWard(userLocation.ward, user_ghn_district_id);
-            if (!user_ghn_ward_id) {
-                this.logger.warn(`[Delivery Service] GHN Ward ID not found for ward: ${userLocation.ward}`);
-                throw new BadRequestException('Không tìm thấy phường xã tương ứng với địa chỉ giao hàng.');
-            }
-            // chưa giải giải quyết được vấn đề tách ra từng farm ( để gọi 1 lân) trả về response như nào để thể hiện cho từng farm....
-            // const calculateDto: CalculateShippingFeeDto = {
-            //     from_district_id: this.ghnService.getIdDistrictByName('Huyện Củ Chi', 1), // GHN Shop ID 1
-            //     to_district_id: user_ghn_district_id,
-            //     to_ward_code: user_ghn_ward_id,
-            //     to_province_id: user_ghn_province_id,
-            //     length: 10, // GHN yêu cầu chiều dài tối thiểu là 10cm
-            //     width: 10, // GHN yêu cầu chiều rộng tối thiểu là 10cm
-            //     height: 10, // GHN yêu cầu chiều cao tối thiểu là 10cm
-            //     weight: 1000, // GHN yêu cầu trọng lượng tối thiểu là 1000g
-            //     items: userRequestList.map(item => ({
-            //         product_id: item.product_id,
-            //         quantity: item.quantity,
-            //         weight: item.weight || 1000, // Mặc định nếu không có trọng lượng
-            //         name: item.name || 'Sản phẩm không tên',
-            //     })),
-            // };
 
+        if (Array.isArray(subOrderValidationResult)) {
+            allIssues.push(...subOrderValidationResult);
+        } else {
+            validSubOrder = subOrderValidationResult;
         }
-        catch (error) {
-            this.logger.error(`[Delivery Service] Error calculating shipping fee: ${error.message}`, error.stack);
-            throw new InternalServerErrorException(`Lỗi khi tính phí vận chuyển: ${error.message}`);
+        if (Array.isArray(orderInfoValidationResult)) {
+            allIssues.push(...orderInfoValidationResult);
+        } else {
+            validOrderInfo = orderInfoValidationResult;
         }
 
+        if (allIssues.length > 0) {
+           
+            return allIssues;
+        }
+
+        if (validSubOrder && validOrderInfo) {
+            try {
+                const listItemDelivery: ItemDeliveryDto[] = validSubOrder.products.map((item: Item) => {
+                    return {
+                        name: item.product_name,
+                        quantity: item.quantity,
+                        weight: item.weight,
+                        length: 0, // Việc tạo sản phẩm chưa có các trường này, nên tạm thời để 0
+                        width: 0,
+                        height: 0,
+                        price: item.price_per_unit,
+                    };
+                })
+
+                const calculateShippingFeeDto: CalculateShippingFeeDto = {
+                    from_district_id: validSubOrder.district_code!,
+                    from_ward_code: validSubOrder.ward_code!,
+                    to_district_id: validOrderInfo.district_code,
+                    to_ward_code: validOrderInfo.ward_code,
+                    length: 0, // Tạm thời để 0
+                    width: 0, // Tạm thời để 0
+                    height: 0, // Tạm thời để 0
+                    weight: validSubOrder.products.reduce((sum: number, item: Item) => sum + (item.weight * item.quantity), 0),
+                    items: listItemDelivery,
+                };
+                const ghnFeeData = await this.calculateFeeByGHN(calculateShippingFeeDto);
+                this.logger.log(`GHN Fee Data: ${JSON.stringify(ghnFeeData)}`);
+                const shippingFeeDetails: ShippingFeeDetails = {
+                    ...validSubOrder,
+                    shipping_fee: ghnFeeData.total,
+                    final_fee: ghnFeeData.total + validSubOrder.shipping_fee,
+                };
+                this.logger.log(`Calculated shipping fee details: ${JSON.stringify(shippingFeeDetails)}`);
+                return shippingFeeDetails;
+
+                
+            } catch (error) { 
+                this.logger.error(`Error calculating shipping fee: ${error.message}`, error.stack);
+                throw new InternalServerErrorException(`Lỗi khi tính phí vận chuyển: ${error.message}`);
+            }
+        }
+        this.logger.warn(`No valid suborder or order info found for shipping fee calculation.`);
+        throw new BadRequestException('Không có thông tin hợp lệ để tính phí vận chuyển.');
     }
 
 }

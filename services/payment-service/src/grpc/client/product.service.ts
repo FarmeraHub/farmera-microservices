@@ -11,6 +11,8 @@ import { ErrorMapper } from "src/mappers/common/error.mapper";
 import { TypesMapper } from "src/mappers/common/types.mapper";
 import { ProductMapper } from "src/mappers/product/product.mapper";
 import { Product } from "src/product/product/entities/product.entity";
+import { Farm } from "src/product/farm/entities/farm.entity";
+import { FarmMapper } from "src/mappers/product/farm.mapper";
 
 // Define ProductOptions interface
 interface ProductOptions {
@@ -54,7 +56,23 @@ export class ProductsGrpcClientService implements OnModuleInit {
 
         } catch (error) {
             this.logger.error(error.message);
-            throw ErrorMapper.fromGrpcError(error);
+            throw ErrorMapper.toRpcException(error);
+        }
+    }
+    async getFarm(farmId: string): Promise<Farm> {
+        try {
+            const response = await firstValueFrom(
+                this.productGrpcService.getFarm({ farm_id: farmId })
+            );
+    
+            const farm = FarmMapper.fromGrpcFarm(response.farm!);
+            if (!farm) {
+                throw new RpcException(`Farm with ID ${farmId} could not be mapped from gRPC response`);
+            }
+            return farm;
+        } catch (error) {
+            this.logger.error(error.message);
+            throw ErrorMapper.toRpcException(error);
         }
     }
 

@@ -10,6 +10,8 @@ import { LocationMapper } from "src/mappers/user/location.mapper";
 import { ErrorMapper } from "src/mappers/common/error.mapper";
 import { UserMapper } from "src/mappers/user/user.mapper";
 import { User } from "src/user/entities/user.entity";
+import { PaymentMethod } from "src/user/entities/payment_method.entity";
+import { PaymentMethodMapper } from "src/mappers/user/payment-method.mapper";
 
 @Injectable()
 export class UserGrpcClientService implements OnModuleInit {
@@ -40,7 +42,7 @@ export class UserGrpcClientService implements OnModuleInit {
             return user;
         } catch (err) {
             this.logger.error(err.message);
-            throw ErrorMapper.fromGrpcError(err);
+            throw ErrorMapper.toRpcException(err);
         }
     }
     async getLocationById(LocationId: string): Promise<Location> {
@@ -59,7 +61,21 @@ export class UserGrpcClientService implements OnModuleInit {
         }
         catch (err) {
             this.logger.error(err.message);
-            throw ErrorMapper.fromGrpcError(err);
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+    async getPaymentMethods(userId: string) :Promise<PaymentMethod[]> {
+        try {
+            const result = await firstValueFrom(this.userGrpcService.getPaymentMethods({ user_id: userId }));
+            if (!result || !result.payment_methods) {
+                throw new Error(`Payment methods for user ID ${userId} not found or gRPC result is malformed`);
+            }
+            this.logger.log(`Payment methods for user ID ${userId} found: ${JSON.stringify(result.payment_methods)}`);
+
+            return result.payment_methods.map(pm => PaymentMethodMapper.fromGrpcPaymentMethod(pm));
+        } catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.toRpcException(err);
         }
     }
 }

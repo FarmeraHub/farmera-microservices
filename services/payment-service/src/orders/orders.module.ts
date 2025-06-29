@@ -9,6 +9,7 @@ import { OrderDetail } from './entities/order-detail.entity';
 import { ProductClientModule } from 'src/clients/product/product.client.module';
 import { DiscountModule } from 'src/discounts/discount.module';
 import { PaymentModule } from 'src/payments/payment.module';
+import { BusinessValidationModule } from 'src/business-validation/business-validation.module';
 
 @Module({
     imports: [
@@ -19,8 +20,10 @@ import { PaymentModule } from 'src/payments/payment.module';
         DiscountModule,
         DeliveryModule,
         ProductClientModule,
+        BusinessValidationModule,
     ],
     controllers: [OrdersController],
     providers: [OrdersService],
+    exports: [OrdersService],
 })
 export class OrdersModule { }

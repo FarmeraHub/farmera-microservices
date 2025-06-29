@@ -80,7 +80,6 @@ message SubOrder{
   double final_amount = 8;
   farmera.common.Timestamp created = 9;
   repeated OrderItem items = 10;
-
 }
 // Order item
 message OrderItem {
@@ -633,57 +632,159 @@ message RevenueDataPoint {
 } 
 
 
-message CalculateShippingFeeRequest{
-  repeated OrderItemRequest list_items = 1;
-  string user_id = 2;
-  string address_id = 3;
-}
-message ShippingErrorDetail {
-  enum ErrorCode {
-    ERROR_CODE_UNSPECIFIED = 0;
-    PRODUCT_NOT_FOUND = 1;         // Sản phẩm không tồn tại
-    INSUFFICIENT_STOCK = 2;        // Không đủ hàng tồn kho
-    PRODUCT_UNAVAILABLE_FOR_SHIPPING = 3; // Sản phẩm không hỗ trợ giao hàng tới địa chỉ này
-    FARM_UNAVAILABLE = 4;          // Farm không hoạt động hoặc không tìm thấy
-    ADDRESS_INVALID = 5;           // Địa chỉ không hợp lệ hoặc không giao được
-    SHIPPING_SERVICE_UNAVAILABLE = 6; // Dịch vụ vận chuyển không khả dụng
-    INTERNAL_SERVER_ERROR = 7;     // Lỗi server nội bộ
-    WEIGHT_VOLUME_EXCEEDED = 8;    // Vượt quá cân nặng/thể tích cho phép
-  }
-  ErrorCode error_code = 1;
-  string message = 2;                 // Mô tả lỗi chi tiết, thân thiện với người dùng
-  string item_id = 3;                 // ID của sản phẩm/item gây ra lỗi (nếu có)
-  string farm_id = 4;                 // ID của farm liên quan đến lỗi (nếu có)
-}
 
-// Thông tin phí ship cho một nhóm sản phẩm (cùng farm)
-message FarmShippingFee {
+
+message ItemRequest{
+  int32 product_id = 1;
+  int32 quantity = 2;
+}
+message SubOrderRequest{
   string farm_id = 1;
-  string farm_name = 2; // Tên farm (tùy chọn, để hiển thị)
-  double shipping_fee = 3; // Phí ship cho các sản phẩm từ farm này
-  string estimated_delivery_time = 4; // Thời gian giao hàng dự kiến (ví dụ: "2-3 ngày")
-  repeated string product_ids_in_group = 5; // Danh sách ID các sản phẩm trong nhóm này
+  repeated ItemRequest products = 2;
+}
+message OrderInfoRequest {
+  string user_id = 1;
+  string address_id = 2; 
+  optional string payment_type = 3;
 }
 
-// Response chính
+message OrderRequest{
+  repeated SubOrderRequest suborders = 1;
+  OrderInfoRequest order_info = 2;
+}
+
+
+
+// ValidationError
+message ValidationError {
+  string reason = 1; // Mã lỗi, ví dụ: "INSUFFICIENT_STOCK"
+  string details = 2; // Mô tả lỗi cho developer
+  map<string, string> context = 3; // Ngữ cảnh dưới dạng map
+}
+
+// ValidatedItem
+message ValidatedItem {
+  int32 product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  double price_per_unit = 4;
+  double total_price = 5;
+  double weight = 6;       
+  string image_urls = 7;   
+}
+
+// Farm
+message Farm {
+  string id = 1;
+  string name = 2;
+}
+
+// ValidatedSuborder
+message ValidatedSuborder {
+  Farm farm = 1;
+  repeated ValidatedItem items = 2;
+}
+
+// User
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  string phone = 4;
+}
+
+// Location
+message Location {
+  int32 id = 1;
+  string city = 2;
+  string district = 3;
+  string ward = 4;
+  string street = 5;
+  string address_line = 6;
+  string type = 7;
+  bool is_primary = 8;
+  string name = 11;  // Name associated with this address (e.g., recipient name)
+  string phone = 12; // Phone number for this address
+}
+
+// PaymentMethod
+message PaymentMethod {
+  string id = 1;
+  string type = 2;
+  string provider = 3;
+}
+
+// FullValidationResult
+message FullValidationResult {
+  bool is_valid = 1;
+  repeated ValidationError issues = 2;
+  User validated_user = 3;
+  Location validated_location = 4;
+  PaymentMethod validated_payment_method = 5;
+  repeated ValidatedSuborder validated_suborders = 6;
+}
+
+// SuborderValidationResult
+message SuborderValidationResult {
+  bool is_valid = 1;
+  repeated ValidationError issues = 2;
+  Farm farm = 3;
+  repeated ValidatedItem valid_items = 4;
+}
+
+message CalculateShippingFeeRequest{
+  SubOrderRequest suborders = 1;
+  OrderInfoRequest order_info = 2;
+}
+// =================== RESPONSE CalculateShippingFee MESSAGES ===================
+message ItemResponse {
+  int32 product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  double price_per_unit = 4;
+  double total_price = 5;
+  double weight = 6;       
+  string image_url = 7;  
+  string unit = 8;
+}
+
+message ShippingFeeDetails {
+  string farm_id = 1;
+  string farm_name = 2;
+  string avatar_url = 3;
+  double final_fee = 4;
+  string currency = 5;
+  repeated ItemResponse products = 6;
+  double shipping_fee = 7;
+
+}
+
+message Issue {
+  string reason = 1;      // Dùng string, ví dụ: "PRODUCT_NOT_FOUND", "OUT_OF_STOCK"
+  string details = 2;       // Mô tả chi tiết, thân thiện với người dùng
+  
+  oneof context {
+    int32 product_id = 3;
+    string farm_id = 4;
+    string user_id = 5;
+    string address_id = 6;
+  }
+}
+
+// **MỚI**: Một message để gom nhóm tất cả các lỗi lại
+message ValidationErrors {
+  repeated Issue issues = 1;
+}
+
+// **CẬP NHẬT**: Response chính sử dụng oneof
 message CalculateShippingFeeResponse {
   oneof result {
-    SuccessResponse success = 1;
-    ErrorResponse error = 2;
+    ShippingFeeDetails details = 1;     // Trả về khi MỌI THỨ đều hợp lệ
+    ValidationErrors errors = 2;        // Trả về khi có BẤT KỲ lỗi validation nào
   }
 }
 
-message SuccessResponse {
-  repeated FarmShippingFee farm_shipping_fees = 1; // Danh sách phí ship theo từng farm
-  double total_shipping_fee = 2; // Tổng phí ship (nếu cần tính tổng ở server)
-}
 
-message ErrorResponse {
-  // Một lỗi chung cho toàn bộ yêu cầu, ví dụ địa chỉ không hợp lệ
-  // hoặc dịch vụ vận chuyển không khả dụng cho toàn bộ đơn.
-  ShippingErrorDetail general_error = 1;
 
-  // Hoặc danh sách các lỗi cụ thể cho từng item/farm.
-  // Nếu có general_error, trường này có thể không cần thiết hoặc dùng để bổ sung.
-  repeated ShippingErrorDetail item_errors = 2;
-}
+
+

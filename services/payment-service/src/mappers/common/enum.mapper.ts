@@ -149,14 +149,23 @@ export class EnumMapper {
             default: throw new BadRequestException("Invalid User Status value");
         }
     }
-    static fromGrpcPaymentProvider(value: GrpcPaymentProvider ) :PaymentProvider {
+    // static fromGrpcPaymentMethod(value: GrpcPaymentProvider ) :PaymentProvider {
+    //     switch (value.toString()) {
+    //         case "PAYMENT_METHOD_PAYPAL": return PaymentProvider.PAYPAL;
+    //         case "PAYMENT_METHOD_STRIPE": return PaymentProvider.STRIPE;
+    //         case "PAYMENT_METHOD_BANK_TRANSFER": return PaymentProvider.BANK_TRANSFER;
+    //         case "PAYMENT_METHOD_CREDIT_CARD": return PaymentProvider.CREDIT_CARD;
+    //         case "PAYMENT_METHOD_OTHER": return PaymentProvider.OTHER;
+    //         default: throw new BadRequestException("Invalid Payment Method value");
+    //     }
+    // }
+    static fromGrpcPaymentProvider(value: GrpcPaymentProvider): PaymentProvider {
         switch (value.toString()) {
-            case "PAYMENT_METHOD_PAYPAL": return PaymentProvider.PAYPAL;
-            case "PAYMENT_METHOD_STRIPE": return PaymentProvider.STRIPE;
-            case "PAYMENT_METHOD_BANK_TRANSFER": return PaymentProvider.BANK_TRANSFER;
-            case "PAYMENT_METHOD_CREDIT_CARD": return PaymentProvider.CREDIT_CARD;
-            case "PAYMENT_METHOD_OTHER": return PaymentProvider.OTHER;
-            default: throw new BadRequestException("Invalid Payment Method value");
+            case "PAYMENT_PROVIDER_VNPAY": return PaymentProvider.VNPAY;
+            case "PAYMENT_PROVIDER_MOMO": return PaymentProvider.MOMO;
+            case "PAYMENT_PROVIDER_ZALOPAY": return PaymentProvider.ZALOPAY;
+            case "PAYMENT_PROVIDER_OTHER": return PaymentProvider.OTHER;
+            default: throw new BadRequestException("Invalid payment provider");
         }
     }
 }
