@@ -53,6 +53,7 @@ service UsersService {
   // Admin methods
   rpc GetUsersByRole(GetUsersByRoleRequest) returns (GetUsersByRoleResponse);
   rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
+  rpc UpdateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
   rpc GetUserStats(GetUserStatsRequest) returns (GetUserStatsResponse);
 }
 
@@ -416,6 +417,16 @@ message UpdateUserStatusRequest {
 }
 
 message UpdateUserStatusResponse {
+  User user = 1;
+}
+
+message UpdateUserRoleRequest {
+  string user_id = 1;
+  farmera.common.UserRole role = 2;
+  optional string farm_id = 3;
+}
+
+message UpdateUserRoleResponse {
   User user = 1;
 }
 

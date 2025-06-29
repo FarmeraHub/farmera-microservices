@@ -18,221 +18,338 @@ import { ProductStatus } from 'src/common/enums/product/product-status.enum';
 
 @Injectable()
 export class ProductService {
+  private readonly logger = new Logger(ProductService.name);
+  private productGrpcService: ProductsServiceClient;
 
-    private readonly logger = new Logger(ProductService.name);
-    private productGrpcService: ProductsServiceClient;
+  constructor(@Inject('PRODUCTS_PACKAGE') private client: ClientGrpc) {}
 
-    constructor(
-        @Inject("PRODUCTS_PACKAGE") private client: ClientGrpc
-    ) { }
+  onModuleInit() {
+    this.productGrpcService =
+      this.client.getService<ProductsServiceClient>('ProductsService');
+  }
 
-    onModuleInit() {
-        this.productGrpcService = this.client.getService<ProductsServiceClient>("ProductsService")
+  async createProduct(
+    userId: string,
+    createProductDto: CreateProductDto,
+  ): Promise<Product> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.createProduct({
+          user_id: userId,
+          product_name: createProductDto.product_name,
+          description: createProductDto.description,
+          price_per_unit: createProductDto.price_per_unit,
+          unit: createProductDto.unit,
+          stock_quantity: createProductDto.stock_quantity,
+          weight: createProductDto.weight,
+          image_urls: createProductDto.image_urls
+            ? { list: createProductDto.image_urls }
+            : undefined,
+          video_urls: createProductDto.video_urls
+            ? { list: createProductDto.video_urls }
+            : undefined,
+          subcategory_ids: createProductDto.subcategory_ids,
+        }),
+      );
+      return ProductMapper.fromGrpcProduct(result.product);
+    } catch (err) {
+      this.logger.error(`[createProduct] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async createProduct(userId: string, createProductDto: CreateProductDto): Promise<Product> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.createProduct({
-                user_id: userId,
-                product_name: createProductDto.product_name,
-                description: createProductDto.description,
-                price_per_unit: createProductDto.price_per_unit,
-                unit: createProductDto.unit,
-                stock_quantity: createProductDto.stock_quantity,
-                weight: createProductDto.weight,
-                image_urls: createProductDto.image_urls ? { list: createProductDto.image_urls } : undefined,
-                video_urls: createProductDto.video_urls ? { list: createProductDto.video_urls } : undefined,
-                subcategory_ids: createProductDto.subcategory_ids,
-            }));
-            return ProductMapper.fromGrpcProduct(result.product);
-        }
-        catch (err) {
-            this.logger.error(`[createProduct] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async getProductById(
+    productId: number,
+    productOptions?: ProductOptions,
+  ): Promise<Product> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.getProduct({
+          product_id: productId,
+          options: TypesMapper.toGrpcProductOptions(productOptions),
+        }),
+      );
+      return ProductMapper.fromGrpcProduct(result.product);
+    } catch (err) {
+      this.logger.error(`[getProductById] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async getProductById(productId: number, productOptions?: ProductOptions): Promise<Product> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.getProduct({
-                product_id: productId,
-                options: TypesMapper.toGrpcProductOptions(productOptions),
-            }));
-            return ProductMapper.fromGrpcProduct(result.product);
-        } catch (err) {
-            this.logger.error(`[getProductById] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async getProductsByFarm(
+    farmId: string,
+    getProductByFarmDto?: GetProductByFarmDto,
+  ): Promise<PaginationResult<Product>> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.getProductsByFarm({
+          farm_id: farmId,
+          options: TypesMapper.toGrpcProductOptions({
+            include_categories: getProductByFarmDto.include_categories,
+          }),
+          pagination: PaginationMapper.toGrpcPaginationRequest({
+            limit: getProductByFarmDto.limit,
+            order: getProductByFarmDto.order,
+            page: getProductByFarmDto.page,
+            sort_by: getProductByFarmDto.sort_by,
+            skip: getProductByFarmDto.skip,
+          }),
+        }),
+      );
+      return {
+        data: result.products.map((value) =>
+          ProductMapper.fromGrpcProduct(value),
+        ),
+        pagination: PaginationMapper.fromGrpcPaginationResponse(
+          result.pagination,
+        ),
+      };
+    } catch (err) {
+      this.logger.error(`[getProductsByFarm] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async getProductsByFarm(farmId: string, getProductByFarmDto?: GetProductByFarmDto): Promise<PaginationResult<Product>> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.getProductsByFarm({
-                farm_id: farmId,
-                options: TypesMapper.toGrpcProductOptions({ include_categories: getProductByFarmDto.include_categories }),
-                pagination: PaginationMapper.toGrpcPaginationRequest({
-                    limit: getProductByFarmDto.limit,
-                    order: getProductByFarmDto.order,
-                    page: getProductByFarmDto.page,
-                    sort_by: getProductByFarmDto.sort_by,
-                    skip: getProductByFarmDto.skip
-                }),
-            }));
-            return {
-                data: result.products.map((value) => ProductMapper.fromGrpcProduct(value)),
-                pagination: PaginationMapper.fromGrpcPaginationResponse(result.pagination)
-            }
-        } catch (err) {
-            this.logger.error(`[getProductsByFarm] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async deleteProduct(productId: number, userId: string): Promise<boolean> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.deleteProduct({
+          product_id: productId,
+          user_id: userId,
+        }),
+      );
+      return result.success;
+    } catch (err) {
+      this.logger.error(`[deleteProduct] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async deleteProduct(productId: number, userId: string): Promise<boolean> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.deleteProduct({
-                product_id: productId,
-                user_id: userId,
-            }));
-            return result.success;
-        }
-        catch (err) {
-            this.logger.error(`[deleteProduct] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async getProductsByCategory(
+    categoryId: number,
+    getProductByFarmDto?: GetProductByFarmDto,
+  ): Promise<PaginationResult<Product>> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.getProductsByCategory({
+          category_id: categoryId,
+          options: TypesMapper.toGrpcProductOptions({
+            include_categories: getProductByFarmDto.include_categories,
+          }),
+          pagination: PaginationMapper.toGrpcPaginationRequest({
+            limit: getProductByFarmDto.limit,
+            order: getProductByFarmDto.order,
+            page: getProductByFarmDto.page,
+            sort_by: getProductByFarmDto.sort_by,
+            skip: getProductByFarmDto.skip,
+          }),
+        }),
+      );
+      return {
+        data: result.products.map((value) =>
+          ProductMapper.fromGrpcProduct(value),
+        ),
+        pagination: PaginationMapper.fromGrpcPaginationResponse(
+          result.pagination,
+        ),
+      };
+    } catch (err) {
+      this.logger.error(`[getProductsByCategory] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async getProductsByCategory(categoryId: number, getProductByFarmDto?: GetProductByFarmDto): Promise<PaginationResult<Product>> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.getProductsByCategory({
-                category_id: categoryId,
-                options: TypesMapper.toGrpcProductOptions({ include_categories: getProductByFarmDto.include_categories }),
-                pagination: PaginationMapper.toGrpcPaginationRequest({
-                    limit: getProductByFarmDto.limit,
-                    order: getProductByFarmDto.order,
-                    page: getProductByFarmDto.page,
-                    sort_by: getProductByFarmDto.sort_by,
-                    skip: getProductByFarmDto.skip
-                }),
-            }));
-            return {
-                data: result.products.map((value) => ProductMapper.fromGrpcProduct(value)),
-                pagination: PaginationMapper.fromGrpcPaginationResponse(result.pagination)
-            }
-        }
-        catch (err) {
-            this.logger.error(`[getProductsByCategory] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async getProductsBySubCategory(
+    subcategoryId: number,
+    getProductByFarmDto?: GetProductByFarmDto,
+  ): Promise<PaginationResult<Product>> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.getProductsBySubCategory({
+          subcategory_id: subcategoryId,
+          options: TypesMapper.toGrpcProductOptions({
+            include_categories: getProductByFarmDto.include_categories,
+          }),
+          pagination: PaginationMapper.toGrpcPaginationRequest({
+            limit: getProductByFarmDto.limit,
+            order: getProductByFarmDto.order,
+            page: getProductByFarmDto.page,
+            sort_by: getProductByFarmDto.sort_by,
+            skip: getProductByFarmDto.skip,
+          }),
+        }),
+      );
+      return {
+        data: result.products.map((value) =>
+          ProductMapper.fromGrpcProduct(value),
+        ),
+        pagination: PaginationMapper.fromGrpcPaginationResponse(
+          result.pagination,
+        ),
+      };
+    } catch (err) {
+      this.logger.error(`[getProductsByCategory] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async getProductsBySubCategory(subcategoryId: number, getProductByFarmDto?: GetProductByFarmDto): Promise<PaginationResult<Product>> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.getProductsBySubCategory({
-                subcategory_id: subcategoryId,
-                options: TypesMapper.toGrpcProductOptions({ include_categories: getProductByFarmDto.include_categories }),
-                pagination: PaginationMapper.toGrpcPaginationRequest({
-                    limit: getProductByFarmDto.limit,
-                    order: getProductByFarmDto.order,
-                    page: getProductByFarmDto.page,
-                    sort_by: getProductByFarmDto.sort_by,
-                    skip: getProductByFarmDto.skip
-                }),
-            }));
-            return {
-                data: result.products.map((value) => ProductMapper.fromGrpcProduct(value)),
-                pagination: PaginationMapper.fromGrpcPaginationResponse(result.pagination)
-            }
-        }
-        catch (err) {
-            this.logger.error(`[getProductsByCategory] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async updateProduct(
+    userId: string,
+    updateProductDto: UpdateProductDto,
+  ): Promise<Product> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.updateProduct({
+          product_id: updateProductDto.product_id,
+          user_id: userId,
+          product_name: updateProductDto.product_name,
+          description: updateProductDto.description,
+          price_per_unit: updateProductDto.price_per_unit,
+          unit: updateProductDto.unit,
+          stock_quantity: updateProductDto.stock_quantity,
+          weight: updateProductDto.weight,
+          image_urls: updateProductDto.image_urls
+            ? { list: updateProductDto.image_urls }
+            : undefined,
+          video_urls: updateProductDto.video_urls
+            ? { list: updateProductDto.video_urls }
+            : undefined,
+        }),
+      );
+      return ProductMapper.fromGrpcProduct(result.product);
+    } catch (err) {
+      this.logger.error(`[updateProduct] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async updateProduct(userId: string, updateProductDto: UpdateProductDto): Promise<Product> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.updateProduct({
-                product_id: updateProductDto.product_id,
-                user_id: userId,
-                product_name: updateProductDto.product_name,
-                description: updateProductDto.description,
-                price_per_unit: updateProductDto.price_per_unit,
-                unit: updateProductDto.unit,
-                stock_quantity: updateProductDto.stock_quantity,
-                weight: updateProductDto.weight,
-                image_urls: updateProductDto.image_urls ? { list: updateProductDto.image_urls } : undefined,
-                video_urls: updateProductDto.video_urls ? { list: updateProductDto.video_urls } : undefined,
-            }));
-            return ProductMapper.fromGrpcProduct(result.product);
-        }
-        catch (err) {
-            this.logger.error(`[updateProduct] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async searchProducts(
+    searchDto: SearchProductsDto,
+  ): Promise<PaginationResult<Product>> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.searchProducts({
+          query: searchDto.search,
+          pagination: {
+            limit: searchDto.limit,
+            page: searchDto.page,
+            order: EnumMapper.toGrpcSortOrder(searchDto.order),
+            sort_by: searchDto.sort_by,
+            all: searchDto.all,
+          },
+          min_price: searchDto.min_price,
+          max_price: searchDto.max_price,
+          min_rating: searchDto.min_rating,
+          max_rating: searchDto.max_rating,
+          min_total_sold: searchDto.min_total_sold,
+          status: EnumMapper.toGrpcProductStatus(searchDto.status),
+          subcategories_id: searchDto.subcategory_id,
+          is_category: searchDto.is_category,
+          options: {
+            include_farm: searchDto.include_farm,
+            include_categories: searchDto.include_categories,
+          },
+        }),
+      );
+      return {
+        data: result.products.map((value) =>
+          ProductMapper.fromGrpcProduct(value),
+        ),
+        pagination: PaginationMapper.fromGrpcPaginationResponse(
+          result.pagination,
+        ),
+      };
+    } catch (err) {
+      this.logger.error(`[searchProducts] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async searchProducts(searchDto: SearchProductsDto): Promise<PaginationResult<Product>> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.searchProducts({
-                query: searchDto.search,
-                pagination: {
-                    limit: searchDto.limit,
-                    page: searchDto.page,
-                    order: EnumMapper.toGrpcSortOrder(searchDto.order),
-                    sort_by: searchDto.sort_by,
-                    all: searchDto.all,
-                },
-                min_price: searchDto.min_price,
-                max_price: searchDto.max_price,
-                min_rating: searchDto.min_rating,
-                max_rating: searchDto.max_rating,
-                min_total_sold: searchDto.min_total_sold,
-                status: EnumMapper.toGrpcProductStatus(searchDto.status),
-                subcategories_id: searchDto.subcategory_id,
-                is_category: searchDto.is_category,
-                options: {
-                    include_farm: searchDto.include_farm,
-                    include_categories: searchDto.include_categories
-                }
-            }));
-            return {
-                data: result.products.map((value) => ProductMapper.fromGrpcProduct(value)),
-                pagination: PaginationMapper.fromGrpcPaginationResponse(result.pagination),
-            }
-        }
-        catch (err) {
-            this.logger.error(`[searchProducts] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async updateProductStatus(
+    userId: string,
+    productId: number,
+    status: ProductStatus,
+  ): Promise<boolean> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.updateProductStatus({
+          product_id: productId,
+          user_id: userId,
+          status: EnumMapper.toGrpcProductStatus(status),
+        }),
+      );
+      return result.success;
+    } catch (err) {
+      this.logger.error(`[updateProductStatus] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async updateProductStatus(userId: string, productId: number, status: ProductStatus): Promise<boolean> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.updateProductStatus({
-                product_id: productId,
-                user_id: userId,
-                status: EnumMapper.toGrpcProductStatus(status),
-            }));
-            return result.success;
-        }
-        catch (err) {
-            this.logger.error(`[updateProductStatus] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async openProductForSale(userId: string, productId: number): Promise<string> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.openProductForSale({
+          product_id: productId,
+          user_id: userId,
+        }),
+      );
+      return result.qr_code;
+    } catch (err) {
+      this.logger.error(`[openProductForSale] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
 
-    async openProductForSale(userId: string, productId: number): Promise<string> {
-        try {
-            const result = await firstValueFrom(this.productGrpcService.openProductForSale({
-                product_id: productId,
-                user_id: userId,
-            }));
-            return result.qr_code;
-        }
-        catch (err) {
-            this.logger.error(`[openProductForSale] ${err.message}`);
-            throw ErrorMapper.fromGrpcError(err);
-        }
+  async generateQRCode(
+    productId: number,
+    userId: string,
+  ): Promise<{ qr_code: string }> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.generateQrCode({
+          product_id: productId,
+          user_id: userId,
+        }),
+      );
+      return { qr_code: result.qr_code };
+    } catch (err) {
+      this.logger.error(`[generateQRCode] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
     }
+  }
+
+  async activateBlockchain(
+    productId: number,
+    userId: string,
+  ): Promise<{ blockchain_hash: string; success: boolean }> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.activateBlockchain({
+          product_id: productId,
+          user_id: userId,
+        }),
+      );
+      return {
+        blockchain_hash: result.blockchain_hash,
+        success: result.success,
+      };
+    } catch (err) {
+      this.logger.error(`[activateBlockchain] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
+
+  async getQRCode(productId: number): Promise<{ qr_code: string | null }> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.getQrCode({
+          product_id: productId,
+        }),
+      );
+      return { qr_code: result.qr_code || null };
+    } catch (err) {
+      this.logger.error(`[getQRCode] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
 }

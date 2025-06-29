@@ -51,6 +51,8 @@ import {
   UpdateUserResponse,
   UpdateUserStatusRequest,
   UpdateUserStatusResponse,
+  UpdateUserRoleRequest,
+  UpdateUserRoleResponse,
   UsersServiceController,
   UsersServiceControllerMethods,
   VerifyEmailRequest,
@@ -701,6 +703,30 @@ export class UsersGrpcController implements UsersServiceController {
       throw new RpcException({
         code: status.INTERNAL,
         message: error.message || 'Failed to update user status',
+      });
+    }
+  }
+
+  async updateUserRole(
+    request: UpdateUserRoleRequest,
+  ): Promise<UpdateUserRoleResponse> {
+    try {
+      this.logger.log(
+        `gRPC UpdateUserRole request for user: ${request.user_id}, role: ${request.role}, farm_id: ${request.farm_id || 'none'}`,
+      );
+
+      const user = await this.usersService.updateUserRole(
+        request.user_id,
+        EnumsMapper.fromGrpcUserRole(request.role),
+        request.farm_id,
+      );
+
+      return { user: UserMapper.userToGrpcUser(user) };
+    } catch (error) {
+      this.logger.error(`UpdateUserRole error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to update user role',
       });
     }
   }

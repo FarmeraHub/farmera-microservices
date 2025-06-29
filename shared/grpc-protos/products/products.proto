@@ -23,6 +23,11 @@ service ProductsService {
   rpc UpdateProductStatus(UpdateProductStatusRequest) returns (UpdateProductStatusResponse);
   rpc OpenProductForSale(OpenProductForSaleRequest) returns (OpenProductForSaleResponse);
   
+  // QR Code and Blockchain functionality
+  rpc GenerateQRCode(GenerateQRCodeRequest) returns (GenerateQRCodeResponse);
+  rpc ActivateBlockchain(ActivateBlockchainRequest) returns (ActivateBlockchainResponse);
+  rpc GetQRCode(GetQRCodeRequest) returns (GetQRCodeResponse);
+  
   // Farm management
   rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
   rpc VerifyFarm(stream VerifyFarmRequest) returns (VerifyFarmResponse);
@@ -646,11 +651,37 @@ message GetProcessResponse {
 }
 
 message ListProcessesRequest {
-  farmera.common.SimpleCursorPaginationRequest pagination = 1;
-  int32 product_id = 2;
+  int32 product_id = 1;
 }
 
 message ListProcessesResponse {
   repeated ProductProcess processes = 1;
-  farmera.common.SimpleCursorPaginationResponse pagination = 2;
+}
+
+// QR Code and Blockchain message definitions
+message GenerateQRCodeRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message GenerateQRCodeResponse {
+  string qr_code = 1;
+}
+
+message ActivateBlockchainRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message ActivateBlockchainResponse {
+  string blockchain_hash = 1;
+  bool success = 2;
+}
+
+message GetQRCodeRequest {
+  int32 product_id = 1;
+}
+
+message GetQRCodeResponse {
+  optional string qr_code = 1;
 }

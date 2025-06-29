@@ -32,7 +32,7 @@ export class UsersService {
     private verificationService: VerificationService,
 
     private hashService: HashService,
-  ) { }
+  ) {}
 
   async createUserSignUp(createUserSignUpDto: CreateUserSignUpDto) {
     await this.verificationService.verifyCode({
@@ -74,7 +74,6 @@ export class UsersService {
   }
 
   async getUserById(id: string): Promise<User> {
-
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ['locations', 'payment_methods'],
@@ -105,7 +104,10 @@ export class UsersService {
   }
 
   // Additional User Management Methods
-  async updateUser(id: string, updateData: Partial<CreateUserDto>): Promise<User> {
+  async updateUser(
+    id: string,
+    updateData: Partial<CreateUserDto>,
+  ): Promise<User> {
     const user = await this.getUserById(id);
 
     const updateFields: any = { updated_at: new Date() };
@@ -240,13 +242,36 @@ export class UsersService {
     return this.getUserById(id);
   }
 
+  async updateUserRole(
+    id: string,
+    role: UserRole,
+    farmId?: string,
+  ): Promise<User> {
+    const user = await this.getUserById(id);
+
+    const updateData: any = {
+      role,
+      updated_at: new Date(),
+    };
+
+    // If farmId is provided, update it as well
+    if (farmId) {
+      updateData.farm_id = farmId;
+    }
+
+    await this.usersRepository.update(id, updateData);
+
+    return this.getUserById(id);
+  }
+
   async getUserByEmail(email: string) {
     const user = await this.usersRepository.findOne({
       where: { email },
+      relations: ['locations', 'payment_methods'],
     });
 
     if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
+      throw new NotFoundException(`User with this email not found`);
     }
 
     return user;
@@ -296,7 +321,11 @@ export class UsersService {
     });
   }
 
-  async updateUserLocation(locationId: number, userId: string, locationData: UpdateAddressDto) {
+  async updateUserLocation(
+    locationId: number,
+    userId: string,
+    locationData: UpdateAddressDto,
+  ) {
     const location = await this.locationsRepository.findOne({
       where: { location_id: locationId, user: { id: userId } },
     });
@@ -342,7 +371,6 @@ export class UsersService {
     });
   }
 
-
   // Payment Method Management
   async addPaymentMethod(
     userId: string,
@@ -357,7 +385,8 @@ export class UsersService {
       );
     }
 
-    const newPaymentMethod = this.paymentMethodsRepository.create(createPaymentDto);
+    const newPaymentMethod =
+      this.paymentMethodsRepository.create(createPaymentDto);
     newPaymentMethod.user = user;
 
     return await this.paymentMethodsRepository.save(newPaymentMethod);
