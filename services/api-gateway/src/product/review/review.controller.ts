@@ -1,13 +1,15 @@
-import { Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { User } from 'src/common/decorators/user.decorator';
 import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiBadRequestResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiBadRequestResponse, ApiQuery } from '@nestjs/swagger';
 import { Review } from './entities/review.entity';
 import { ReviewReply } from './entities/review-reply.entity';
+import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Review')
 @Controller('review')
@@ -94,5 +96,17 @@ export class ReviewController {
     @ApiInternalServerErrorResponse({ description: 'Internal server error' })
     async approveReview(@Param("review_id") review_id: number, @Body() body: { approve: boolean }) {
         return await this.reviewServie.approveReview(review_id, body.approve);
+    }
+
+    @Public()
+    @Get(":product_id")
+    @ApiOperation({ summary: 'Get reviews', description: 'Gets reviews for a product.' })
+    @ApiParam({ name: 'product_id', description: 'ID of the product to get reviews for' })
+    @ApiQuery({ type: SimpleCursorPagination })
+    @ApiResponse({ status: 200, description: 'Reviews retrieved successfully', type: [Review] })
+    @ApiBadRequestResponse({ description: 'Invalid input or retrieval failed' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async getReviews(@Param("product_id") productId: number, @Query() pagination: SimpleCursorPagination) {
+        return await this.reviewServie.getReviews(productId, pagination);
     }
 }

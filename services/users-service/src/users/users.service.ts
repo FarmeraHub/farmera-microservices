@@ -2,22 +2,22 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { CreateUserDto, CreateUserSignUpDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { Location } from './entities/location.entity';
 import { PaymentMethod } from './entities/payment_method.entity';
-import * as bcrypt from 'bcrypt';
 import { VerificationService } from 'src/verification/verification.service';
 import { UserRole } from 'src/enums/roles.enum';
 import { HashService } from 'src/services/hash.service';
 import { UserStatus } from 'src/enums/status.enum';
-import { PaymentProvider } from 'src/enums/payment_method.enum';
 import { JwtDecoded } from 'src/guards/jwt.strategy';
+import { CreateLocationDto } from './dto/create-location.dto';
+import { CreatePaymentDto } from './dto/create-payment.dto';
+import { UpdateAddressDto } from './dto/update-address.dto';
+import { UpdatePaymentMethodDto } from './dto/payment-method.dto';
 
 @Injectable()
 export class UsersService {
@@ -35,8 +35,6 @@ export class UsersService {
   ) { }
 
   async createUserSignUp(createUserSignUpDto: CreateUserSignUpDto) {
-    console.log(createUserSignUpDto);
-
     await this.verificationService.verifyCode({
       email: createUserSignUpDto.email,
       code: createUserSignUpDto.code,
@@ -75,7 +73,7 @@ export class UsersService {
     return userWithoutPassword;
   }
 
-  async getUserById(id: string) {
+  async getUserById(id: string): Promise<User> {
 
     const user = await this.usersRepository.findOne({
       where: { id },
@@ -107,7 +105,7 @@ export class UsersService {
   }
 
   // Additional User Management Methods
-  async updateUser(id: string, updateData: Partial<UpdateUserDto>) {
+  async updateUser(id: string, updateData: Partial<CreateUserDto>): Promise<User> {
     const user = await this.getUserById(id);
 
     const updateFields: any = { updated_at: new Date() };
@@ -117,9 +115,6 @@ export class UsersService {
     if (updateData.gender) updateFields.gender = updateData.gender;
     if (updateData.avatar) updateFields.avatar = updateData.avatar;
     if (updateData.birthday) updateFields.birthday = updateData.birthday;
-    if (updateData.farm_id) updateFields.farm_id = updateData.farm_id;
-    if (updateData.points !== undefined)
-      updateFields.points = updateData.points;
 
     await this.usersRepository.update(id, updateFields);
 
@@ -242,10 +237,6 @@ export class UsersService {
       updated_at: new Date(),
     });
 
-    console.log(
-      `User ${id} status changed to ${status} by admin ${adminId}. Reason: ${reason}`,
-    );
-
     return this.getUserById(id);
   }
 
@@ -264,57 +255,62 @@ export class UsersService {
   // Location Management
   async addUserLocation(
     userId: string,
-    locationData: {
-      address_line: string;
-      city: string;
-      state: string;
-      postal_code?: string;
-      country: string;
-      latitude?: number;
-      longitude?: number;
-      is_default?: boolean;
-    },
-  ) {
+    locationData: CreateLocationDto,
+  ): Promise<Location> {
     const user = await this.getUserById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
 
-    if (locationData.is_default) {
+    if (locationData.is_primary) {
       await this.locationsRepository.update(
-        { user_id: parseInt(userId) },
-        { is_primary: false },
+        { user: { id: userId } },
+        { is_primary: false, updated_at: new Date() },
       );
     }
 
     const newLocation = this.locationsRepository.create({
-      user_id: parseInt(userId),
+      user: { id: userId },
       city: locationData.city,
-      district: locationData.state,
+      district: locationData.district,
       address_line: locationData.address_line,
       street: locationData.address_line,
-      is_primary: locationData.is_default || false,
-      created_at: new Date(),
-      updated_at: new Date(),
+      ward: locationData.ward,
+      type: locationData.type,
+      is_primary: locationData.is_primary || false,
     });
 
     const savedLocation = await this.locationsRepository.save(newLocation);
     return savedLocation;
   }
 
-  async getUserLocations(userId: string) {
-    await this.getUserById(userId);
+  async getUserLocations(userId: string): Promise<Location[]> {
+    const user = await this.getUserById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
 
     return this.locationsRepository.find({
-      where: { user_id: parseInt(userId) },
+      where: { user: { id: userId } },
       order: { is_primary: 'DESC', created_at: 'DESC' },
     });
   }
 
-  async updateUserLocation(locationId: string, locationData: any) {
+  async updateUserLocation(locationId: number, userId: string, locationData: UpdateAddressDto) {
     const location = await this.locationsRepository.findOne({
-      where: { id: parseInt(locationId) },
+      where: { location_id: locationId, user: { id: userId } },
     });
 
     if (!location) {
       throw new NotFoundException(`Location with ID ${locationId} not found`);
+    }
+
+    // If setting this as primary, unset other primary locations for this user
+    if (locationData.is_primary) {
+      await this.locationsRepository.update(
+        { user: { id: userId } },
+        { is_primary: false, updated_at: new Date() },
+      );
     }
 
     await this.locationsRepository.update(locationId, {
@@ -323,13 +319,13 @@ export class UsersService {
     });
 
     return this.locationsRepository.findOne({
-      where: { id: parseInt(locationId) },
+      where: { location_id: locationId },
     });
   }
 
-  async deleteUserLocation(locationId: string) {
+  async deleteUserLocation(userId: string, locationId: number) {
     const location = await this.locationsRepository.findOne({
-      where: { id: parseInt(locationId) },
+      where: { location_id: locationId, user: { id: userId } },
     });
 
     if (!location) {
@@ -340,61 +336,76 @@ export class UsersService {
     return { success: true, message: 'Location deleted successfully' };
   }
 
+  async findLocationById(locationId: number) {
+    return await this.locationsRepository.findOne({
+      where: { location_id: locationId },
+    });
+  }
+
+
   // Payment Method Management
   async addPaymentMethod(
     userId: string,
-    paymentData: {
-      type: string;
-      display_name: string;
-      last_four_digits?: string;
-      provider: string;
-      is_default?: boolean;
-      expires_at?: Date;
-      metadata?: any;
-    },
-  ) {
+    createPaymentDto: CreatePaymentDto,
+  ): Promise<PaymentMethod> {
     const user = await this.getUserById(userId);
 
-    if (paymentData.is_default) {
+    if (createPaymentDto.is_default) {
       await this.paymentMethodsRepository.update(
-        { user_id: parseInt(userId) },
+        { user: { id: userId } },
         { is_default: false },
       );
     }
 
-    const newPaymentMethod = new PaymentMethod();
-    newPaymentMethod.user_id = parseInt(userId);
-    newPaymentMethod.provider = paymentData.provider as PaymentProvider;
-    newPaymentMethod.external_id = `ext_${Date.now()}`;
-    // newPaymentMethod.last_four = paymentData.last_four_digits;
-    // newPaymentMethod.cardholder_name = paymentData.display_name;
-    // newPaymentMethod.is_default = paymentData.is_default || false;
-    // newPaymentMethod.expiry_date = paymentData.expires_at
-    //   ? this.formatExpiryDate(paymentData.expires_at)
-    //   : null;
-    // newPaymentMethod.metadata = paymentData.metadata
-    //   ? JSON.stringify(paymentData.metadata)
-    //   : null;
-    newPaymentMethod.created_at = new Date();
-    newPaymentMethod.updated_at = new Date();
+    const newPaymentMethod = this.paymentMethodsRepository.create(createPaymentDto);
+    newPaymentMethod.user = user;
 
-    const savedPaymentMethod =
-      await this.paymentMethodsRepository.save(newPaymentMethod);
-    return savedPaymentMethod;
+    return await this.paymentMethodsRepository.save(newPaymentMethod);
   }
 
-  async getUserPaymentMethods(userId: string) {
-    await this.getUserById(userId);
-
+  async getUserPaymentMethods(userId: string): Promise<PaymentMethod[]> {
     return this.paymentMethodsRepository.find({
-      where: { user_id: parseInt(userId), is_active: true },
+      where: { user: { id: userId }, is_active: true },
       order: { is_default: 'DESC', created_at: 'DESC' },
     });
   }
 
-  async deletePaymentMethod(paymentMethodId: string) {
+  async updatePaymentMethod(
+    userId: string,
+    paymentMethodId: number,
+    paymentData: UpdatePaymentMethodDto,
+  ): Promise<PaymentMethod> {
     const paymentMethod = await this.paymentMethodsRepository.findOne({
-      where: { id: parseInt(paymentMethodId) },
+      where: { payment_method_id: paymentMethodId, user: { id: userId } },
+    });
+
+    if (!paymentMethod) {
+      throw new NotFoundException(
+        `Payment method with ID ${paymentMethodId} not found`,
+      );
+    }
+
+    // If setting this as default, unset other default payment methods for this user
+    if (paymentData.is_default) {
+      await this.paymentMethodsRepository.update(
+        { user: { id: userId } },
+        { is_default: false },
+      );
+    }
+
+    await this.paymentMethodsRepository.update(paymentMethodId, {
+      ...paymentData,
+      updated_at: new Date(),
+    });
+
+    return await this.paymentMethodsRepository.findOne({
+      where: { payment_method_id: paymentMethodId },
+    });
+  }
+
+  async deletePaymentMethod(paymentMethodId: number) {
+    const paymentMethod = await this.paymentMethodsRepository.findOne({
+      where: { payment_method_id: paymentMethodId },
     });
 
     if (!paymentMethod) {

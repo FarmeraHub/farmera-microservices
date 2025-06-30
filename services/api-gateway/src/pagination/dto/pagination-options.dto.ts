@@ -20,6 +20,10 @@ export enum Order {
 
 export class SimpleCursorPagination {
   @IsOptional()
+  @IsString()
+  sort_by?: string;
+
+  @IsOptional()
   @IsEnum(Order)
   order? = Order.DESC
 

@@ -78,7 +78,7 @@ import { GrpcModule } from './grpc/grpc.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class GrpcAppModule {}
+export class GrpcAppModule { }
 
 async function bootstrap() {
   const logger = new Logger('GrpcMain');

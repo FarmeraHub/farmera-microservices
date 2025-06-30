@@ -57,7 +57,7 @@ service ProductsService {
   rpc DeleteReview(DeleteReviewRequest) returns (DeleteReviewResponse);
   rpc DeleteReply(DeleteReplyRequest) returns (DeleteReplyResponse);
   rpc ApproveReview(ApproveReviewRequest) returns (ApproveReviewResponse);
-  //rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse);
+  rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse);
   
   // Process tracking
   rpc CreateProcess(CreateProcessRequest) returns (CreateProcessResponse);
@@ -121,7 +121,7 @@ message GetProductResponse {
 }
 
 message GetListProductsRequest{
-  int32 product_id = 1;
+  repeated int32 product_ids = 1;
   optional farmera.common.PaginationRequest pagination = 2;
   optional farmera.common.ProductOptions options = 3;
 }
@@ -577,6 +577,17 @@ message ApproveReviewRequest {
 
 message ApproveReviewResponse {
   bool success = 1;
+}
+
+message ListReviewsRequest {
+  int32 product_id = 1;
+  optional string sort_by = 2;
+  farmera.common.SimpleCursorPaginationRequest pagination = 3;
+}
+
+message ListReviewsResponse {
+  repeated Review reviews = 1;
+  farmera.common.SimpleCursorPaginationResponse pagination = 2;
 }
 
 // ========================================Process=======================================

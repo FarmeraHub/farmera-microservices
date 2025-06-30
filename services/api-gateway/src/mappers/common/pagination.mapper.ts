@@ -26,6 +26,7 @@ export class PaginationMapper {
 
     static toGrpcSimpleCursorPaginationRequest(value: SimpleCursorPagination): SimpleCursorPaginationRequest {
         return {
+            sort_by: value.sort_by,
             limit: value.limit,
             order: this.toGrpcPaginationOrder(value.order),
             cursor: value.cursor,

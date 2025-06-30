@@ -7,11 +7,9 @@ option go_package = "github.com/farmera/grpc-protos/common";
 // User roles across the system
 enum UserRole {
   USER_ROLE_UNSPECIFIED = 0;
-  USER_ROLE_CUSTOMER = 1;
+  USER_ROLE_BUYER = 1;
   USER_ROLE_FARMER = 2;
   USER_ROLE_ADMIN = 3;
-  USER_ROLE_MODERATOR = 4;
-  USER_ROLE_DELIVERY = 5;
 }
 
 // User account status
@@ -44,6 +42,18 @@ enum FarmStatus {
   FARM_STATUS_REJECTED = 5;
 }
 // Order status lifecycle
+enum SubOrderStatus {
+  SUB_ORDER_STATUS_UNSPECIFIED = 0;
+  SUB_ORDER_STATUS_PENDING = 1;
+  SUB_ORDER_STATUS_CONFIRMED = 2;
+  SUB_ORDER_STATUS_PROCESSING = 3;
+  SUB_ORDER_STATUS_SHIPPED = 4;
+  SUB_ORDER_STATUS_DELIVERED = 5;
+  SUB_ORDER_STATUS_CANCELLED = 6;
+  SUB_ORDER_STATUS_REFUNDED = 7;
+  SUB_ORDER_STATUS_FAILED = 8;
+}
+
 enum OrderStatus {
   ORDER_STATUS_UNSPECIFIED = 0;
   ORDER_STATUS_PENDING = 1;
@@ -71,11 +81,19 @@ enum PaymentStatus {
 // Payment methods
 enum PaymentMethod {
   PAYMENT_METHOD_UNSPECIFIED = 0;
-  PAYMENT_METHOD_VISA = 1;
-  PAYMENT_METHOD_MASTER_CARD = 2;
+  PAYMENT_METHOD_CREDIT_CARD = 1;
+  PAYMENT_METHOD_STRIPE = 2;
   PAYMENT_METHOD_PAYPAL = 3;
   PAYMENT_METHOD_BANK_TRANSFER = 4;
   PAYMENT_METHOD_CASH = 5;
+}
+
+enum PaymentProvider {
+  PAYMENT_PROVIDER_UNSPECIFIED = 0;
+  PAYMENT_PROVIDER_VNPAY = 1;
+  PAYMENT_PROVIDER_MOMO = 2;
+  PAYMENT_PROVIDER_ZALOPAY = 3;
+  PAYMENT_PROVIDER_OTHER = 4;
 }
 
 // Delivery status
@@ -119,8 +137,6 @@ enum Gender {
   GENDER_UNSPECIFIED = 0;
   GENDER_MALE = 1;
   GENDER_FEMALE = 2;
-  GENDER_OTHER = 3;
-  GENDER_PREFER_NOT_TO_SAY = 4;
 }
 
 // Farm certification types

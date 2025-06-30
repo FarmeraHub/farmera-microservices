@@ -2,8 +2,10 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cron } from '@nestjs/schedule';
 import { EmailService } from 'src/email/email.service';
 import { SmsService } from 'src/sms/sms.service';
 import { User } from 'src/users/entities/user.entity';
@@ -18,6 +20,8 @@ import { Verification } from './entities/verification.entity';
 
 @Injectable()
 export class VerificationService {
+  private readonly logger = new Logger(VerificationService.name);
+
   constructor(
     @InjectRepository(Verification)
     private verificationRepository: Repository<Verification>,
@@ -52,7 +56,7 @@ export class VerificationService {
     if (foundVerification) {
       if (foundVerification.email_code_count >= 5) {
         throw new BadRequestException(
-          'You have reached the maximum verification code sent limit, please try again tomorrow or contact the Valo team',
+          'You have reached the maximum verification code sent limit, please try again tomorrow or contact the Farmera team',
         );
       }
 
@@ -183,6 +187,17 @@ Farmera Team`;
 
   async deleteAllVerifications() {
     await this.verificationRepository.delete({});
+  }
+
+  @Cron('0 0 * * *')
+  async handleCleanupCron() {
+    this.logger.log('Running daily verification cleanup cron job');
+    try {
+      await this.deleteAllVerifications();
+      this.logger.log('Successfully cleaned up all verifications');
+    } catch (error) {
+      this.logger.error('Failed to clean up verifications:', error);
+    }
   }
 
   async createPhoneVerification(

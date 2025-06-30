@@ -14,24 +14,21 @@ export class UserMapper {
       phone: user.phone || '',
       first_name: user.first_name,
       last_name: user.last_name,
-      farm_id: user.farm_id?.toString() || '',
+      farm_id: user.farm_id?.toString() || undefined,
       gender: EnumsMapper.toGrpcGender(user.gender),
-      avatar_url: user.avatar || '',
+      avatar_url: user.avatar || undefined,
       birthday: user.birthday ? TypesMapper.toGrpcTimestamp(user.birthday) : undefined,
       role: EnumsMapper.toGrpcUserRole(user.role),
       points: user.points || 0,
       status: EnumsMapper.toGrpcUserStatus(user.status),
       locations: user.locations
         ? user.locations.map((loc: any) => LocationMapper.toGrpcLocation(loc))
-        : [],
+        : undefined,
       payment_methods: user.payment_methods
         ? user.payment_methods.map((pm: any) => PaymentMapper.toGrpcPaymentMethod(pm))
-        : [],
+        : undefined,
       created_at: TypesMapper.toGrpcTimestamp(user.created_at),
       updated_at: TypesMapper.toGrpcTimestamp(user.updated_at),
-      email_verified: true, // You may want to add this field to your entity
-      phone_verified: false, // You may want to add this field to your entity
-      last_login: undefined, // You may want to add this field to your entity
     };
   }
 
@@ -39,27 +36,24 @@ export class UserMapper {
     return {
       id: user.id,
       email: user.email,
-      phone: user.phone || '',
+      phone: user.phone,
       first_name: user.first_name,
       last_name: user.last_name,
-      farm_id: user.farm_id?.toString() || '',
+      farm_id: user.farm_id,
       gender: EnumsMapper.toGrpcGender(user.gender),
-      avatar_url: user.avatar || '',
+      avatar_url: user.avatar,
       birthday: user.birthday ? TypesMapper.toGrpcTimestamp(user.birthday) : undefined,
       role: EnumsMapper.toGrpcUserRole(user.role),
-      points: user.points || 0,
+      points: user.points,
       status: EnumsMapper.toGrpcUserStatus(user.status),
       locations: user.locations
-        ? user.locations.map((loc) => LocationMapper.toGrpcLocation(loc))
-        : [],
+        ? { locations: user.locations.map((loc) => LocationMapper.toGrpcLocation(loc)) }
+        : undefined,
       payment_methods: user.payment_methods
-        ? user.payment_methods.map((pm) => PaymentMapper.toGrpcPaymentMethod(pm))
-        : [],
+        ? { payment_methods: user.payment_methods.map((pm) => PaymentMapper.toGrpcPaymentMethod(pm)) }
+        : undefined,
       created_at: TypesMapper.toGrpcTimestamp(user.created_at),
       updated_at: TypesMapper.toGrpcTimestamp(user.updated_at),
-      email_verified: true, // You may want to add this field to your entity
-      phone_verified: false, // You may want to add this field to your entity
-      last_login: undefined, // You may want to add this field to your entity
     };
   }
 

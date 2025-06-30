@@ -10,85 +10,89 @@ option go_package = "github.com/farmera/grpc-protos/payment";
 
 // Payment service definition
 service PaymentService {
+
+  rpc CalculateShippingFee(CalculateShippingFeeRequest) returns (CalculateShippingFeeResponse);
   // Order management
-  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
-  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
-  rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
-  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
-  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
-  rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse);
-  rpc GetOrdersByStatus(GetOrdersByStatusRequest) returns (GetOrdersByStatusResponse);
+  //rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  //rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  //rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
+  //rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+  //rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  //rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse);
+  //rpc GetOrdersByStatus(GetOrdersByStatusRequest) returns (GetOrdersByStatusResponse);
   
   // Payment processing
-  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
-  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
-  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
-  rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
-  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
-  rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
+  //rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
+  //rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  //rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
+  //rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
+  //rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
+  //rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
   
   // Discount management
-  rpc CreateDiscount(CreateDiscountRequest) returns (CreateDiscountResponse);
-  rpc GetDiscount(GetDiscountRequest) returns (GetDiscountResponse);
-  rpc UpdateDiscount(UpdateDiscountRequest) returns (UpdateDiscountResponse);
-  rpc DeleteDiscount(DeleteDiscountRequest) returns (DeleteDiscountResponse);
-  rpc ListDiscounts(ListDiscountsRequest) returns (ListDiscountsResponse);
-  rpc ApplyDiscount(ApplyDiscountRequest) returns (ApplyDiscountResponse);
-  rpc ValidateDiscountCode(ValidateDiscountCodeRequest) returns (ValidateDiscountCodeResponse);
+  //rpc CreateDiscount(CreateDiscountRequest) returns (CreateDiscountResponse);
+  //rpc GetDiscount(GetDiscountRequest) returns (GetDiscountResponse);
+  //rpc UpdateDiscount(UpdateDiscountRequest) returns (UpdateDiscountResponse);
+  //rpc DeleteDiscount(DeleteDiscountRequest) returns (DeleteDiscountResponse);
+  //rpc ListDiscounts(ListDiscountsRequest) returns (ListDiscountsResponse);
+  //rpc ApplyDiscount(ApplyDiscountRequest) returns (ApplyDiscountResponse);
+  //rpc ValidateDiscountCode(ValidateDiscountCodeRequest) returns (ValidateDiscountCodeResponse);
   
   // Delivery management
-  rpc CreateDelivery(CreateDeliveryRequest) returns (CreateDeliveryResponse);
-  rpc GetDelivery(GetDeliveryRequest) returns (GetDeliveryResponse);
-  rpc UpdateDeliveryStatus(UpdateDeliveryStatusRequest) returns (UpdateDeliveryStatusResponse);
-  rpc ListDeliveries(ListDeliveriesRequest) returns (ListDeliveriesResponse);
-  rpc TrackDelivery(TrackDeliveryRequest) returns (TrackDeliveryResponse);
-  rpc AssignDeliveryAgent(AssignDeliveryAgentRequest) returns (AssignDeliveryAgentResponse);
+  //rpc CreateDelivery(CreateDeliveryRequest) returns (CreateDeliveryResponse);
+  //rpc GetDelivery(GetDeliveryRequest) returns (GetDeliveryResponse);
+  //rpc UpdateDeliveryStatus(UpdateDeliveryStatusRequest) returns (UpdateDeliveryStatusResponse);
+  //rpc ListDeliveries(ListDeliveriesRequest) returns (ListDeliveriesResponse);
+  //rpc TrackDelivery(TrackDeliveryRequest) returns (TrackDeliveryResponse);
+  //rpc AssignDeliveryAgent(AssignDeliveryAgentRequest) returns (AssignDeliveryAgentResponse);
   
   // Analytics and reporting
-  rpc GetOrderStats(GetOrderStatsRequest) returns (GetOrderStatsResponse);
-  rpc GetPaymentStats(GetPaymentStatsRequest) returns (GetPaymentStatsResponse);
-  rpc GetRevenueReport(GetRevenueReportRequest) returns (GetRevenueReportResponse);
+  //rpc GetOrderStats(GetOrderStatsRequest) returns (GetOrderStatsResponse);
+  //rpc GetPaymentStats(GetPaymentStatsRequest) returns (GetPaymentStatsResponse);
+  //rpc GetRevenueReport(GetRevenueReportRequest) returns (GetRevenueReportResponse);
+
 }
 
 // Order message definition
 message Order {
   int32 order_id = 1;
   string customer_id = 2;
-  repeated OrderItem items = 3;
-  farmera.common.Money total_amount = 4;
-  farmera.common.Money discount_amount = 5;
-  farmera.common.Money shipping_amount = 6;
-  farmera.common.Money tax_amount = 7;
-  farmera.common.Money final_amount = 8;
-  farmera.common.OrderStatus status = 9;
-  farmera.common.DeliveryAddress delivery_address = 10;
-  farmera.common.DeliveryAddress billing_address = 11;
-  Payment payment = 12;
-  Delivery delivery = 13;
-  repeated DiscountUsage discount_usage = 14;
-  farmera.common.Timestamp created_at = 15;
-  farmera.common.Timestamp updated_at = 16;
-  farmera.common.Timestamp estimated_delivery = 17;
-  string notes = 18;
-  OrderMetadata metadata = 19;
+  int32 address_id = 3;
+  repeated SubOrder suborder = 4;
+  double total_amount = 5;
+  optional double shipping_amount = 6;
+  optional double final_amount = 7;
+  farmera.common.OrderStatus status = 8;
+  optional Payment payment = 9;
+  farmera.common.Timestamp created = 10;
+  farmera.common.Timestamp updated = 11; 
+  string notes = 12;
 }
 
+message SubOrder{
+  int32 sub_order_id = 1;
+  optional Order order = 2;
+  string farm_id = 3;
+  farmera.common.SubOrderStatus status = 4;
+  double total_amount = 5;
+  double discount_amount = 6;
+  double shipping_amount = 7;
+  double final_amount = 8;
+  farmera.common.Timestamp created = 9;
+  repeated OrderItem items = 10;
+
+}
 // Order item
 message OrderItem {
   int32 item_id = 1;
-  int32 product_id = 2;
-  string product_name = 3;
-  string product_sku = 4;
-  int32 quantity = 5;
-  farmera.common.Money unit_price = 6;
-  farmera.common.Money total_price = 7;
-  farmera.common.Unit unit = 8;
-  string product_image_url = 9;
-  int32 farm_id = 10;
-  string farm_name = 11;
-  bool is_organic = 12;
-  farmera.common.Timestamp harvest_date = 13;
-  farmera.common.Timestamp expiry_date = 14;
+  int32 sub_order_id = 2;
+  int32 product_id = 3;
+  string product_name = 4;
+  string price_per_unit = 5;
+  int32 quantity = 6;
+  double unit_price = 7;
+  double total = 8;
+  double weight = 9;
 }
 
 // Payment message definition
@@ -228,7 +232,7 @@ message CreateOrderRequest {
 message OrderItemRequest {
   int32 product_id = 1;
   int32 quantity = 2;
-  string special_instructions = 3;
+  optional string special_instructions = 3;
 }
 
 message CreateOrderResponse {
@@ -627,3 +631,59 @@ message RevenueDataPoint {
   int32 order_count = 3;
   farmera.common.Money average_order_value = 4;
 } 
+
+
+message CalculateShippingFeeRequest{
+  repeated OrderItemRequest list_items = 1;
+  string user_id = 2;
+  string address_id = 3;
+}
+message ShippingErrorDetail {
+  enum ErrorCode {
+    ERROR_CODE_UNSPECIFIED = 0;
+    PRODUCT_NOT_FOUND = 1;         // Sản phẩm không tồn tại
+    INSUFFICIENT_STOCK = 2;        // Không đủ hàng tồn kho
+    PRODUCT_UNAVAILABLE_FOR_SHIPPING = 3; // Sản phẩm không hỗ trợ giao hàng tới địa chỉ này
+    FARM_UNAVAILABLE = 4;          // Farm không hoạt động hoặc không tìm thấy
+    ADDRESS_INVALID = 5;           // Địa chỉ không hợp lệ hoặc không giao được
+    SHIPPING_SERVICE_UNAVAILABLE = 6; // Dịch vụ vận chuyển không khả dụng
+    INTERNAL_SERVER_ERROR = 7;     // Lỗi server nội bộ
+    WEIGHT_VOLUME_EXCEEDED = 8;    // Vượt quá cân nặng/thể tích cho phép
+  }
+  ErrorCode error_code = 1;
+  string message = 2;                 // Mô tả lỗi chi tiết, thân thiện với người dùng
+  string item_id = 3;                 // ID của sản phẩm/item gây ra lỗi (nếu có)
+  string farm_id = 4;                 // ID của farm liên quan đến lỗi (nếu có)
+}
+
+// Thông tin phí ship cho một nhóm sản phẩm (cùng farm)
+message FarmShippingFee {
+  string farm_id = 1;
+  string farm_name = 2; // Tên farm (tùy chọn, để hiển thị)
+  double shipping_fee = 3; // Phí ship cho các sản phẩm từ farm này
+  string estimated_delivery_time = 4; // Thời gian giao hàng dự kiến (ví dụ: "2-3 ngày")
+  repeated string product_ids_in_group = 5; // Danh sách ID các sản phẩm trong nhóm này
+}
+
+// Response chính
+message CalculateShippingFeeResponse {
+  oneof result {
+    SuccessResponse success = 1;
+    ErrorResponse error = 2;
+  }
+}
+
+message SuccessResponse {
+  repeated FarmShippingFee farm_shipping_fees = 1; // Danh sách phí ship theo từng farm
+  double total_shipping_fee = 2; // Tổng phí ship (nếu cần tính tổng ở server)
+}
+
+message ErrorResponse {
+  // Một lỗi chung cho toàn bộ yêu cầu, ví dụ địa chỉ không hợp lệ
+  // hoặc dịch vụ vận chuyển không khả dụng cho toàn bộ đơn.
+  ShippingErrorDetail general_error = 1;
+
+  // Hoặc danh sách các lỗi cụ thể cho từng item/farm.
+  // Nếu có general_error, trường này có thể không cần thiết hoặc dùng để bổ sung.
+  repeated ShippingErrorDetail item_errors = 2;
+}

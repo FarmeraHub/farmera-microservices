@@ -54,7 +54,7 @@ export class ReviewsService {
             return await this.reviewRepository.save(review);
 
         } catch (error) {
-            this.logger.error(error);
+            this.logger.error(error.message);
             throw new InternalServerErrorException(`Không thể đánh giá`);
         }
     }
@@ -66,7 +66,7 @@ export class ReviewsService {
     ): Promise<ReviewReply> {
         try {
             const review = await this.reviewRepository.findOne({
-                where: { review_id: createReplyDto.review_id }
+                where: { review_id: createReplyDto.review_id, is_deleted: false }
             });
 
             if (review) {
@@ -86,7 +86,7 @@ export class ReviewsService {
             throw new NotFoundException("Đánh giá không tồn tại");
         }
         catch (error) {
-            this.logger.error(error);
+            this.logger.error(error.message);
 
             if (error instanceof NotFoundException || error instanceof BadRequestException) {
                 throw error;
@@ -97,11 +97,16 @@ export class ReviewsService {
 
     async getReviewsByCursor(
         productId: number,
-        sortBy: 'created' | 'rating' = 'created',
+        sortBy: string,
         order: 'ASC' | 'DESC' = 'DESC',
         limit = 10,
         cursor: string,
     ) {
+        const validSortBy = ['created', 'rating'];
+        if (!validSortBy.includes(sortBy)) {
+            throw new BadRequestException('Valid sort by: created, rating');
+        }
+
         const qb = this.reviewRepository.createQueryBuilder('review')
             .leftJoinAndSelect('review.replies', 'reply', 'reply.is_deleted = false')
             .where('review.is_deleted = false')

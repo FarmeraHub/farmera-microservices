@@ -2,8 +2,11 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
-import { UserController } from './user.controller';
-import { UserService } from './user.service';
+import { UserController } from './user/user.controller';
+import { UserService } from './user/user.service';
+import { AuthController } from './auth/auth.controller';
+import { AuthService } from './auth/auth.service';
+import { HashService } from 'src/services/hash.service';
 
 @Module({
   imports: [
@@ -35,8 +38,7 @@ import { UserService } from './user.service';
       },
     ]),
   ],
-  controllers: [UserController],
-  providers: [UserService],
-  exports: [UserService],
+  controllers: [UserController, AuthController],
+  providers: [UserService, AuthService, HashService],
 })
-export class UserModule {}
+export class UserModule { }

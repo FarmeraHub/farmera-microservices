@@ -1,5 +1,4 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import { Public } from 'src/decorators/public.decorator';
 import { ResponseMessage } from 'src/decorators/response-message.decorator';
 import {
@@ -24,10 +23,5 @@ export class VerificationController {
   @Post('email/verify')
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
     return await this.verificationService.verifyCode(verifyEmailDto);
-  }
-
-  @Cron('0 0 * * *')
-  async handleCron() {
-    await this.verificationService.deleteAllVerifications();
   }
 }

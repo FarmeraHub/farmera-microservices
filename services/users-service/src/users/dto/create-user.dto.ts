@@ -6,7 +6,6 @@ import {
   IsEnum,
   IsNumber,
   IsDate,
-  IsBoolean,
   MinLength,
   MaxLength,
   IsArray,
@@ -16,92 +15,19 @@ import {
 import { Type } from 'class-transformer';
 import { UserRole } from 'src/enums/roles.enum';
 import { UserStatus } from 'src/enums/status.enum';
-import { PaymentProvider } from 'src/enums/payment_method.enum';
+import { CreateLocationDto } from './create-location.dto';
+import { CreatePaymentDto } from './create-payment.dto';
+import { Gender } from 'src/enums/gender.enum';
 
-export class CreateLocationDto {
-  @IsString()
-  @IsNotEmpty()
-  city: string;
-
-  @IsString()
-  @IsNotEmpty()
-  district: string;
-
-  @IsString()
-  @IsOptional()
-  ward?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  street: string;
-
-  @IsString()
-  @IsOptional()
-  address_line?: string;
-
-  @IsString()
-  @IsOptional()
-  type?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  is_primary?: boolean;
-}
-
-export class CreatePaymentMethodDto {
-  @IsEnum(PaymentProvider)
-  @IsNotEmpty()
-  provider: PaymentProvider;
-
-  @IsString()
-  @IsNotEmpty()
-  external_id: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(4)
-  last_four?: string;
-
-  @IsString()
-  @IsOptional()
-  card_type?: string;
-
-  @IsString()
-  @IsOptional()
-  @Matches(/^(0[1-9]|1[0-2])\/\d{2}$/, {
-    message: 'Expiry date should be in MM/YY format',
-  })
-  expiry_date?: string;
-
-  @IsString()
-  @IsOptional()
-  cardholder_name?: string;
-
-  @IsString()
-  @IsOptional()
-  billing_address?: string;
-
-  @IsString()
-  @IsOptional()
-  token?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  is_default?: boolean;
-
-  @IsString()
-  @IsOptional()
-  metadata?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  is_active?: boolean;
-}
 
 export class CreateUserDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
 
   @IsString()
   @IsNotEmpty()
@@ -134,9 +60,9 @@ export class CreateUserDto {
   @IsOptional()
   farm_id?: number;
 
-  @IsString()
+  @IsEnum(Gender)
   @IsOptional()
-  gender?: string;
+  gender?: Gender;
 
   @IsString()
   @IsOptional()
@@ -151,10 +77,6 @@ export class CreateUserDto {
   @IsNotEmpty()
   role: UserRole;
 
-  @IsNumber()
-  @IsOptional()
-  points?: number;
-
   @IsEnum(UserStatus)
   @IsOptional()
   status?: UserStatus;
@@ -168,8 +90,8 @@ export class CreateUserDto {
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
-  @Type(() => CreatePaymentMethodDto)
-  payment_methods?: CreatePaymentMethodDto[];
+  @Type(() => CreatePaymentDto)
+  payment_methods?: CreatePaymentDto[];
 }
 
 export class CreateUserSignUpDto {

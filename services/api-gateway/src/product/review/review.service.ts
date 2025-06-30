@@ -9,6 +9,8 @@ import { CreateReplyDto } from './dto/create-reply.dto';
 import { ReviewReply } from './entities/review-reply.entity';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ErrorMapper } from 'src/mappers/common/error.mapper';
+import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
+import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
 
 @Injectable()
 export class ReviewService implements OnModuleInit {
@@ -125,6 +127,23 @@ export class ReviewService implements OnModuleInit {
                 approved: approve,
             }));
             return result.success
+        }
+        catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
+        }
+    }
+
+    async getReviews(productId: number, pagination: SimpleCursorPagination): Promise<{ reviews: Review[], nextCursor?: string }> {
+        try {
+            const result = await firstValueFrom(this.productGrpcService.listReviews({
+                product_id: productId,
+                pagination: PaginationMapper.toGrpcSimpleCursorPaginationRequest(pagination)
+            }));
+            return {
+                reviews: result.reviews.map((value) => ReviewMapper.fromGrpcReview(value)),
+                nextCursor: result.pagination.next_cursor
+            };
         }
         catch (err) {
             this.logger.error(err.message);

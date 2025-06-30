@@ -51,7 +51,15 @@ async function bootstrap() {
     .setTitle('Farmera API Gateway')
     .setDescription('Central API Gateway for Farmera Microservices Platform')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        in: 'header',
+      },
+      'access-token',
+    )
     .addTag('Authentication', 'User authentication endpoints')
     .addTag('Users', 'User management endpoints')
     .addTag('Products', 'Product catalog endpoints')
