@@ -68,6 +68,13 @@ service ProductsService {
   rpc CreateProcess(CreateProcessRequest) returns (CreateProcessResponse);
   rpc GetProcess(GetProcessRequest) returns (GetProcessResponse);
   rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);  
+  
+  // Diary management
+  rpc CreateDiary(CreateDiaryRequest) returns (CreateDiaryResponse);
+  rpc GetDiary(GetDiaryRequest) returns (GetDiaryResponse);
+  rpc GetDiariesByProcess(GetDiariesByProcessRequest) returns (GetDiariesByProcessResponse);
+  rpc UpdateDiary(UpdateDiaryRequest) returns (UpdateDiaryResponse);
+  rpc DeleteDiary(DeleteDiaryRequest) returns (DeleteDiaryResponse);
 }
 
 // ======================================Product==========================================
@@ -684,4 +691,78 @@ message GetQRCodeRequest {
 
 message GetQRCodeResponse {
   optional string qr_code = 1;
+}
+
+// =========================================Diary========================================
+message Diary {
+  int32 diary_id = 1;
+  int32 process_id = 2;
+  string step_name = 3;
+  string step_description = 4;
+  optional farmera.common.StringList image_urls = 5;
+  optional farmera.common.StringList video_urls = 6;
+  farmera.common.Timestamp recorded_date = 7;
+  optional double latitude = 8;
+  optional double longitude = 9;
+  optional string notes = 10;
+  farmera.common.Timestamp created = 11;
+}
+
+message CreateDiaryRequest {
+  int32 process_id = 1;
+  string step_name = 2;
+  string step_description = 3;
+  optional farmera.common.StringList image_urls = 4;
+  optional farmera.common.StringList video_urls = 5;
+  farmera.common.Timestamp recorded_date = 6;
+  optional double latitude = 7;
+  optional double longitude = 8;
+  optional string notes = 9;
+  string user_id = 10;
+}
+
+message CreateDiaryResponse {
+  Diary diary = 1;
+}
+
+message GetDiaryRequest {
+  int32 diary_id = 1;
+}
+
+message GetDiaryResponse {
+  Diary diary = 1;
+}
+
+message GetDiariesByProcessRequest {
+  int32 process_id = 1;
+}
+
+message GetDiariesByProcessResponse {
+  repeated Diary diaries = 1;
+}
+
+message UpdateDiaryRequest {
+  int32 diary_id = 1;
+  optional string step_name = 2;
+  optional string step_description = 3;
+  optional farmera.common.StringList image_urls = 4;
+  optional farmera.common.StringList video_urls = 5;
+  optional farmera.common.Timestamp recorded_date = 6;
+  optional double latitude = 7;
+  optional double longitude = 8;
+  optional string notes = 9;
+  string user_id = 10;
+}
+
+message UpdateDiaryResponse {
+  Diary diary = 1;
+}
+
+message DeleteDiaryRequest {
+  int32 diary_id = 1;
+  string user_id = 2;
+}
+
+message DeleteDiaryResponse {
+  bool success = 1;
 }

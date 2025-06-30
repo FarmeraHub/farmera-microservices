@@ -89,6 +89,16 @@ import {
   OpenProductForSaleResponse,
   ListReviewsRequest,
   ListReviewsResponse,
+  CreateDiaryRequest,
+  CreateDiaryResponse,
+  GetDiaryRequest,
+  GetDiaryResponse,
+  GetDiariesByProcessRequest,
+  GetDiariesByProcessResponse,
+  UpdateDiaryRequest,
+  UpdateDiaryResponse,
+  DeleteDiaryRequest,
+  DeleteDiaryResponse,
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
@@ -103,6 +113,8 @@ import { ReviewMapper } from './mappers/product/review.mapper';
 import { ProcessService } from 'src/process/process.service';
 import { TypesMapper } from './mappers/common/types.mapper';
 import { ProcessMapper } from './mappers/product/process.mapper';
+import { DiaryService } from 'src/diary/diary.service';
+import { DiaryMapper } from './mappers/product/diary.mapper';
 import { EnumsMapper } from './mappers/common/enums.mapper';
 import { status } from '@grpc/grpc-js';
 import { CreateSubcategoryDto } from 'src/categories/dto/create-subcategories.dto';
@@ -122,6 +134,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
     private readonly farmAdminService: FarmAdminService,
     private readonly reviewService: ReviewsService,
     private readonly processService: ProcessService,
+    private readonly diaryService: DiaryService,
   ) {}
 
   // Product methods
@@ -1010,6 +1023,101 @@ export class ProductGrpcServerController implements ProductsServiceController {
         processes: result.data.processes.map((value) =>
           ProcessMapper.toGrpcProcess(value),
         ),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  // Diary methods
+  async createDiary(request: CreateDiaryRequest): Promise<CreateDiaryResponse> {
+    try {
+      const result = await this.diaryService.create(
+        {
+          process_id: request.process_id,
+          step_name: request.step_name,
+          step_description: request.step_description,
+          image_urls: request.image_urls?.list,
+          video_urls: request.video_urls?.list,
+          recorded_date: TypesMapper.fromGrpcTimestamp(
+            request.recorded_date,
+          )?.toISOString(),
+          latitude: request.latitude,
+          longitude: request.longitude,
+          notes: request.notes,
+        },
+        request.user_id,
+      );
+      return {
+        diary: DiaryMapper.toGrpcDiary(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getDiary(request: GetDiaryRequest): Promise<GetDiaryResponse> {
+    try {
+      const result = await this.diaryService.findOne(request.diary_id);
+      return {
+        diary: DiaryMapper.toGrpcDiary(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getDiariesByProcess(
+    request: GetDiariesByProcessRequest,
+  ): Promise<GetDiariesByProcessResponse> {
+    try {
+      const result = await this.diaryService.findByProcessId(
+        request.process_id,
+      );
+      return {
+        diaries: result.map((value) => DiaryMapper.toGrpcDiary(value)),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async updateDiary(request: UpdateDiaryRequest): Promise<UpdateDiaryResponse> {
+    try {
+      const result = await this.diaryService.update(
+        {
+          diary_id: request.diary_id,
+          step_name: request.step_name,
+          step_description: request.step_description,
+          image_urls: request.image_urls?.list,
+          video_urls: request.video_urls?.list,
+          recorded_date: request.recorded_date
+            ? TypesMapper.fromGrpcTimestamp(
+                request.recorded_date,
+              )?.toISOString()
+            : undefined,
+          latitude: request.latitude,
+          longitude: request.longitude,
+          notes: request.notes,
+        },
+        request.user_id,
+      );
+      return {
+        diary: DiaryMapper.toGrpcDiary(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async deleteDiary(request: DeleteDiaryRequest): Promise<DeleteDiaryResponse> {
+    try {
+      const result = await this.diaryService.remove(
+        request.diary_id,
+        request.user_id,
+      );
+      return {
+        success: result,
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);

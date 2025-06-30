@@ -16,6 +16,8 @@ import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
 import { RedirectController } from './redirect/redirect.controller';
 import { UserModule } from '../user/user.module';
+import { DiaryController } from './diary/diary.controller';
+import { DiaryService } from './diary/diary.service';
 
 @Module({
   imports: [
@@ -58,6 +60,7 @@ import { UserModule } from '../user/user.module';
     ProcessController,
     AdminController,
     RedirectController,
+    DiaryController,
   ],
   providers: [
     ProductService,
@@ -66,6 +69,7 @@ import { UserModule } from '../user/user.module';
     ReviewService,
     ProcessService,
     AdminService,
+    DiaryService,
   ],
   exports: [ProductService],
 })
