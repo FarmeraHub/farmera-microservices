@@ -29,10 +29,5 @@ pub mod communication {
     include!("farmera.communication.tonic.rs");
 }
 
-pub mod hello {
-    include!("hello.rs");
-    include!("hello.tonic.rs");
-}
-
 // Re-export commonly used types
 pub use common::*;
