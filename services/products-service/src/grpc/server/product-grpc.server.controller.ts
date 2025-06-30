@@ -81,6 +81,8 @@ import {
     OpenProductForSaleResponse,
     ListReviewsRequest,
     ListReviewsResponse,
+    GetReviewOverviewRequest,
+    GetReviewOverviewResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
@@ -775,12 +777,28 @@ export class ProductGrpcServerController implements ProductsServiceController {
                 request.pagination?.order ? EnumsMapper.fromGrpcPaginationOrder(request.pagination.order) : 'DESC',
                 request.pagination?.limit ?? 10,
                 request.pagination?.cursor ?? '',
+                request.rating_filter
             );
             return {
                 reviews: result.data.reviews.map((value) => ReviewMapper.toGrpcReview(value)),
                 pagination: {
                     next_cursor: result.data.nextCursor ?? undefined
                 }
+            }
+        }
+        catch (err) {
+            throw ErrorMapper.toRpcException(err);
+        }
+    }
+
+    async getReviewOverview(request: GetReviewOverviewRequest): Promise<GetReviewOverviewResponse> {
+        try {
+            const result = await this.reviewService.getReviewOverview(request.product_id);
+            return {
+                total_count: result.totalCount,
+                total_ratings: result.totalRating,
+                average_rating: result.averageRating,
+                rating_overview: result.ratings
             }
         }
         catch (err) {
