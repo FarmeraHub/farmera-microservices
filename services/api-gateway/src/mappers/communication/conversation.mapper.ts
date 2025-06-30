@@ -31,6 +31,7 @@ export class ConversationMapper {
                 type: EnumMapper.fromGrpcMessageType(value.type)
             } : undefined,
             participants: value.participants,
+            created_at: TypesMapper.fromGrpcTimestamp(value.created_at),
         }))
     }
 

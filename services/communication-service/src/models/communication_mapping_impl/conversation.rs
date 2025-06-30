@@ -103,6 +103,7 @@ impl From<GetConversationDTO> for ConversationDto {
                 .into_iter()
                 .map(|v| v.to_string())
                 .collect(),
+            created_at: Some(datetime_to_grpc_timestamp(value.created_at)),
         }
     }
 }

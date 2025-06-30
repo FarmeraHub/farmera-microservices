@@ -13,7 +13,8 @@ SELECT
         FROM users_conversations uc
         WHERE
             uc.conversation_id = us.conversation_id
-    ) AS participants
+    ) AS participants,
+    c.created_at
 FROM
     users_conversations us
     JOIN conversations c ON us.conversation_id = c.conversation_id
