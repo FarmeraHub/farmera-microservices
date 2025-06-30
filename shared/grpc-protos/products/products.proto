@@ -69,12 +69,31 @@ service ProductsService {
   rpc GetProcess(GetProcessRequest) returns (GetProcessResponse);
   rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);  
   
+  // Process Template management
+  rpc CreateProcessTemplate(CreateProcessTemplateRequest) returns (CreateProcessTemplateResponse);
+  rpc GetProcessTemplatesByFarm(GetProcessTemplatesByFarmRequest) returns (GetProcessTemplatesByFarmResponse);
+  rpc GetProcessTemplateById(GetProcessTemplateByIdRequest) returns (GetProcessTemplateByIdResponse);
+  rpc UpdateProcessTemplate(UpdateProcessTemplateRequest) returns (UpdateProcessTemplateResponse);
+  rpc DeleteProcessTemplate(DeleteProcessTemplateRequest) returns (DeleteProcessTemplateResponse);
+  rpc GetProcessSteps(GetProcessStepsRequest) returns (GetProcessStepsResponse);
+  rpc ReorderProcessSteps(ReorderProcessStepsRequest) returns (ReorderProcessStepsResponse);
+  
+  // Product Process Assignment
+  rpc AssignProductToProcess(AssignProductToProcessRequest) returns (AssignProductToProcessResponse);
+  rpc GetProductProcessAssignment(GetProductProcessAssignmentRequest) returns (GetProductProcessAssignmentResponse);
+  rpc UnassignProductFromProcess(UnassignProductFromProcessRequest) returns (UnassignProductFromProcessResponse);
+  
   // Diary management
   rpc CreateDiary(CreateDiaryRequest) returns (CreateDiaryResponse);
   rpc GetDiary(GetDiaryRequest) returns (GetDiaryResponse);
   rpc GetDiariesByProcess(GetDiariesByProcessRequest) returns (GetDiariesByProcessResponse);
   rpc UpdateDiary(UpdateDiaryRequest) returns (UpdateDiaryResponse);
   rpc DeleteDiary(DeleteDiaryRequest) returns (DeleteDiaryResponse);
+  
+  // Step Diary management
+  rpc CreateStepDiary(CreateStepDiaryRequest) returns (CreateStepDiaryResponse);
+  rpc GetStepDiaries(GetStepDiariesRequest) returns (GetStepDiariesResponse);
+  rpc GetProductDiaries(GetProductDiariesRequest) returns (GetProductDiariesResponse);
 }
 
 // ======================================Product==========================================
@@ -765,4 +784,255 @@ message DeleteDiaryRequest {
 
 message DeleteDiaryResponse {
   bool success = 1;
+}
+
+// ======================================Process Templates===============================
+// Process Template messages
+message ProcessTemplate {
+  int32 process_id = 1;
+  string process_name = 2;
+  string description = 3;
+  string farm_id = 4;
+  optional int32 estimated_duration_days = 5;
+  bool is_active = 6;
+  repeated ProcessStep steps = 7;
+  optional int32 step_count = 8;
+  farmera.common.Timestamp created = 9;
+  farmera.common.Timestamp updated = 10;
+}
+
+message ProcessStep {
+  int32 step_id = 1;
+  int32 process_id = 2;
+  int32 step_order = 3;
+  string step_name = 4;
+  string step_description = 5;
+  bool is_required = 6;
+  optional int32 estimated_duration_days = 7;
+  optional string instructions = 8;
+  farmera.common.Timestamp created = 9;
+}
+
+message CreateProcessStepInput {
+  int32 step_order = 1;
+  string step_name = 2;
+  string step_description = 3;
+  optional bool is_required = 4;
+  optional int32 estimated_duration_days = 5;
+  optional string instructions = 6;
+}
+
+message UpdateProcessStepInput {
+  optional int32 step_id = 1;
+  optional int32 step_order = 2;
+  optional string step_name = 3;
+  optional string step_description = 4;
+  optional bool is_required = 5;
+  optional int32 estimated_duration_days = 6;
+  optional string instructions = 7;
+}
+
+// Process Template CRUD messages
+message CreateProcessTemplateRequest {
+  string process_name = 1;
+  string description = 2;
+  optional int32 estimated_duration_days = 3;
+  optional bool is_active = 4;
+  repeated CreateProcessStepInput steps = 5;
+  string user_id = 6;
+}
+
+message CreateProcessTemplateResponse {
+  ProcessTemplate template = 1;
+}
+
+message GetProcessTemplatesByFarmRequest {
+  string user_id = 1;
+}
+
+message GetProcessTemplatesByFarmResponse {
+  repeated ProcessTemplate templates = 1;
+}
+
+message GetProcessTemplateByIdRequest {
+  int32 process_id = 1;
+  string user_id = 2;
+}
+
+message GetProcessTemplateByIdResponse {
+  ProcessTemplate template = 1;
+}
+
+message UpdateProcessTemplateRequest {
+  int32 process_id = 1;
+  optional string process_name = 2;
+  optional string description = 3;
+  optional int32 estimated_duration_days = 4;
+  optional bool is_active = 5;
+  repeated UpdateProcessStepInput steps = 6;
+  string user_id = 7;
+}
+
+message UpdateProcessTemplateResponse {
+  ProcessTemplate template = 1;
+}
+
+message DeleteProcessTemplateRequest {
+  int32 process_id = 1;
+  string user_id = 2;
+}
+
+message DeleteProcessTemplateResponse {
+  bool success = 1;
+}
+
+message GetProcessStepsRequest {
+  int32 process_id = 1;
+  string user_id = 2;
+}
+
+message GetProcessStepsResponse {
+  repeated ProcessStep steps = 1;
+}
+
+message StepOrderInput {
+  int32 step_id = 1;
+  int32 step_order = 2;
+}
+
+message ReorderProcessStepsRequest {
+  int32 process_id = 1;
+  repeated StepOrderInput step_orders = 2;
+  string user_id = 3;
+}
+
+message ReorderProcessStepsResponse {
+  bool success = 1;
+}
+
+// Product Process Assignment messages
+enum AssignmentStatus {
+  ASSIGNMENT_ACTIVE = 0;
+  ASSIGNMENT_COMPLETED = 1;
+  ASSIGNMENT_CANCELLED = 2;
+}
+
+message ProductProcessAssignment {
+  int32 assignment_id = 1;
+  int32 product_id = 2;
+  int32 process_id = 3;
+  farmera.common.Timestamp assigned_date = 4;
+  AssignmentStatus status = 5;
+  optional int32 current_step_order = 6;
+  double completion_percentage = 7;
+  optional farmera.common.Timestamp start_date = 8;
+  optional farmera.common.Timestamp target_completion_date = 9;
+  optional farmera.common.Timestamp actual_completion_date = 10;
+  farmera.common.Timestamp created = 11;
+  farmera.common.Timestamp updated = 12;
+  optional ProcessTemplate process_template = 13;
+}
+
+message AssignProductToProcessRequest {
+  int32 product_id = 1;
+  int32 process_id = 2;
+  optional farmera.common.Timestamp start_date = 3;
+  optional farmera.common.Timestamp target_completion_date = 4;
+  string user_id = 5;
+}
+
+message AssignProductToProcessResponse {
+  ProductProcessAssignment assignment = 1;
+}
+
+message GetProductProcessAssignmentRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message GetProductProcessAssignmentResponse {
+  optional ProductProcessAssignment assignment = 1;
+}
+
+message UnassignProductFromProcessRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message UnassignProductFromProcessResponse {
+  bool success = 1;
+}
+
+// Step Diary messages
+enum DiaryCompletionStatus {
+  DIARY_IN_PROGRESS = 0;
+  DIARY_COMPLETED = 1;
+  DIARY_SKIPPED = 2;
+}
+
+message StepDiaryEntry {
+  int32 diary_id = 1;
+  int32 assignment_id = 2;
+  int32 step_id = 3;
+  int32 product_id = 4;
+  string step_name = 5;
+  int32 step_order = 6;
+  string notes = 7;
+  DiaryCompletionStatus completion_status = 8;
+  repeated string image_urls = 9;
+  repeated string video_urls = 10;
+  farmera.common.Timestamp recorded_date = 11;
+  optional double latitude = 12;
+  optional double longitude = 13;
+  optional string weather_conditions = 14;
+  optional int32 quality_rating = 15;
+  optional string issues_encountered = 16;
+  optional string additional_data = 17; // JSON string
+  farmera.common.Timestamp created = 18;
+  farmera.common.Timestamp updated = 19;
+  optional ProcessStep step = 20;
+  optional ProductProcessAssignment assignment = 21;
+}
+
+message CreateStepDiaryRequest {
+  int32 assignment_id = 1;
+  int32 step_id = 2;
+  int32 product_id = 3;
+  string step_name = 4;
+  int32 step_order = 5;
+  string notes = 6;
+  optional DiaryCompletionStatus completion_status = 7;
+  repeated string image_urls = 8;
+  repeated string video_urls = 9;
+  optional farmera.common.Timestamp recorded_date = 10;
+  optional double latitude = 11;
+  optional double longitude = 12;
+  optional string weather_conditions = 13;
+  optional int32 quality_rating = 14;
+  optional string issues_encountered = 15;
+  optional string additional_data = 16;
+  string user_id = 17;
+}
+
+message CreateStepDiaryResponse {
+  StepDiaryEntry diary = 1;
+}
+
+message GetStepDiariesRequest {
+  int32 product_id = 1;
+  int32 step_id = 2;
+  string user_id = 3;
+}
+
+message GetStepDiariesResponse {
+  repeated StepDiaryEntry diaries = 1;
+}
+
+message GetProductDiariesRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message GetProductDiariesResponse {
+  repeated StepDiaryEntry diaries = 1;
 }

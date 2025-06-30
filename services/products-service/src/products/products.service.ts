@@ -67,9 +67,9 @@ export class ProductsService implements OnModuleInit {
     if (!existedFarm) {
       throw new NotFoundException('Farm không tồn tại');
     }
-    if ('status' in existedFarm && existedFarm.status !== FarmStatus.APPROVED) {
-      throw new BadRequestException('Farm chưa được duyệt');
-    }
+    // if ('status' in existedFarm && existedFarm.status !== FarmStatus.APPROVED) {
+    //   throw new BadRequestException('Farm chưa được duyệt');
+    // }
 
     try {
       const { subcategory_ids, ...temp_product } = createProductDto;

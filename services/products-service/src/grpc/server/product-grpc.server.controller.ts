@@ -99,6 +99,32 @@ import {
   UpdateDiaryResponse,
   DeleteDiaryRequest,
   DeleteDiaryResponse,
+  CreateProcessTemplateRequest,
+  CreateProcessTemplateResponse,
+  GetProcessTemplatesByFarmRequest,
+  GetProcessTemplatesByFarmResponse,
+  GetProcessTemplateByIdRequest,
+  GetProcessTemplateByIdResponse,
+  UpdateProcessTemplateRequest,
+  UpdateProcessTemplateResponse,
+  DeleteProcessTemplateRequest,
+  DeleteProcessTemplateResponse,
+  GetProcessStepsRequest,
+  GetProcessStepsResponse,
+  ReorderProcessStepsRequest,
+  ReorderProcessStepsResponse,
+  AssignProductToProcessRequest,
+  AssignProductToProcessResponse,
+  GetProductProcessAssignmentRequest,
+  GetProductProcessAssignmentResponse,
+  UnassignProductFromProcessRequest,
+  UnassignProductFromProcessResponse,
+  CreateStepDiaryRequest,
+  CreateStepDiaryResponse,
+  GetStepDiariesRequest,
+  GetStepDiariesResponse,
+  GetProductDiariesRequest,
+  GetProductDiariesResponse,
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
@@ -111,8 +137,11 @@ import { CategoryMapper } from './mappers/product/category.mapper';
 import { ReviewsService } from 'src/reviews/reviews.service';
 import { ReviewMapper } from './mappers/product/review.mapper';
 import { ProcessService } from 'src/process/process.service';
+import { ProcessTemplateService } from 'src/process/process-template.service';
+import { StepDiaryService } from 'src/diary/step-diary.service';
 import { TypesMapper } from './mappers/common/types.mapper';
 import { ProcessMapper } from './mappers/product/process.mapper';
+import { ProcessTemplateMapper } from './mappers/product/process-template.mapper';
 import { DiaryService } from 'src/diary/diary.service';
 import { DiaryMapper } from './mappers/product/diary.mapper';
 import { EnumsMapper } from './mappers/common/enums.mapper';
@@ -134,6 +163,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
     private readonly farmAdminService: FarmAdminService,
     private readonly reviewService: ReviewsService,
     private readonly processService: ProcessService,
+    private readonly processTemplateService: ProcessTemplateService,
+    private readonly stepDiaryService: StepDiaryService,
     private readonly diaryService: DiaryService,
   ) {}
 
@@ -1118,6 +1149,297 @@ export class ProductGrpcServerController implements ProductsServiceController {
       );
       return {
         success: result,
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  // Process Template methods
+  async createProcessTemplate(
+    request: CreateProcessTemplateRequest,
+  ): Promise<CreateProcessTemplateResponse> {
+    try {
+      const createDto = {
+        process_name: request.process_name,
+        description: request.description,
+        estimated_duration_days: request.estimated_duration_days,
+        is_active: request.is_active,
+        steps: request.steps.map((step: any) =>
+          ProcessTemplateMapper.fromGrpcCreateProcessStepInput(step),
+        ),
+      };
+
+      const result = await this.processTemplateService.createProcessTemplate(
+        createDto,
+        request.user_id,
+      );
+
+      return {
+        template: ProcessTemplateMapper.toGrpcProcessTemplate(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getProcessTemplatesByFarm(
+    request: GetProcessTemplatesByFarmRequest,
+  ): Promise<GetProcessTemplatesByFarmResponse> {
+    try {
+      const result =
+        await this.processTemplateService.getProcessTemplatesByFarm(
+          request.user_id,
+        );
+
+      return {
+        templates: result.map((template) =>
+          ProcessTemplateMapper.toGrpcProcessTemplate(template),
+        ),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getProcessTemplateById(
+    request: GetProcessTemplateByIdRequest,
+  ): Promise<GetProcessTemplateByIdResponse> {
+    try {
+      const result = await this.processTemplateService.getProcessTemplateById(
+        request.process_id,
+        request.user_id,
+      );
+
+      return {
+        template: ProcessTemplateMapper.toGrpcProcessTemplate(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async updateProcessTemplate(
+    request: UpdateProcessTemplateRequest,
+  ): Promise<UpdateProcessTemplateResponse> {
+    try {
+      const updateDto = {
+        process_name: request.process_name,
+        description: request.description,
+        estimated_duration_days: request.estimated_duration_days,
+        is_active: request.is_active,
+        steps: request.steps?.map((step: any) =>
+          ProcessTemplateMapper.fromGrpcUpdateProcessStepInput(step),
+        ),
+      };
+
+      const result = await this.processTemplateService.updateProcessTemplate(
+        request.process_id,
+        updateDto,
+        request.user_id,
+      );
+
+      return {
+        template: ProcessTemplateMapper.toGrpcProcessTemplate(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async deleteProcessTemplate(
+    request: DeleteProcessTemplateRequest,
+  ): Promise<DeleteProcessTemplateResponse> {
+    try {
+      await this.processTemplateService.deleteProcessTemplate(
+        request.process_id,
+        request.user_id,
+      );
+
+      return { success: true };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getProcessSteps(
+    request: GetProcessStepsRequest,
+  ): Promise<GetProcessStepsResponse> {
+    try {
+      const result = await this.processTemplateService.getProcessSteps(
+        request.process_id,
+        request.user_id,
+      );
+
+      return {
+        steps: result.map((step) =>
+          ProcessTemplateMapper.toGrpcProcessStep(step),
+        ),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async reorderProcessSteps(
+    request: ReorderProcessStepsRequest,
+  ): Promise<ReorderProcessStepsResponse> {
+    try {
+      await this.processTemplateService.reorderProcessSteps(
+        request.process_id,
+        request.step_orders,
+        request.user_id,
+      );
+
+      return { success: true };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  // Product Process Assignment methods
+  async assignProductToProcess(
+    request: AssignProductToProcessRequest,
+  ): Promise<AssignProductToProcessResponse> {
+    try {
+      const assignDto = {
+        process_id: request.process_id,
+        start_date: request.start_date
+          ? TypesMapper.fromGrpcTimestamp(request.start_date)
+          : undefined,
+        target_completion_date: request.target_completion_date
+          ? TypesMapper.fromGrpcTimestamp(request.target_completion_date)
+          : undefined,
+      };
+
+      const result = await this.processTemplateService.assignProductToProcess(
+        request.product_id,
+        assignDto,
+        request.user_id,
+      );
+
+      return {
+        assignment:
+          ProcessTemplateMapper.toGrpcProductProcessAssignment(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getProductProcessAssignment(
+    request: GetProductProcessAssignmentRequest,
+  ): Promise<GetProductProcessAssignmentResponse> {
+    try {
+      const result =
+        await this.processTemplateService.getProductProcessAssignment(
+          request.product_id,
+          request.user_id,
+        );
+
+      return {
+        assignment: result
+          ? ProcessTemplateMapper.toGrpcProductProcessAssignment(result)
+          : undefined,
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async unassignProductFromProcess(
+    request: UnassignProductFromProcessRequest,
+  ): Promise<UnassignProductFromProcessResponse> {
+    try {
+      await this.processTemplateService.unassignProductFromProcess(
+        request.product_id,
+        request.user_id,
+      );
+
+      return { success: true };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  // Step Diary methods
+  async createStepDiary(
+    request: CreateStepDiaryRequest,
+  ): Promise<CreateStepDiaryResponse> {
+    try {
+      const createDto = {
+        assignment_id: request.assignment_id,
+        step_id: request.step_id,
+        product_id: request.product_id,
+        step_name: request.step_name,
+        step_order: request.step_order,
+        notes: request.notes,
+        completion_status: request.completion_status
+          ? ProcessTemplateMapper.fromGrpcDiaryCompletionStatus(
+              request.completion_status,
+            )
+          : undefined,
+        image_urls: request.image_urls,
+        video_urls: request.video_urls,
+        recorded_date: request.recorded_date
+          ? TypesMapper.fromGrpcTimestamp(request.recorded_date)
+          : undefined,
+        latitude: request.latitude,
+        longitude: request.longitude,
+        weather_conditions: request.weather_conditions,
+        quality_rating: request.quality_rating,
+        issues_encountered: request.issues_encountered,
+        additional_data: request.additional_data
+          ? JSON.parse(request.additional_data)
+          : undefined,
+      };
+
+      const result = await this.stepDiaryService.createStepDiary(
+        createDto,
+        request.user_id,
+      );
+
+      return {
+        diary: ProcessTemplateMapper.toGrpcStepDiaryEntry(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getStepDiaries(
+    request: GetStepDiariesRequest,
+  ): Promise<GetStepDiariesResponse> {
+    try {
+      const result = await this.stepDiaryService.getStepDiaries(
+        request.product_id,
+        request.step_id,
+        request.user_id,
+      );
+
+      return {
+        diaries: result.map((diary) =>
+          ProcessTemplateMapper.toGrpcStepDiaryEntry(diary),
+        ),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getProductDiaries(
+    request: GetProductDiariesRequest,
+  ): Promise<GetProductDiariesResponse> {
+    try {
+      const result = await this.stepDiaryService.getProductDiaries(
+        request.product_id,
+        request.user_id,
+      );
+
+      return {
+        diaries: result.map((diary) =>
+          ProcessTemplateMapper.toGrpcStepDiaryEntry(diary),
+        ),
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);

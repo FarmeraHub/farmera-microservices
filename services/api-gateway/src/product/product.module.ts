@@ -12,6 +12,8 @@ import { ReviewController } from './review/review.controller';
 import { ReviewService } from './review/review.service';
 import { ProcessController } from './process/process.controller';
 import { ProcessService } from './process/process.service';
+import { ProcessTemplateController } from './process-template/process-template.controller';
+import { ProcessTemplateService } from './process-template/process-template.service';
 import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
 import { RedirectController } from './redirect/redirect.controller';
@@ -58,6 +60,7 @@ import { DiaryService } from './diary/diary.service';
     CategoryController,
     ReviewController,
     ProcessController,
+    ProcessTemplateController,
     AdminController,
     RedirectController,
     DiaryController,
@@ -68,6 +71,7 @@ import { DiaryService } from './diary/diary.service';
     CategoryService,
     ReviewService,
     ProcessService,
+    ProcessTemplateService,
     AdminService,
     DiaryService,
   ],

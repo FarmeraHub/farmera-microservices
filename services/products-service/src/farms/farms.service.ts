@@ -245,7 +245,7 @@ export class FarmsService {
     const farm = await this.farmsRepository.findOne({
       where: {
         user_id: userId,
-        status: In([FarmStatus.VERIFIED, FarmStatus.APPROVED]),
+        // status: In([FarmStatus.VERIFIED, FarmStatus.APPROVED]),
       },
       relations: ['address', 'address.address_ghn'],
     });
