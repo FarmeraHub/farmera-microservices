@@ -29,7 +29,8 @@ export class ConversationMapper {
                 sent_at: TypesMapper.fromGrpcTimestamp(value.sent_at),
                 is_read: value.is_read,
                 type: EnumMapper.fromGrpcMessageType(value.type)
-            } : undefined
+            } : undefined,
+            participants: value.participants,
         }))
     }
 

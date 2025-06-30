@@ -74,6 +74,7 @@ message ConversationDTO {
   optional farmera.common.Timestamp sent_at = 7;
   optional bool is_read = 8;
   optional farmera.common.MessageType type = 9;
+  repeated string participants = 10;
 }
 
 // Conversation
