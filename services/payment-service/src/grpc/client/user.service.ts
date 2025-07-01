@@ -36,13 +36,14 @@ export class UserGrpcClientService implements OnModuleInit {
                 throw new Error(`User with ID ${userId} not found or gRPC result is malformed`);
             }
             const user = UserMapper.fromGrpcUser(result.user);
+            this.logger.log(`User with ID ${userId} found: ${JSON.stringify(user,null, 2)}`);
             if (!user) {
                 throw new Error(`User mapping failed for ID ${userId}`);
             }
             return user;
         } catch (err) {
             this.logger.error(err.message);
-            throw ErrorMapper.toRpcException(err);
+            throw new Error(`Failed to get user with ID ${userId}: ${err.message}`);
         }
     }
     async getLocationById(LocationId: string): Promise<Location> {
@@ -61,7 +62,7 @@ export class UserGrpcClientService implements OnModuleInit {
         }
         catch (err) {
             this.logger.error(err.message);
-            throw ErrorMapper.toRpcException(err);
+            throw new Error(`Failed to get location with ID ${LocationId}: ${err.message}`);
         }
     }
     async getPaymentMethods(userId: string) :Promise<PaymentMethod[]> {
@@ -75,7 +76,7 @@ export class UserGrpcClientService implements OnModuleInit {
             return result.payment_methods.map(pm => PaymentMethodMapper.fromGrpcPaymentMethod(pm));
         } catch (err) {
             this.logger.error(err.message);
-            throw ErrorMapper.toRpcException(err);
+            throw new Error(`Failed to get payment methods for user ID ${userId}: ${err.message}`);
         }
     }
 }

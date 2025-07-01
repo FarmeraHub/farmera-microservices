@@ -544,10 +544,15 @@ export class BusinessValidationService {
                 return result;
             }
 
+            this.logger.log(`User found: ${JSON.stringify(user.locations, null, 2)}`);
             // 1.2 Kiểm tra địa chỉ giao hàng có hợp lệ không
             const userLocation: Location = await this.userGrpcClientService.getLocationById(value.address_id);
             this.logger.log(`User Location: ${JSON.stringify(userLocation, null, 2)}`);
-            if (!userLocation || !userLocation.location_id || userLocation.user_id !== user.id || userLocation.user_id !== value.user_id) {
+            if (!userLocation ||
+                !userLocation.location_id ||
+                !user.locations ||
+                !user.locations.some(loc => loc.location_id === userLocation.location_id)
+            ) {
                 result.push({
                     reason: 'INVALID_ADDRESS_ID',
                     user_id: value.user_id,
@@ -564,8 +569,9 @@ export class BusinessValidationService {
                 return result;
             }
             // 1.3 Kiểm tra province_code, district_code, ward_code
-            const provinceCode = this.ghnService.getIdProvince(userLocation.city);
-            if (!provinceCode || provinceCode !== null) {
+            const provinceCode = await this.ghnService.getIdProvince(userLocation.city);
+            this.logger.log(`Province code: ${JSON.stringify(provinceCode, null, 2)}`);
+            if (provinceCode == null) {
                 result.push({
                     reason: 'PROVINCE_CODE_MISSING',
                     user_id: value.user_id,
@@ -573,8 +579,8 @@ export class BusinessValidationService {
                 });
                 return result;
             }
-            const districtCode = this.ghnService.getIdDistrict(userLocation.district, provinceCode);
-            if (!districtCode || districtCode !== null) {
+            const districtCode = await this.ghnService.getIdDistrict(userLocation.district, provinceCode);
+            if (districtCode == null) {
                 result.push({
                     reason: 'DISTRICT_CODE_MISSING',
                     user_id: value.user_id,
@@ -582,8 +588,8 @@ export class BusinessValidationService {
                 });
                 return result;
             }
-            const wardCode = this.ghnService.getIdWard(userLocation.ward, districtCode);
-            if (!wardCode || wardCode !== null) {
+            const wardCode: string | null = await this.ghnService.getIdWard(userLocation.ward, districtCode);
+            if (wardCode == null || wardCode === '') {
                 result.push({
                     reason: 'WARD_CODE_MISSING',
                     user_id: value.user_id,

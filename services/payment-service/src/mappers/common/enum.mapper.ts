@@ -119,7 +119,7 @@ export class EnumMapper {
             case "PROCESS_STAGE_START": return ProcessStage.START;
             case "PROCESS_STAGE_PRODUCTION": return ProcessStage.PRODUCTION;
             case "PROCESS_STAGE_COMPLETION": return ProcessStage.COMPLETION;
-            default: throw new BadRequestException("Invalid process stage");
+            default: throw new Error("Invalid process stage");
         }
     }
     static fromGrpcGender(value: GrpcGender): string {
@@ -129,24 +129,24 @@ export class EnumMapper {
             case "GENDER_FEMALE": return "Female";
             case "GENDER_OTHER": return "Other";
             case "GENDER_PREFER_NOT_TO_SAY": return "Prefer not to say";
-            default: throw new BadRequestException("Invalid Gender value");
+            default: throw new Error("Invalid Gender value");
         }
     }
     static fromGrpcUserRole(value: GrpcUserRole): UserRole {
         switch (value.toString()) {
             case "USER_ROLE_ADMIN": return UserRole.ADMIN;
             case "USER_ROLE_FARMER": return UserRole.FARMER;
-            case "USER_ROLE_CUSTOMER": return UserRole.BUYER;
-            default: throw new BadRequestException("Invalid User Role value");
+            case "USER_ROLE_BUYER": return UserRole.BUYER;
+            default: throw new Error("Invalid User Role value");
         }
-        
+
     }
     static fromGrpcUserStatus(value: GrpcUserStatus): UserStatus {
         switch (value.toString()) {
             case "USER_STATUS_ACTIVE": return UserStatus.ACTIVE;
             case "USER_STATUS_INACTIVE": return UserStatus.INACTIVE;
             case "USER_STATUS_BANNED": return UserStatus.BANNED;
-            default: throw new BadRequestException("Invalid User Status value");
+            default: throw new Error("Invalid User Status value");
         }
     }
     // static fromGrpcPaymentMethod(value: GrpcPaymentProvider ) :PaymentProvider {
@@ -165,7 +165,7 @@ export class EnumMapper {
             case "PAYMENT_PROVIDER_MOMO": return PaymentProvider.MOMO;
             case "PAYMENT_PROVIDER_ZALOPAY": return PaymentProvider.ZALOPAY;
             case "PAYMENT_PROVIDER_OTHER": return PaymentProvider.OTHER;
-            default: throw new BadRequestException("Invalid payment provider");
+            default: throw new Error("Invalid payment provider");
         }
     }
 }
