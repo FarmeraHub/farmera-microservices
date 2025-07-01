@@ -8,8 +8,9 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiBadRequestResponse, ApiQuery } from '@nestjs/swagger';
 import { Review } from './entities/review.entity';
 import { ReviewReply } from './entities/review-reply.entity';
-import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { GetReviewsDto } from './dto/get-review.dto';
+import { RatingStatsDto } from './dto/rating-stat.dto';
 
 @ApiTags('Review')
 @Controller('review')
@@ -87,6 +88,17 @@ export class ReviewController {
         return await this.reviewServie.deleteReply(replyId, user.id);
     }
 
+    @Public()
+    @Get("overview/:product_id")
+    @ApiOperation({ summary: 'Get review overview', description: 'Gets review overview for a product.' })
+    @ApiParam({ name: 'product_id', description: 'ID of the product to get review overview for' })
+    @ApiResponse({ status: 200, description: 'Review overview retrieved successfully', type: RatingStatsDto })
+    @ApiBadRequestResponse({ description: 'Invalid input or retrieval failed' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async getReviewOverview(@Param("product_id") productId: number) {
+        return await this.reviewServie.getReviewOverview(productId);
+    }
+
     @Post("approve/:review_id")
     @ApiOperation({ summary: 'Approve a review', description: 'Approves or disapproves a review.' })
     @ApiParam({ name: 'review_id', description: 'ID of the review to approve/disapprove' })
@@ -102,11 +114,11 @@ export class ReviewController {
     @Get(":product_id")
     @ApiOperation({ summary: 'Get reviews', description: 'Gets reviews for a product.' })
     @ApiParam({ name: 'product_id', description: 'ID of the product to get reviews for' })
-    @ApiQuery({ type: SimpleCursorPagination })
+    @ApiQuery({ type: GetReviewsDto })
     @ApiResponse({ status: 200, description: 'Reviews retrieved successfully', type: [Review] })
     @ApiBadRequestResponse({ description: 'Invalid input or retrieval failed' })
     @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-    async getReviews(@Param("product_id") productId: number, @Query() pagination: SimpleCursorPagination) {
+    async getReviews(@Param("product_id") productId: number, @Query() pagination: GetReviewsDto) {
         return await this.reviewServie.getReviews(productId, pagination);
     }
 }

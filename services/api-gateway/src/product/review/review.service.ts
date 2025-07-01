@@ -11,6 +11,8 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 import { ErrorMapper } from 'src/mappers/common/error.mapper';
 import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
 import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
+import { GetReviewsDto } from './dto/get-review.dto';
+import { RatingStatsDto } from './dto/rating-stat.dto';
 
 @Injectable()
 export class ReviewService implements OnModuleInit {
@@ -134,16 +136,40 @@ export class ReviewService implements OnModuleInit {
         }
     }
 
-    async getReviews(productId: number, pagination: SimpleCursorPagination): Promise<{ reviews: Review[], nextCursor?: string }> {
+    async getReviews(productId: number, getReviewsDto: GetReviewsDto): Promise<{ reviews: Review[], nextCursor?: string }> {
         try {
             const result = await firstValueFrom(this.productGrpcService.listReviews({
                 product_id: productId,
-                pagination: PaginationMapper.toGrpcSimpleCursorPaginationRequest(pagination)
+                pagination: PaginationMapper.toGrpcSimpleCursorPaginationRequest({
+                    sort_by: getReviewsDto.sort_by,
+                    order: getReviewsDto.order,
+                    limit: getReviewsDto.limit,
+                    cursor: getReviewsDto.cursor
+                }),
+                rating_filter: getReviewsDto.rating_filter
             }));
             return {
                 reviews: result.reviews.map((value) => ReviewMapper.fromGrpcReview(value)),
                 nextCursor: result.pagination.next_cursor
             };
+        }
+        catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
+        }
+    }
+
+    async getReviewOverview(productId: number): Promise<RatingStatsDto> {
+        try {
+            const result = await firstValueFrom(this.productGrpcService.getReviewOverview({
+                product_id: productId
+            }));
+            return {
+                totalCount: result.total_count,
+                totalRating: result.total_ratings,
+                averageRating: result.average_rating,
+                ratings: result.rating_overview
+            }
         }
         catch (err) {
             this.logger.error(err.message);
