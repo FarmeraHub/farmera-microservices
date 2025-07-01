@@ -2,10 +2,11 @@ export enum PaymentStatus {
     PENDING = 'PENDING',
     COMPLETED = 'COMPLETED',
     FAILED = 'FAILED',
+    CANCELED = 'CANCELED',
+    PROCESSING = 'PROCESSING',
+
 }
 export enum PaymentMethod {
-    CREDIT_CARD = 'CREDIT_CARD',
-    MOMO = 'MOMO',
-    BANK_TRANSFER = 'BANK_TRANSFER',
-    CASH_ON_DELIVERY = 'CASH_ON_DELIVERY',
+    COD = 'COD', 
+    PAYOS = 'PAYOS',
 }

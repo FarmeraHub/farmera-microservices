@@ -2,8 +2,12 @@ import {
     ItemResponse as GrpcItemResponse,
     ShippingFeeDetails as GrpcShippingFeeDetails,
     Issue as GrpcIssue,
+    Delivery as GrpcDelivery,
 } from "@farmera/grpc-proto/dist/payment/payment";
 import { Issue, Item, ShippingFeeDetails } from "src/delivery/enitites/cart.entity";
+import { Delivery } from "src/delivery/enitites/delivery.entity";
+import { SubOrderMapper } from "./suborder.mapper";
+import { TypesMapper } from "../common/types.mapper";
 
 export class DeliveryEnumMapper {
     static toGrpcItem(values: Item): GrpcItemResponse {
@@ -40,6 +44,23 @@ export class DeliveryEnumMapper {
             user_id: issue.user_id,
             address_id: issue.address_id,
         };
+    }
+
+    static toGrpcDelivery(value: Delivery): GrpcDelivery{
+        return {
+            delivery_id: value.delivery_id,
+            sub_order: value.sub_order ? SubOrderMapper.toGrpcSubOrder(value.sub_order) : undefined,
+            tracking_number: value.tracking_number,
+            delivery_instructions: value.delivery_instructions,
+            shipping_amount: value.shipping_amount,
+            discount_amount: value.discount_amount,
+            cod_amount: value.cod_amount,
+            final_amount: value.final_amount,
+            ship_date: TypesMapper.toGrpcTimestamp(value.ship_date),
+            created_at: TypesMapper.toGrpcTimestamp(value.created),
+            updated_at: TypesMapper.toGrpcTimestamp(value.updated),
+            delivery_method: value.delivery_method,
+        } 
     }
 
         

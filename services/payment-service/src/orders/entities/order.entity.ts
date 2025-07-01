@@ -2,6 +2,8 @@
 import { DiscountUsage } from "src/discounts/entities/discount-usage.entity";
 import { Payment } from "src/payments/entities/payment.entity";
 import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { SubOrder } from "./sub-order.entity";
+import { OrderStatus } from "src/common/enums/payment/order-status.enum";
 
 @Entity('order')
 export class Order {
@@ -11,7 +13,8 @@ export class Order {
     @Column({ name: 'customer_id', type: 'uuid' })
     customer_id: string;
 
-
+    @Column()
+    address_id: string;
 
     @Column()
     total_amount: number;
@@ -36,5 +39,15 @@ export class Order {
     discount_usage: DiscountUsage[];
     @OneToOne(() => Payment)
     payment: Payment;
+    @OneToMany(() => SubOrder, (subOrder) => subOrder.order, { cascade: true })
+    sub_orders: SubOrder[];
 
+    @Column()
+    currency: string;
+    @Column({
+            type: 'enum',
+            enum: OrderStatus,
+            default: OrderStatus.PENDING,
+        })
+        status: OrderStatus;
 }   

@@ -55,6 +55,7 @@ export class PaymentGrpcController implements PaymentServiceController {
             throw ErrorMapper.toRpcException(error);
         }
     }
+    async createOrder(request: CreateOrderRequest): Promise<any> { }
 
     
 

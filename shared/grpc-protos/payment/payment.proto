@@ -13,7 +13,7 @@ service PaymentService {
 
   rpc CalculateShippingFee(CalculateShippingFeeRequest) returns (CalculateShippingFeeResponse);
   // Order management
-  //rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
   //rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
   //rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
   //rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
@@ -57,16 +57,15 @@ service PaymentService {
 message Order {
   int32 order_id = 1;
   string customer_id = 2;
-  int32 address_id = 3;
-  repeated SubOrder suborder = 4;
-  double total_amount = 5;
-  optional double shipping_amount = 6;
-  optional double final_amount = 7;
-  farmera.common.OrderStatus status = 8;
-  optional Payment payment = 9;
-  farmera.common.Timestamp created = 10;
-  farmera.common.Timestamp updated = 11; 
-  string notes = 12;
+  string address_id = 3;
+  double total_amount = 4;
+  double shipping_amount = 5;
+  double final_amount = 6;
+  farmera.common.OrderStatus status = 7;
+  optional Payment payment = 8;
+  farmera.common.Timestamp created = 9;
+  farmera.common.Timestamp updated = 10;
+  string currency = 11;
 }
 
 message SubOrder{
@@ -79,38 +78,37 @@ message SubOrder{
   double shipping_amount = 7;
   double final_amount = 8;
   farmera.common.Timestamp created = 9;
-  repeated OrderItem items = 10;
+  string currency = 10;
+  optional string avatar_url = 11;
+  optional string notes = 12;
+
 }
 // Order item
 message OrderItem {
   int32 item_id = 1;
-  int32 sub_order_id = 2;
+  optional SubOrder sub_order = 2;
   int32 product_id = 3;
   string product_name = 4;
-  string price_per_unit = 5;
+  double price_per_unit = 5;
   int32 quantity = 6;
-  double unit_price = 7;
-  double total = 8;
+  string unit = 7;
+  double total_price = 8;
   double weight = 9;
+  optional string image_url = 10;
+
 }
 
 // Payment message definition
 message Payment {
   int32 payment_id = 1;
-  int32 order_id = 2;
-  string customer_id = 3;
-  farmera.common.Money amount = 4;
-  farmera.common.PaymentMethod method = 5;
-  farmera.common.PaymentStatus status = 6;
-  string provider = 7; // "stripe", "paypal", etc.
-  string provider_transaction_id = 8;
-  string provider_payment_method_id = 9;
-  farmera.common.Timestamp processed_at = 10;
-  farmera.common.Timestamp created_at = 11;
-  repeated PaymentRefund refunds = 12;
-  PaymentMetadata metadata = 13;
-  string failure_reason = 14;
-  int32 retry_count = 15;
+  optional Order order = 2;
+  double amount = 3;
+  farmera.common.PaymentMethod method = 4;
+  farmera.common.PaymentStatus status = 5;
+  optional string transaction_id = 6;
+  farmera.common.Timestamp paid_at = 7;
+  farmera.common.Timestamp created_at = 8;
+  string currency = 9;
 }
 
 // Payment refund
@@ -163,22 +161,17 @@ message DiscountUsage {
 // Delivery message definition
 message Delivery {
   int32 delivery_id = 1;
-  int32 order_id = 2;
-  string delivery_agent_id = 3;
-  farmera.common.DeliveryStatus status = 4;
-  farmera.common.DeliveryAddress pickup_address = 5;
-  farmera.common.DeliveryAddress delivery_address = 6;
-  farmera.common.Timestamp scheduled_pickup = 7;
-  farmera.common.Timestamp actual_pickup = 8;
-  farmera.common.Timestamp estimated_delivery = 9;
-  farmera.common.Timestamp actual_delivery = 10;
-  string tracking_number = 11;
-  string delivery_instructions = 12;
-  repeated DeliveryEvent events = 13;
-  farmera.common.Money delivery_fee = 14;
-  string delivery_method = 15; // "standard", "express", "same-day"
-  farmera.common.Timestamp created_at = 16;
-  farmera.common.Timestamp updated_at = 17;
+  optional SubOrder sub_order = 2;
+  string tracking_number = 3;
+  string delivery_instructions = 4;
+  double shipping_amount = 5;
+  double discount_amount = 6;
+  double cod_amount = 7;
+  double final_amount = 8;
+  farmera.common.Timestamp ship_date = 9;
+  string delivery_method = 10; //Hàng nhẹ/ hàng nặng
+  farmera.common.Timestamp created_at = 11;
+  farmera.common.Timestamp updated_at = 12;
 }
 
 // Delivery event tracking
@@ -218,14 +211,8 @@ message PaymentMetadata {
 
 // Order management requests/responses
 message CreateOrderRequest {
-  string customer_id = 1;
-  repeated OrderItemRequest items = 2;
-  farmera.common.DeliveryAddress delivery_address = 3;
-  farmera.common.DeliveryAddress billing_address = 4;
-  repeated string discount_codes = 5;
-  string delivery_method = 6;
-  string notes = 7;
-  OrderMetadata metadata = 8;
+  repeated SubOrderRequest suborders = 1;
+  OrderInfoRequest order_info = 2;
 }
 
 message OrderItemRequest {
@@ -235,9 +222,10 @@ message OrderItemRequest {
 }
 
 message CreateOrderResponse {
-  Order order = 1;
-  repeated string applied_discounts = 2;
-  repeated string failed_discounts = 3;
+  oneof result {
+    Order order = 1;
+    ValidationErrors errors = 2;        // Trả về khi có BẤT KỲ lỗi validation nào
+  }
 }
 
 message GetOrderRequest {

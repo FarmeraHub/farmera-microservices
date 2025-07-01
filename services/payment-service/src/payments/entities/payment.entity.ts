@@ -8,15 +8,15 @@ export class Payment {
     payment_id: number;
 
     @OneToOne(() => Order)
-    @JoinColumn({ name: 'order_id' })
-    order_id: Order;
+    @JoinColumn({ name: 'order' })
+    order: Order;
 
     @Column()
     amount: number;
     @Column({
         type: 'enum',
         enum: PaymentMethod,
-        default: PaymentMethod.CREDIT_CARD,
+        default: PaymentMethod.COD,
     })
     method: PaymentMethod;
     @Column({
@@ -31,6 +31,9 @@ export class Payment {
     paid_at: Date;
     @CreateDateColumn()
     created: Date;
+    @Column()
+    currency: string;
+   
 
 
 }

@@ -1,7 +1,8 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne, Or, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, Or, PrimaryGeneratedColumn } from "typeorm";
 import { Order } from "./order.entity";
 import { SubOrderStatus } from "src/common/enums/payment/sub-order-status.enum";
 import { Delivery } from "src/delivery/enitites/delivery.entity";
+import { OrderDetail } from "./order-detail.entity";
 
 @Entity('sub_order')
 export class SubOrder {
@@ -9,8 +10,8 @@ export class SubOrder {
     sub_order_id: number;
 
     @ManyToOne(() => Order)
-    @JoinColumn({ name: 'order_id' })
-    order_id: Order;
+    @JoinColumn({ name: 'order' })
+    order: Order;
 
     @Column({ name: 'farm_id', type: 'uuid' })
     farm_id: string;
@@ -32,6 +33,17 @@ export class SubOrder {
     @Column()
     created: Date;
     @OneToOne(() => Delivery)
-    delivery_id: Delivery;
+    delivery: Delivery;
+    @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.sub_order, { cascade: true })
+    order_details: OrderDetail[];
+
+    @Column()
+    currency: string;
+
+    @Column()
+    avartar_url: string;
+    @Column()
+    notes: string;
+
 
 }
