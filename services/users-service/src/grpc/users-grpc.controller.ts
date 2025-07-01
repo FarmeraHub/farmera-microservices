@@ -17,6 +17,8 @@ import {
   GetLocationByIdResponse,
   GetPaymentMethodsRequest,
   GetPaymentMethodsResponse,
+  GetUserLiteReponse,
+  GetUserLiteRequest,
   GetUserLocationsRequest,
   GetUserLocationsResponse,
   GetUserProfileRequest,
@@ -728,6 +730,29 @@ export class UsersGrpcController implements UsersServiceController {
       return { stats: UserMapper.anyToGrpcUserStatistic(stats) };
     } catch (error) {
       this.logger.error(`GetUserStats error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to get user stats',
+      });
+    }
+  }
+
+  async getUserLite(request: GetUserLiteRequest): Promise<GetUserLiteReponse> {
+    try {
+      const result = await this.usersService.getUserLite(request.user_id);
+      return {
+        user: {
+          id: result.id,
+          email: result.email,
+          first_name: result.first_name,
+          last_name: result.last_name,
+          farm_id: result.farm_id,
+          avatar: result.avatar,
+        }
+      }
+    }
+    catch (error) {
+      this.logger.error(`GetUserLite error: ${error.message}`);
       throw new RpcException({
         code: status.INTERNAL,
         message: error.message || 'Failed to get user stats',
