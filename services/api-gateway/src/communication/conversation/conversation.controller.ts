@@ -6,7 +6,7 @@ import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { Conversation } from './entities/conversation.entity';
 import { ConversationListDto } from './dto/conversation-list.dto';
 import { UserListDto } from './dto/user-list.dto';
-import { ConversationMessage, GetMessagesDto } from './dto/message.dto';
+import { ConversationMessage, GetMessagesDto, ListMessagesDto } from './dto/message.dto';
 
 
 @Controller('conversation')
@@ -43,12 +43,12 @@ export class ConversationController {
     }
 
     @Get(":conversation_id/messages")
-    async getConversationMessages(@User() user: UserInterface, @Param("conversation_id") id: number, @Query("before") before?: Date, @Query("limit") limit?: number): Promise<ConversationMessage[]> {
+    async getConversationMessages(@User() user: UserInterface, @Param("conversation_id") id: number, @Query() listMessagesDto: ListMessagesDto): Promise<ConversationMessage[]> {
         return await this.conversationService.getConversationMessages({
             user_id: user.id,
             conversation_id: id,
-            before: before,
-            limit: limit
+            before: listMessagesDto.before,
+            limit: listMessagesDto.limit
         });
     }
 
