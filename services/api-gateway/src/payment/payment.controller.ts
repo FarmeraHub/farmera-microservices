@@ -12,22 +12,5 @@ export class PaymentController {
     constructor(
         private readonly paymentClientService: PaymentClientService,
     ) {}
-    @Post('calculate-fee')
-    @ApiBearerAuth('access-token')
-    @ApiOperation({ summary: 'Caculate fee for order' })
-    @ApiResponse({ status: 201, description: 'Successfully caculate fee.', type: CalculateShippingFeeDto })
-    @ApiBadGatewayResponse({ description: 'Failed to caculate fee.' })
-    @ApiUnauthorizedResponse({ description: 'Unauthorized access.' })
-    @ApiInternalServerErrorResponse({ description: 'Internal server error.' })
-    @ApiBody({ type: CalculateShippingFeeDto })
-    @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
-    async calculateShippingFee(
-        @User() user: UserInterface,
-        @Body() calculateShippingFeeDto: CalculateShippingFeeDto,
-    ): Promise<any> {
-        
-        const test = await this.paymentClientService.calculateShippingFee(calculateShippingFeeDto, user.id);
-        return test;
-
-    }
+    
 }

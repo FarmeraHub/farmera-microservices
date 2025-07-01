@@ -4,6 +4,8 @@ import { ConfigModule } from "@nestjs/config";
 import { join } from "path";
 import { PaymentController } from "./payment.controller";
 import { PaymentClientService } from "./payment.client.service";
+import { DeliveryController } from './delivery/delivery.controller';
+import { DeliveryService } from './delivery/delivery.service';
 
 @Module({
     imports: [
@@ -28,8 +30,8 @@ import { PaymentClientService } from "./payment.client.service";
             }
         ])
     ],
-    controllers: [PaymentController],
-    providers: [PaymentClientService],
+    controllers: [PaymentController, DeliveryController],
+    providers: [PaymentClientService, DeliveryService],
     exports: [],
 })
 export class PaymentModule { }

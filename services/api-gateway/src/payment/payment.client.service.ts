@@ -22,22 +22,7 @@ export class PaymentClientService implements OnModuleInit {
             this.logger.log('PaymentService gRPC client initialized successfully.');
         }
     } 
-    async calculateShippingFee(calculateShippingFeeDto: CalculateShippingFeeDto, userId: string): Promise<any>{
-
-        this.logger.log(`calculateShippingFee called with orderItems: ${JSON.stringify(calculateShippingFeeDto, null, 2)}`, 'userId:', userId, 'address_id:', calculateShippingFeeDto.address_id);
-        try {
-            const response = await this.paymentServiceGrpcClient.calculateShippingFee({
-                list_items:  calculateShippingFeeDto.products.map(item => OrderMapper.toGrpcOrderItemRequest(item)),
-                user_id: userId,
-                address_id: calculateShippingFeeDto.address_id
-            });
-            this.logger.log('calculateShippingFee response:', response);
-            return response;
-        } catch (error) {
-            this.logger.error('Error in calculateShippingFee:', error);
-            throw error; // Re-throw the error for further handling
-        }
-    }
+    
     
 
 }

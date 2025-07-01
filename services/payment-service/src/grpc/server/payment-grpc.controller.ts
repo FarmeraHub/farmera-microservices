@@ -56,19 +56,6 @@ export class PaymentGrpcController implements PaymentServiceController {
         }
     }
 
-    // async createOrder(request: CreateOrderRequest): Promise<CreateOrderResponse> {
-    //     try {
-    //         const { user, location, issues } = await this.businessValidationService.validateOrderInfo(request.order_info);
-    //         if (issues.length > 0) {
-    //             throw new Error(JSON.stringify(issues));
-    //         }
-    //         const order = await this.ordersService.createOrder(request.order_info, user, location);
-    //         return { order_id: order.order_id };
-    //     }
-    //     catch (error) {
-    //         this.logger.error('Error in createOrder:', error);
-    //         throw error; // Re-throw the error for further handling
-    //     }
-    // }
+    
 
 }
