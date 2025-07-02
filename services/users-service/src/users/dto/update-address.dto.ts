@@ -7,6 +7,8 @@ export class UpdateAddressDto {
     description: 'Name associated with this address',
   })
   @IsString()
+  @IsPhoneNumber("VN")
+  @IsNotEmpty()
   name: string;
 
   @ApiProperty({
@@ -14,6 +16,8 @@ export class UpdateAddressDto {
     description: 'Phone number for this address',
   })
   @IsString()
+  @IsPhoneNumber("VN")
+  @IsNotEmpty()
   phone: string;
   
   @ApiProperty({
@@ -69,11 +73,5 @@ export class UpdateAddressDto {
   @IsBoolean()
   is_primary?: boolean;
 
-  @IsString()
-  @IsNotEmpty()
-  name: string;
 
-  @IsPhoneNumber("VN")
-  @IsNotEmpty()
-  phone: string
 }

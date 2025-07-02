@@ -483,8 +483,6 @@ export class UsersGrpcController implements UsersServiceController {
           is_primary: request.is_primary,
           type: request.type,
           user_id: request.user_id,
-          phone: request.phone,
-          name: request.name,
         },
       );
 
@@ -511,8 +509,6 @@ export class UsersGrpcController implements UsersServiceController {
         is_primary: request.is_primary,
         type: request.type,
         ward: request.ward,
-        name: request.name,
-        phone: request.phone,
       };
 
       const location = await this.usersService.updateUserLocation(

@@ -164,8 +164,6 @@ export class UserService implements OnModuleInit {
       const result = await firstValueFrom(
         this.usersGrpcService.addUserLocation({
           user_id: userId,
-          name: req.name,
-          phone: req.phone,
           city: req.city,
           district: req.district,
           ward: req.ward,
@@ -195,8 +193,6 @@ export class UserService implements OnModuleInit {
       const result = await firstValueFrom(
         this.usersGrpcService.updateUserLocation({
           user_id: userId,
-          name: req.name,
-          phone: req.phone,
           location_id: locationId,
           city: req.city,
           district: req.district,

@@ -5,8 +5,6 @@ import { Location } from "src/user/user/entities/location.entity";
 export class LocationMapper {
     static toGrpcLocation(location: Location): GrpcUserLocation {
         return {
-            name: location.name,
-            phone: location.phone,
             id: location.location_id,
             city: location.city,
             district: location.district,
@@ -25,8 +23,6 @@ export class LocationMapper {
     static fromGrpcLocation(value: GrpcUserLocation): Location {
         return {
             location_id: value.id,
-            name: value.name,
-            phone: value.phone,
             city: value.city,
             district: value.district,
             ward: value.ward,
