@@ -33,7 +33,7 @@ export class UsersService {
     private verificationService: VerificationService,
 
     private hashService: HashService,
-  ) {}
+  ) { }
 
   async createUserSignUp(createUserSignUpDto: CreateUserSignUpDto) {
     await this.verificationService.verifyCode({
@@ -304,6 +304,8 @@ export class UsersService {
       ward: locationData.ward,
       type: locationData.type,
       is_primary: locationData.is_primary || false,
+      name: locationData.name,
+      phone: locationData.phone,
     });
 
     const savedLocation = await this.locationsRepository.save(newLocation);
