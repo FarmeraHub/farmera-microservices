@@ -23,6 +23,9 @@ export class ProcessTemplate {
   @Column({ type: 'text', nullable: false })
   description: string;
 
+  @Column({ type: 'uuid', nullable: false })
+  farm_id: string;
+
   @ManyToOne(() => Farm)
   @JoinColumn({ name: 'farm_id' })
   farm: Farm;

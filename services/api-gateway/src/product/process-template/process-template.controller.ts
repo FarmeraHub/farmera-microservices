@@ -7,12 +7,13 @@ import {
   Body,
   Param,
   ParseIntPipe,
-  Req,
 } from '@nestjs/common';
 import { ProcessTemplateService } from './process-template.service';
 import { User } from '../../common/decorators/user.decorator';
 import { User as UserInterface } from '../../common/interfaces/user.interface';
-import { Request } from 'express';
+import { CreateProcessTemplateDto } from './dto/create-process-template.dto';
+import { UpdateProcessTemplateDto } from './dto/update-process-template.dto';
+import { AssignProductToProcessDto } from './dto/assign-product-process.dto';
 
 @Controller('process-template')
 export class ProcessTemplateController {
@@ -21,71 +22,74 @@ export class ProcessTemplateController {
   ) {}
 
   @Post()
-  async createProcessTemplate(@Body() createDto: any, @Req() req: Request) {
+  async createProcessTemplate(
+    @Body() createDto: CreateProcessTemplateDto,
+    @User() user: UserInterface,
+  ) {
     return await this.processTemplateService.createProcessTemplate(
       createDto,
-      req,
+      user,
     );
   }
 
   @Get('farm')
-  async getProcessTemplatesByFarm(@Req() req: Request) {
-    return await this.processTemplateService.getProcessTemplatesByFarm(req);
+  async getProcessTemplatesByFarm(@User() user: UserInterface) {
+    return await this.processTemplateService.getProcessTemplatesByFarm(user);
   }
 
   @Get(':id')
   async getProcessTemplateById(
     @Param('id', ParseIntPipe) processId: number,
-    @Req() req: Request,
+    @User() user: UserInterface,
   ) {
     return await this.processTemplateService.getProcessTemplateById(
       processId,
-      req,
+      user,
     );
   }
 
   @Put(':id')
   async updateProcessTemplate(
     @Param('id', ParseIntPipe) processId: number,
-    @Body() updateDto: any,
-    @Req() req: Request,
+    @Body() updateDto: UpdateProcessTemplateDto,
+    @User() user: UserInterface,
   ) {
     return await this.processTemplateService.updateProcessTemplate(
       processId,
       updateDto,
-      req,
+      user,
     );
   }
 
   @Delete(':id')
   async deleteProcessTemplate(
     @Param('id', ParseIntPipe) processId: number,
-    @Req() req: Request,
+    @User() user: UserInterface,
   ) {
     return await this.processTemplateService.deleteProcessTemplate(
       processId,
-      req,
+      user,
     );
   }
 
   @Get(':id/steps')
   async getProcessSteps(
     @Param('id', ParseIntPipe) processId: number,
-    @Req() req: Request,
+    @User() user: UserInterface,
   ) {
-    return await this.processTemplateService.getProcessSteps(processId, req);
+    return await this.processTemplateService.getProcessSteps(processId, user);
   }
 
   @Put(':id/steps/reorder')
   async reorderProcessSteps(
     @Param('id', ParseIntPipe) processId: number,
     @Body() stepOrders: { step_id: number; step_order: number }[],
-    @Req() req: Request,
+    @User() user: UserInterface,
   ) {
     return await this.processTemplateService.reorderProcessSteps(
       processId,
       stepOrders,
-      req,
+      user,
     );
   }
 
@@ -93,35 +97,35 @@ export class ProcessTemplateController {
   @Post('product/:productId/assign')
   async assignProductToProcess(
     @Param('productId', ParseIntPipe) productId: number,
-    @Body() assignDto: any,
-    @Req() req: Request,
+    @Body() assignDto: AssignProductToProcessDto,
+    @User() user: UserInterface,
   ) {
     return await this.processTemplateService.assignProductToProcess(
       productId,
       assignDto,
-      req,
+      user,
     );
   }
 
   @Get('product/:productId/assignment')
   async getProductProcessAssignment(
     @Param('productId', ParseIntPipe) productId: number,
-    @Req() req: Request,
+    @User() user: UserInterface,
   ) {
     return await this.processTemplateService.getProductProcessAssignment(
       productId,
-      req,
+      user,
     );
   }
 
   @Delete('product/:productId/assignment')
   async unassignProductFromProcess(
     @Param('productId', ParseIntPipe) productId: number,
-    @Req() req: Request,
+    @User() user: UserInterface,
   ) {
     return await this.processTemplateService.unassignProductFromProcess(
       productId,
-      req,
+      user,
     );
   }
 }

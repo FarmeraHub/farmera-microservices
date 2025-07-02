@@ -29,7 +29,7 @@ export class ProcessTemplateMapper {
       process_id: entity.process_id,
       process_name: entity.process_name,
       description: entity.description,
-      farm_id: entity.farm?.farm_id || '',
+      farm_id: entity.farm_id || entity.farm?.farm_id || '',
       estimated_duration_days: entity.estimated_duration_days ?? undefined,
       is_active: entity.is_active,
       steps: entity.steps
