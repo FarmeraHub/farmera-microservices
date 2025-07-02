@@ -18,6 +18,7 @@ import { CreateLocationDto } from './dto/create-location.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { UpdatePaymentMethodDto } from './dto/payment-method.dto';
+import { UserLite } from './dto/user-lite.dto';
 
 @Injectable()
 export class UsersService {
@@ -74,7 +75,6 @@ export class UsersService {
   }
 
   async getUserById(id: string): Promise<User> {
-
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ['locations', 'payment_methods'],
@@ -105,7 +105,10 @@ export class UsersService {
   }
 
   // Additional User Management Methods
-  async updateUser(id: string, updateData: Partial<CreateUserDto>): Promise<User> {
+  async updateUser(
+    id: string,
+    updateData: Partial<CreateUserDto>,
+  ): Promise<User> {
     const user = await this.getUserById(id);
 
     const updateFields: any = { updated_at: new Date() };
@@ -240,13 +243,36 @@ export class UsersService {
     return this.getUserById(id);
   }
 
+  async updateUserRole(
+    id: string,
+    role: UserRole,
+    farmId?: string,
+  ): Promise<User> {
+    const user = await this.getUserById(id);
+
+    const updateData: any = {
+      role,
+      updated_at: new Date(),
+    };
+
+    // If farmId is provided, update it as well
+    if (farmId) {
+      updateData.farm_id = farmId;
+    }
+
+    await this.usersRepository.update(id, updateData);
+
+    return this.getUserById(id);
+  }
+
   async getUserByEmail(email: string) {
     const user = await this.usersRepository.findOne({
       where: { email },
+      relations: ['locations', 'payment_methods'],
     });
 
     if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
+      throw new NotFoundException(`User with this email not found`);
     }
 
     return user;
@@ -278,6 +304,8 @@ export class UsersService {
       ward: locationData.ward,
       type: locationData.type,
       is_primary: locationData.is_primary || false,
+      name: locationData.name,
+      phone: locationData.phone,
     });
 
     const savedLocation = await this.locationsRepository.save(newLocation);
@@ -296,7 +324,11 @@ export class UsersService {
     });
   }
 
-  async updateUserLocation(locationId: number, userId: string, locationData: UpdateAddressDto) {
+  async updateUserLocation(
+    locationId: number,
+    userId: string,
+    locationData: UpdateAddressDto,
+  ) {
     const location = await this.locationsRepository.findOne({
       where: { location_id: locationId, user: { id: userId } },
     });
@@ -342,7 +374,6 @@ export class UsersService {
     });
   }
 
-
   // Payment Method Management
   async addPaymentMethod(
     userId: string,
@@ -357,7 +388,8 @@ export class UsersService {
       );
     }
 
-    const newPaymentMethod = this.paymentMethodsRepository.create(createPaymentDto);
+    const newPaymentMethod =
+      this.paymentMethodsRepository.create(createPaymentDto);
     newPaymentMethod.user = user;
 
     return await this.paymentMethodsRepository.save(newPaymentMethod);
@@ -508,5 +540,20 @@ export class UsersService {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear().toString().slice(-2);
     return `${month}/${year}`;
+  }
+
+  async getUserLite(id: string): Promise<UserLite> {
+    const user = await this.usersRepository.findOne({ where: { id: id } });
+    if (user) {
+      return {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        farm_id: user.farm_id,
+        avatar: user.avatar,
+      }
+    }
+    throw new NotFoundException("User not found");
   }
 }

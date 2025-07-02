@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsString } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsPhoneNumber, IsString } from "class-validator";
 
 export class CreateLocationDto {
     @IsString()
@@ -40,4 +40,12 @@ export class CreateLocationDto {
     @IsString()
     @IsNotEmpty()
     user_id: string;
+
+    @IsString()
+    @IsNotEmpty()
+    name: string;
+
+    @IsPhoneNumber("VN")
+    @IsNotEmpty()
+    phone: string
 }

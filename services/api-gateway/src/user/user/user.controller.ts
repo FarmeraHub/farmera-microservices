@@ -23,6 +23,7 @@ import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentMethodDto } from './dto/update-payment.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('User Management')
 @Controller('user')
@@ -326,5 +327,18 @@ export class UserController {
     @Param('paymentMethodId') paymentMethodId: number,
   ) {
     return await this.userService.deletePaymentMethod(user.id, paymentMethodId);
+  }
+
+  @Public()
+  @Get(':userId')
+  @ResponseMessage('User retrieved successfully')
+  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiParam({
+    name: 'userId',
+    description: 'User ID to retrieve',
+    example: '123',
+  })
+  async getUserById(@Param('userId') userId: string) {
+    return await this.userService.getUserLite(userId);
   }
 }

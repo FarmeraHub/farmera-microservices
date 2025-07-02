@@ -13,6 +13,12 @@ export class Location {
   phone: string; // Phone number for this address
 
   @Column({ nullable: false })
+  name: string;
+
+  @Column({ nullable: false })
+  phone: string
+
+  @Column({ nullable: false })
   city: string;
 
   @Column({ nullable: false })

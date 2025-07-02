@@ -17,6 +17,8 @@ export class LocationMapper {
             is_primary: location.is_primary,
             created_at: TypesMapper.toGrpcTimestamp(location.created_at),
             updated_at: TypesMapper.toGrpcTimestamp(location.updated_at),
+            name: location.name,
+            phone: location.phone,
         };
     }
 
@@ -32,6 +34,8 @@ export class LocationMapper {
             address_line: value.address_line,
             type: value.type,
             is_primary: value.is_primary,
+            phone: value.phone,
+            name: value.name,
             created_at: TypesMapper.fromGrpcTimestamp(value.created_at),
             updated_at: TypesMapper.fromGrpcTimestamp(value.updated_at),
         }
