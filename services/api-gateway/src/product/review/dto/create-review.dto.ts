@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsNumber, IsPositive, IsString, Max, Min } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Max, Min } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateReviewDto {
@@ -22,12 +22,18 @@ export class CreateReviewDto {
     comment: string;
 
     @ApiPropertyOptional({ description: 'Image URLs for the review', example: ['https://example.com/img1.jpg'] })
+    @IsOptional()
     @IsArray()
+    @ArrayNotEmpty()
+    @IsNotEmpty({ each: true })
     @IsString({ each: true })
     image_urls?: string[];
 
     @ApiPropertyOptional({ description: 'Video URLs for the review', example: ['https://example.com/video1.mp4'] })
+    @IsOptional()
     @IsArray()
+    @ArrayNotEmpty()
+    @IsNotEmpty({ each: true })
     @IsString({ each: true })
     video_urls?: string[];
 }

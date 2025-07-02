@@ -35,8 +35,8 @@ export class ReviewService implements OnModuleInit {
                 user_id: userId,
                 rating: createReviewDto.rating,
                 comment: createReviewDto.comment,
-                image_urls: { list: createReviewDto.image_urls },
-                video_urls: { list: createReviewDto.video_urls },
+                image_urls: createReviewDto.image_urls ? { list: createReviewDto.image_urls } : undefined,
+                video_urls: createReviewDto.video_urls ? { list: createReviewDto.video_urls } : undefined,
             }));
             return ReviewMapper.fromGrpcReview(result.review);
         }
