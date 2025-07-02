@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsNumber, IsPositive, IsString, Max, Min } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Max, Min } from "class-validator";
 
 export class CreateReviewDto {
     @Type(() => Number)
@@ -17,11 +17,17 @@ export class CreateReviewDto {
     @IsNotEmpty()
     comment: string;
 
+    @IsOptional()
     @IsArray()
+    @ArrayNotEmpty()
+    @IsNotEmpty({ each: true })
     @IsString({ each: true })
     image_urls?: string[];
 
+    @IsOptional()
     @IsArray()
+    @ArrayNotEmpty()
+    @IsNotEmpty({ each: true })
     @IsString({ each: true })
     video_urls?: string[];
 }
