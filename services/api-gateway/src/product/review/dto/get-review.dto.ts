@@ -1,37 +1,35 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Order } from 'src/pagination/dto/pagination-options.dto';
 
 export class GetReviewsDto {
-    @ApiProperty({ description: 'Product ID', example: 1 })
-    @IsNumber()
-    @Type(() => Number)
-    product_id: number;
-
     @ApiPropertyOptional({ description: 'Sort by field', enum: ['created', 'rating'], example: 'created' })
     @IsOptional()
-    @IsEnum(['created', 'rating'])
-    sortBy: 'created' | 'rating' = 'created';
+    @IsString()
+    sort_by?: string;
 
     @ApiPropertyOptional({ description: 'Order direction', enum: ['ASC', 'DESC'], example: 'DESC' })
     @IsOptional()
-    @IsEnum(['ASC', 'DESC'])
-    order: 'ASC' | 'DESC' = 'DESC';
+    @IsEnum(Order)
+    order? = Order.DESC
 
     @ApiPropertyOptional({ description: 'Limit of reviews to return', example: 10 })
     @IsOptional()
     @IsNumber()
     @Type(() => Number)
-    limit = 10;
+    limit? = 10;
 
     @ApiPropertyOptional({ description: 'Cursor for pagination', example: 'abcdef' })
     @IsOptional()
     @IsString()
-    cursor: string;
+    cursor?: string;
 
-    @ApiPropertyOptional({ description: 'Page number', example: 1 })
+    @ApiPropertyOptional({ description: 'Rating filter', example: 5 })
     @IsOptional()
-    @Type(() => Number)
     @IsNumber()
-    page: number;
+    @Min(1)
+    @Max(5)
+    @Type(() => Number)
+    rating_filter?: number;
 }

@@ -124,7 +124,9 @@ import {
   GetStepDiariesRequest,
   GetStepDiariesResponse,
   GetProductDiariesRequest,
-  GetProductDiariesResponse,
+  GetProductDiariesResponse, GetReviewOverviewRequest,
+  GetReviewOverviewResponse,
+
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
@@ -166,7 +168,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
     private readonly processTemplateService: ProcessTemplateService,
     private readonly stepDiaryService: StepDiaryService,
     private readonly diaryService: DiaryService,
-  ) {}
+  ) { }
 
   // Product methods
   async createProduct(
@@ -984,21 +986,34 @@ export class ProductGrpcServerController implements ProductsServiceController {
       const result = await this.reviewService.getReviewsByCursor(
         request.product_id,
         request.pagination?.sort_by ?? 'created',
-        request.pagination?.order
-          ? EnumsMapper.fromGrpcPaginationOrder(request.pagination.order)
-          : 'DESC',
+        request.pagination?.order ? EnumsMapper.fromGrpcPaginationOrder(request.pagination.order) : 'DESC',
         request.pagination?.limit ?? 10,
         request.pagination?.cursor ?? '',
+        request.rating_filter
       );
       return {
-        reviews: result.data.reviews.map((value) =>
-          ReviewMapper.toGrpcReview(value),
-        ),
+        reviews: result.data.reviews.map((value) => ReviewMapper.toGrpcReview(value)),
         pagination: {
-          next_cursor: result.data.nextCursor ?? undefined,
-        },
-      };
-    } catch (err) {
+          next_cursor: result.data.nextCursor ?? undefined
+        }
+      }
+    }
+    catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getReviewOverview(request: GetReviewOverviewRequest): Promise<GetReviewOverviewResponse> {
+    try {
+      const result = await this.reviewService.getReviewOverview(request.product_id);
+      return {
+        total_count: result.totalCount,
+        total_ratings: result.totalRating,
+        average_rating: result.averageRating,
+        rating_overview: result.ratings
+      }
+    }
+    catch (err) {
       throw ErrorMapper.toRpcException(err);
     }
   }
@@ -1124,8 +1139,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
           video_urls: request.video_urls?.list,
           recorded_date: request.recorded_date
             ? TypesMapper.fromGrpcTimestamp(
-                request.recorded_date,
-              )?.toISOString()
+              request.recorded_date,
+            )?.toISOString()
             : undefined,
           latitude: request.latitude,
           longitude: request.longitude,
@@ -1376,8 +1391,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
         notes: request.notes,
         completion_status: request.completion_status
           ? ProcessTemplateMapper.fromGrpcDiaryCompletionStatus(
-              request.completion_status,
-            )
+            request.completion_status,
+          )
           : undefined,
         image_urls: request.image_urls,
         video_urls: request.video_urls,

@@ -24,6 +24,7 @@ import { PaymentMapper } from 'src/mappers/users/payment.mapper';
 import { PaymentMethod } from './entities/payment_method.entity';
 import { UpdatePaymentMethodDto } from './dto/update-payment.dto';
 import { UserRole } from 'src/common/enums/user/roles.enum';
+import { UserLite } from './dto/user-lite.dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -32,7 +33,7 @@ export class UserService implements OnModuleInit {
 
   constructor(
     @Inject('USERS_GRPC_PACKAGE') private readonly client: ClientGrpc,
-  ) {}
+  ) { }
 
   onModuleInit() {
     this.usersGrpcService =
@@ -57,6 +58,26 @@ export class UserService implements OnModuleInit {
       throw new Error('Failed to get user profile');
     } catch (error) {
       this.logger.error(`Get user profile failed: ${error.message}`);
+      throw ErrorMapper.fromGrpcError(error);
+    }
+  }
+
+  async getUserLite(userId: string): Promise<UserLite> {
+    try {
+      const result = await firstValueFrom(
+        this.usersGrpcService.getUserLite({ user_id: userId }),
+      );
+
+      return {
+        id: result.user.id,
+        email: result.user.email,
+        first_name: result.user.first_name,
+        last_name: result.user.last_name,
+        farm_id: result.user.farm_id,
+        avatar: result.user.avatar,
+      }
+    } catch (error) {
+      this.logger.error(`Get user lite failed: ${error.message}`);
       throw ErrorMapper.fromGrpcError(error);
     }
   }

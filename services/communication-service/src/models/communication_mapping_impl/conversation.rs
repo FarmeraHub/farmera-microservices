@@ -98,6 +98,12 @@ impl From<GetConversationDTO> for ConversationDto {
             is_read: value.is_read,
             r#type: value.r#type.map(|v| v as i32),
             message_id: value.message_id,
+            participants: value
+                .participants
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect(),
+            created_at: Some(datetime_to_grpc_timestamp(value.created_at)),
         }
     }
 }

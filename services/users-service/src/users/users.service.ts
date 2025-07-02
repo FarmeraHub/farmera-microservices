@@ -18,6 +18,7 @@ import { CreateLocationDto } from './dto/create-location.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { UpdatePaymentMethodDto } from './dto/payment-method.dto';
+import { UserLite } from './dto/user-lite.dto';
 
 @Injectable()
 export class UsersService {
@@ -537,5 +538,20 @@ export class UsersService {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear().toString().slice(-2);
     return `${month}/${year}`;
+  }
+
+  async getUserLite(id: string): Promise<UserLite> {
+    const user = await this.usersRepository.findOne({ where: { id: id } });
+    if (user) {
+      return {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        farm_id: user.farm_id,
+        avatar: user.avatar,
+      }
+    }
+    throw new NotFoundException("User not found");
   }
 }

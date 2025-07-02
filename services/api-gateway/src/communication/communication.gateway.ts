@@ -56,18 +56,18 @@ export class CommunicationGateway implements OnModuleInit {
 
       client.on('message', (data) => {
         const message = data.toString();
-        this.logger.log(`Received from client: ${message}`);
+        this.logger.debug(`Received from client: ${message}`);
 
         if (this.comm_client?.readyState === WebSocket.OPEN) {
           this.comm_client.send(message);
         } else {
-          this.logger.warn('Communication websocket not connected');
+          this.logger.debug('Communication websocket not connected');
         }
       });
 
       client.on('close', () => {
         this.disconnectUser(user.id);
-        this.logger.log(`Client ${user.id} disconnected`);
+        this.logger.debug(`Client ${user.id} disconnected`);
       });
 
       this.connect(user);
@@ -87,7 +87,7 @@ export class CommunicationGateway implements OnModuleInit {
     this.userConnections.set(user.id, { comm_client: this.comm_client });
 
     this.comm_client.on("open", () => {
-      this.logger.log('Connected to Communication WebSocket server');
+      this.logger.debug('Connected to Communication WebSocket server');
 
     });
 
@@ -95,7 +95,7 @@ export class CommunicationGateway implements OnModuleInit {
     this.comm_client.on("message", (data: Buffer) => {
       // received messages from communication service
       const message = data.toString();
-      this.logger.log("Received: ", message);
+      this.logger.debug("Received: ", message);
 
       // send communication's message to clients
       this.server.clients.forEach((client) => {
@@ -130,7 +130,7 @@ export class CommunicationGateway implements OnModuleInit {
       }
       // Remove from map
       this.userConnections.delete(userId);
-      this.logger.log(`Cleaned up connections for user ${userId}`);
+      this.logger.debug(`Cleaned up connections for user ${userId}`);
     }
   }
 }
