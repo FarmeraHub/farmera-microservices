@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsString } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsPhoneNumber, IsString } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateAddressDto {
@@ -36,4 +36,12 @@ export class CreateAddressDto {
     @IsBoolean()
     @IsNotEmpty()
     is_primary: boolean;
+
+    @IsString()
+    @IsNotEmpty()
+    name: string;
+
+    @IsPhoneNumber("VN")
+    @IsNotEmpty()
+    phone: string
 }

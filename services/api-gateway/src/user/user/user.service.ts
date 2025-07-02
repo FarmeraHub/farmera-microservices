@@ -171,6 +171,8 @@ export class UserService implements OnModuleInit {
           address_line: req.address_line,
           type: req.type,
           is_primary: req.is_primary,
+          phone: req.phone,
+          name: req.name,
         }),
       );
 
@@ -199,6 +201,8 @@ export class UserService implements OnModuleInit {
           address_line: req.address_line,
           type: req.type,
           is_primary: req.is_primary,
+          phone: req.phone,
+          name: req.name,
         }),
       );
 

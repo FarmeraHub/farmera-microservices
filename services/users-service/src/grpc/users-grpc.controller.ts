@@ -89,7 +89,7 @@ export class UsersGrpcController implements UsersServiceController {
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
     private readonly verificationService: VerificationService,
-  ) {}
+  ) { }
 
   // ====================================== Auth Methods ======================================
   async login(request: LoginRequest): Promise<LoginResponse> {
@@ -293,8 +293,8 @@ export class UsersGrpcController implements UsersServiceController {
         filters.created_date_range = {
           start_time: request.created_date_range.start_time
             ? TypesMapper.fromGrpcTimestamp(
-                request.created_date_range.start_time,
-              )
+              request.created_date_range.start_time,
+            )
             : undefined,
           end_time: request.created_date_range.end_time
             ? TypesMapper.fromGrpcTimestamp(request.created_date_range.end_time)
@@ -481,6 +481,8 @@ export class UsersGrpcController implements UsersServiceController {
           is_primary: request.is_primary,
           type: request.type,
           user_id: request.user_id,
+          phone: request.phone,
+          name: request.name,
         },
       );
 
@@ -505,6 +507,8 @@ export class UsersGrpcController implements UsersServiceController {
         is_primary: request.is_primary,
         type: request.type,
         ward: request.ward,
+        name: request.name,
+        phone: request.phone,
       };
 
       const location = await this.usersService.updateUserLocation(
