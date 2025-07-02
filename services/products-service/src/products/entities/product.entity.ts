@@ -1,9 +1,19 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 import { Farm } from 'src/farms/entities/farm.entity';
 import { ProductStatus } from 'src/common/enums/product-status.enum';
 import { Subcategory } from 'src/categories/entities/subcategory.entity';
 import { Process } from 'src/process/entities/process.entity';
-
 
 @Entity('product')
 export class Product {
@@ -62,8 +72,18 @@ export class Product {
   subcategories?: Subcategory[];
 
   @OneToMany(() => Process, (process) => process.product)
-  @JoinColumn({ name: "process_id" })
-  processes?: Process[]
+  @JoinColumn({ name: 'process_id' })
+  processes?: Process[];
+
+  // QR Code and Blockchain fields
+  @Column({ type: 'text', nullable: true, name: 'qr_code' })
+  qr_code?: string;
+
+  @Column({ type: 'boolean', default: false, name: 'blockchain_activated' })
+  blockchain_activated: boolean;
+
+  @Column({ type: 'text', nullable: true, name: 'blockchain_hash' })
+  blockchain_hash?: string;
 
   // @Column({ type: 'numeric', precision: 10, scale: 2 })
   // price_per_unit: number; // price for 1 selling unit (e.g 20.000 VND/1kg)

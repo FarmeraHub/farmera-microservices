@@ -53,6 +53,8 @@ import {
   UpdateUserResponse,
   UpdateUserStatusRequest,
   UpdateUserStatusResponse,
+  UpdateUserRoleRequest,
+  UpdateUserRoleResponse,
   UsersServiceController,
   UsersServiceControllerMethods,
   VerifyEmailRequest,
@@ -87,7 +89,7 @@ export class UsersGrpcController implements UsersServiceController {
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
     private readonly verificationService: VerificationService,
-  ) { }
+  ) {}
 
   // ====================================== Auth Methods ======================================
   async login(request: LoginRequest): Promise<LoginResponse> {
@@ -248,16 +250,13 @@ export class UsersGrpcController implements UsersServiceController {
 
   async updateUser(request: UpdateUserRequest): Promise<UpdateUserResponse> {
     try {
-      const user = await this.usersService.updateUser(
-        request.user_id,
-        {
-          first_name: request.first_name,
-          last_name: request.last_name,
-          gender: EnumsMapper.fromGrpcGender(request.gender),
-          avatar: request.avatar_url,
-          birthday: TypesMapper.fromGrpcTimestamp(request.birthday),
-        }
-      );
+      const user = await this.usersService.updateUser(request.user_id, {
+        first_name: request.first_name,
+        last_name: request.last_name,
+        gender: EnumsMapper.fromGrpcGender(request.gender),
+        avatar: request.avatar_url,
+        birthday: TypesMapper.fromGrpcTimestamp(request.birthday),
+      });
 
       return { user: UserMapper.userToGrpcUser(user) };
     } catch (error) {
@@ -294,8 +293,8 @@ export class UsersGrpcController implements UsersServiceController {
         filters.created_date_range = {
           start_time: request.created_date_range.start_time
             ? TypesMapper.fromGrpcTimestamp(
-              request.created_date_range.start_time,
-            )
+                request.created_date_range.start_time,
+              )
             : undefined,
           end_time: request.created_date_range.end_time
             ? TypesMapper.fromGrpcTimestamp(request.created_date_range.end_time)
@@ -353,11 +352,6 @@ export class UsersGrpcController implements UsersServiceController {
           email: request.email as string,
           code: request.verification_code,
         });
-
-        // Clean up verification
-        await this.verificationService.deleteVerification(
-          request.email as string,
-        );
       }
 
       return {
@@ -437,9 +431,13 @@ export class UsersGrpcController implements UsersServiceController {
     }
   }
 
-  async deletePaymentMethod(request: DeletePaymentMethodRequest): Promise<DeletePaymentMethodResponse> {
+  async deletePaymentMethod(
+    request: DeletePaymentMethodRequest,
+  ): Promise<DeletePaymentMethodResponse> {
     try {
-      const result = await this.usersService.deletePaymentMethod(request.payment_method_id);
+      const result = await this.usersService.deletePaymentMethod(
+        request.payment_method_id,
+      );
       return {
         success: result.success,
       };
@@ -449,11 +447,17 @@ export class UsersGrpcController implements UsersServiceController {
     }
   }
 
-  async getPaymentMethods(request: GetPaymentMethodsRequest): Promise<GetPaymentMethodsResponse> {
+  async getPaymentMethods(
+    request: GetPaymentMethodsRequest,
+  ): Promise<GetPaymentMethodsResponse> {
     try {
-      const paymentMethods = await this.usersService.getUserPaymentMethods(request.user_id);
+      const paymentMethods = await this.usersService.getUserPaymentMethods(
+        request.user_id,
+      );
       return {
-        payment_methods: paymentMethods.map((paymentMethod) => PaymentMapper.toGrpcPaymentMethod(paymentMethod)),
+        payment_methods: paymentMethods.map((paymentMethod) =>
+          PaymentMapper.toGrpcPaymentMethod(paymentMethod),
+        ),
       };
     } catch (error) {
       this.logger.error(`GetPaymentMethods error: ${error.message}`);
@@ -555,13 +559,14 @@ export class UsersGrpcController implements UsersServiceController {
     }
   }
 
-  async getLocationById(request: GetLocationByIdRequest): Promise<GetLocationByIdResponse> {
+  async getLocationById(
+    request: GetLocationByIdRequest,
+  ): Promise<GetLocationByIdResponse> {
     try {
       const location = await this.usersService.findLocationById(request.id);
       return {
         location: LocationMapper.toGrpcLocation(location),
       };
-
     } catch (error) {
       this.logger.error(`GetLocationByUser error: ${error.message}`);
       throw ErrorMapper.toRpcException(error);
@@ -700,6 +705,30 @@ export class UsersGrpcController implements UsersServiceController {
       throw new RpcException({
         code: status.INTERNAL,
         message: error.message || 'Failed to update user status',
+      });
+    }
+  }
+
+  async updateUserRole(
+    request: UpdateUserRoleRequest,
+  ): Promise<UpdateUserRoleResponse> {
+    try {
+      this.logger.log(
+        `gRPC UpdateUserRole request for user: ${request.user_id}, role: ${request.role}, farm_id: ${request.farm_id || 'none'}`,
+      );
+
+      const user = await this.usersService.updateUserRole(
+        request.user_id,
+        EnumsMapper.fromGrpcUserRole(request.role),
+        request.farm_id,
+      );
+
+      return { user: UserMapper.userToGrpcUser(user) };
+    } catch (error) {
+      this.logger.error(`UpdateUserRole error: ${error.message}`);
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message || 'Failed to update user role',
       });
     }
   }
