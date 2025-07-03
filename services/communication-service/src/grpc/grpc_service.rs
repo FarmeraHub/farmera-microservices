@@ -6,7 +6,8 @@ use farmera_grpc_proto::communication::{
     GetConversationMessagesRequest, GetConversationMessagesResponse,
     GetConversationParticipantsRequest, GetConversationParticipantsResponse,
     GetConversationRequest, GetConversationResponse, GetMessageRequest, GetMessageResponse,
-    ListConversationsRequest, ListConversationsResponse,
+    GetUnreadCountRequest, GetUnreadCountResponse, ListConversationsRequest,
+    ListConversationsResponse, MarkAsReadRequest, MarkAsReadResponse,
 };
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
@@ -248,5 +249,44 @@ impl CommunicationService for GrpcCommunicationService {
         Ok(Response::new(CreatePrivateConversationResponse::from(
             result,
         )))
+    }
+
+    async fn mark_as_read(
+        &self,
+        request: Request<MarkAsReadRequest>,
+    ) -> Result<Response<MarkAsReadResponse>, Status> {
+        let req = request.into_inner();
+        let conversation_id = req.conversation_id;
+        let user_id = Uuid::parse_str(&req.user_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID for user id"))?;
+
+        let result = self
+            .app_services
+            .conversation_service
+            .mark_as_read(conversation_id, user_id)
+            .await
+            .map_err(|e| Status::from_error(Box::new(e)))?;
+
+        Ok(Response::new(MarkAsReadResponse { success: result }))
+    }
+
+    async fn get_unread_count(
+        &self,
+        request: Request<GetUnreadCountRequest>,
+    ) -> Result<Response<GetUnreadCountResponse>, Status> {
+        let req = request.into_inner();
+        let user_id = Uuid::parse_str(&req.user_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID for user id"))?;
+
+        let result = self
+            .app_services
+            .conversation_service
+            .get_unread_count(user_id)
+            .await
+            .map_err(|e| Status::from_error(Box::new(e)))?;
+
+        Ok(Response::new(GetUnreadCountResponse {
+            count: result as i32,
+        }))
     }
 }
