@@ -94,4 +94,31 @@ export class ConversationService implements OnModuleInit {
             throw ErrorMapper.fromGrpcError(err);
         }
     }
+
+    async getUnreadCount(userId: string): Promise<number> {
+        try {
+            const result = await firstValueFrom(this.communicationGrpcService.getUnreadCount({
+                user_id: userId,
+            }));
+            return result.count;
+        }
+        catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
+        }
+    }
+
+    async markAsRead(conversationId: number, userId: string): Promise<boolean> {
+        try {
+            const result = await firstValueFrom(this.communicationGrpcService.markAsRead({
+                conversation_id: conversationId,
+                user_id: userId,
+            }));
+            return result.success;
+        }
+        catch (err) {
+            this.logger.error(err.message);
+            throw ErrorMapper.fromGrpcError(err);
+        }
+    }
 }

@@ -280,4 +280,40 @@ impl ConversationRepo {
 
         Ok(conversation)
     }
+
+    pub async fn get_unread_count(&self, user_id: Uuid) -> Result<i64, DBError> {
+        let stm = include_str!("./queries/conversation/unread_count.sql");
+
+        let (count,): (i64,) = sqlx::query_as(stm)
+            .bind(user_id)
+            .fetch_one(&*self.pg_db_pool)
+            .await
+            .map_err(|e| {
+                log::error!("Get unread message count error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        Ok(count)
+    }
+
+    pub async fn mark_as_read(&self, conversation_id: i32, user_id: Uuid) -> Result<bool, DBError> {
+        let stm = include_str!("./queries/conversation/mark_as_read.sql");
+
+        let result = sqlx::query(stm)
+            .bind(conversation_id)
+            .bind(user_id)
+            .execute(&*self.pg_db_pool)
+            .await
+            .map_err(|e| {
+                log::error!("Get unread message count error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        if result.rows_affected() == 0 {
+            log::error!("Delete user_conversation returns 0 rows affected");
+            Err(DBError::QueryFailed("0 rows affected".to_string()))
+        } else {
+            Ok(true)
+        }
+    }
 }
