@@ -310,8 +310,8 @@ impl ConversationRepo {
             })?;
 
         if result.rows_affected() == 0 {
-            log::error!("Delete user_conversation returns 0 rows affected");
-            Err(DBError::QueryFailed("0 rows affected".to_string()))
+            log::warn!("Mark message as read returns 0 rows affected");
+            Ok(false)
         } else {
             Ok(true)
         }
