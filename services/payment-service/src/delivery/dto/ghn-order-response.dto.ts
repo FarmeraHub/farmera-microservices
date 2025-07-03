@@ -25,7 +25,7 @@ export class GhnCreatedOrderDataDto {
     ward_encode: string;
     district_encode: string;
     fee: GhnFeeDetailsDto;
-    total_fee: string;
+    total_fee: number;
     expected_delivery_time: string;
     operation_partner: string;
 }

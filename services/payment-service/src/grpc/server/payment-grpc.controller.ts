@@ -10,7 +10,7 @@ import {
 } from "@farmera/grpc-proto/dist/payment/payment";
 import { Observable } from "rxjs";
 import { DeliveryService } from "src/delivery/delivery.service";
-import { OrdersService } from "src/orders/orders.service";
+import { OrdersService } from "src/orders/order/orders.service";
 import { BusinessValidationService } from "src/business-validation/business-validation.service";
 import { ErrorMapper } from "src/mappers/common/error.mapper";
 import { DeliveryEnumMapper } from "src/mappers/payment/delivery.mapper";
@@ -31,7 +31,7 @@ export class PaymentGrpcController implements PaymentServiceController {
         try {
 
             const result = await this.deliveryService.CalculateShippingFee({
-                suborders: {
+                suborder: {
                     farm_id: request.suborders!.farm_id,
                     products: request.suborders!.products.map(product => ({
                         product_id: product.product_id,

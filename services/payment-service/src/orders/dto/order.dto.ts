@@ -16,6 +16,6 @@ export class OrderRequestDto {
     order_info: OrderInfoRequestDto;
 }
 export class CalculateShippingFeeRequestDto{
-    suborders: SuborderRequestDto;
+    suborder: SuborderRequestDto;
     order_info: OrderInfoRequestDto;
 }

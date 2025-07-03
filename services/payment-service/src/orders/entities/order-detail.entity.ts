@@ -11,7 +11,7 @@ export class OrderDetail{
     product_id: number;
 
     @Column()
-    prodcut_name: string;
+    product_name: string;
 
     @Column()
     quantity: number;

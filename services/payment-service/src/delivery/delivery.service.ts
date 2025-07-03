@@ -20,7 +20,7 @@ import { ItemDto } from "src/business-validation/dto/list-product.dto";
 import { CheckAvailabilityResult, OrderDetail } from "src/business-validation/dto/validate-response.dto";
 import { UserGrpcClientService } from "src/grpc/client/user.service";
 import { Location } from "src/user/entities/location.entity";
-import { CalculateShippingFeeRequestDto } from "src/orders/dto/order_dto";
+import { CalculateShippingFeeRequestDto } from "src/orders/dto/order.dto";
 import { ItemDeliveryDto } from "./dto/item-delivery.dto";
 import { Issue, Item, ShippingFeeDetails } from "./enitites/cart.entity";
 import { User } from "src/user/entities/user.entity";
@@ -454,11 +454,11 @@ export class DeliveryService {
         }
     }
 
-    async CalculateShippingFee(order: CalculateShippingFeeRequestDto): Promise<ShippingFeeDetails | Issue[] > {
+    async CalculateShippingFee(order: CalculateShippingFeeRequestDto): Promise<ShippingFeeDetails | Issue[]> {
         this.logger.log(`Starting shipping fee calculation for order: ${JSON.stringify(order)}`);
         let allIssues: Issue[] = [];
         const [subOrderValidationResult, orderInfoValidationResult] = await Promise.all([
-            this.businessValidationService.validateSubOrder(order.suborders),
+            this.businessValidationService.validateSubOrder(order.suborder),
             this.businessValidationService.validateOrderInfoToCalculateShippingFee(order.order_info)
         ]);
         let validSubOrder: ShippingFeeDetails | null = null;
@@ -477,7 +477,7 @@ export class DeliveryService {
         }
 
         if (allIssues.length > 0) {
-           
+
             return allIssues;
         }
 
@@ -516,14 +516,30 @@ export class DeliveryService {
                 this.logger.log(`Calculated shipping fee details: ${JSON.stringify(shippingFeeDetails)}`);
                 return shippingFeeDetails;
 
-                
-            } catch (error) { 
+
+            } catch (error) {
                 this.logger.error(`Error calculating shipping fee: ${error.message}`, error.stack);
                 throw new InternalServerErrorException(`Lỗi khi tính phí vận chuyển: ${error.message}`);
             }
         }
         this.logger.warn(`No valid suborder or order info found for shipping fee calculation.`);
         throw new BadRequestException('Không có thông tin hợp lệ để tính phí vận chuyển.');
+    }
+
+    async create(createOrderDto: GhnCreatedOrderDataDto, subOrder: SubOrder,codFee: number, transactionalManager: EntityManager): Promise<Delivery> {
+        const deliveryToCreate = transactionalManager.create(Delivery, {
+            sub_order: subOrder,
+            shipping_amount: createOrderDto.fee.main_service + createOrderDto.fee.insurance,
+            status: DeliveryStatus.PENDING,
+            tracking_number: createOrderDto.order_code,
+            delivery_method: 'GHN',
+            delivery_instructions: '',
+            cod_amount: codFee, // dữ liệu này sẽ được tính từ tổng tiền hàng của sub-order, bên thứ 3 luôn trả về 0
+            final_amount: createOrderDto.total_fee + codFee,
+            discount_amount: createOrderDto.fee.coupon || 0,
+            ship_date: new Date(createOrderDto.expected_delivery_time),
+        });
+        return transactionalManager.save(Delivery, deliveryToCreate);
     }
 
 }
