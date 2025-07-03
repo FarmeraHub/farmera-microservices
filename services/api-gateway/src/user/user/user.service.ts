@@ -23,8 +23,8 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentMapper } from 'src/mappers/users/payment.mapper';
 import { PaymentMethod } from './entities/payment_method.entity';
 import { UpdatePaymentMethodDto } from './dto/update-payment.dto';
-import { UserRole } from 'src/common/enums/user/roles.enum';
 import { UserLite } from './dto/user-lite.dto';
+import { UserRole } from 'src/common/interfaces/user.interface';
 
 @Injectable()
 export class UserService implements OnModuleInit {

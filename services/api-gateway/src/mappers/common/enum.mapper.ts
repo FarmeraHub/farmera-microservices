@@ -26,7 +26,7 @@ import { BadRequestException } from '@nestjs/common';
 import { NotificationChannel } from 'src/common/enums/notification/notification-channel.enum';
 import { NotificationType } from 'src/common/enums/notification/notification_type';
 import { Gender } from 'src/common/enums/user/gender.enum';
-import { UserRole } from 'src/common/enums/user/roles.enum';
+import { UserRole } from "src/common/interfaces/user.interface";
 import { UserStatus } from 'src/common/enums/user/status.enum';
 import { PaymentProvider } from 'src/common/enums/user/payment_method.enum';
 

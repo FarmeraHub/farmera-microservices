@@ -22,10 +22,8 @@ import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
 import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
 import { Farm } from './entities/farm.entity';
 import { SearchFarmDto } from './dto/search-farm.dto';
-import { plainToInstance } from 'class-transformer';
-import { TypesMapper } from 'src/mappers/common/types.mapper';
 import { UserService } from 'src/user/user/user.service';
-import { UserRole } from 'src/common/enums/user/roles.enum';
+import { UserRole } from "src/common/interfaces/user.interface";
 
 @Injectable()
 export class FarmService implements OnModuleInit {
@@ -35,7 +33,7 @@ export class FarmService implements OnModuleInit {
   constructor(
     @Inject('PRODUCTS_PACKAGE') private client: ClientGrpc,
     private readonly userService: UserService,
-  ) {}
+  ) { }
 
   onModuleInit() {
     this.productGrpcService =
