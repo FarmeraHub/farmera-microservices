@@ -189,12 +189,39 @@ export class ProcessTemplateService {
     assignDto: AssignProductToProcessDto,
     user: UserInterface,
   ) {
+    const toGrpcTimestampWrapper = (iso?: string) => {
+      if (!iso) return undefined;
+      const ms = Date.parse(iso);
+      if (isNaN(ms)) {
+        throw new BadRequestException('Invalid date format');
+      }
+      return {
+        value: {
+          seconds: Math.floor(ms / 1000),
+          nanos: (ms % 1000) * 1e6,
+        },
+      };
+    };
+
+    const transformedRequest: any = {
+      product_id: productId,
+      process_id: assignDto.process_id,
+      user_id: user.id,
+    };
+
+    if (assignDto.start_date) {
+      transformedRequest.start_date = toGrpcTimestampWrapper(
+        assignDto.start_date,
+      );
+    }
+    if (assignDto.target_completion_date) {
+      transformedRequest.target_completion_date = toGrpcTimestampWrapper(
+        assignDto.target_completion_date,
+      );
+    }
+
     return await firstValueFrom(
-      this.productsService.assignProductToProcess({
-        product_id: productId,
-        ...assignDto,
-        user_id: user.id,
-      }),
+      this.productsService.assignProductToProcess(transformedRequest),
     );
   }
 
