@@ -7,8 +7,8 @@ export class Payment {
     @PrimaryGeneratedColumn('increment')
     payment_id: number;
 
-    @OneToOne(() => Order)
-    @JoinColumn({ name: 'order' })
+    @OneToOne(() => Order, (order) => order.payment,)
+    @JoinColumn({ name: 'order_id' })
     order: Order;
 
     @Column()
@@ -27,7 +27,7 @@ export class Payment {
     status: PaymentStatus;
     @Column()
     transaction_id: string;
-    @Column()
+    @Column({ nullable: true })
     paid_at: Date;
     @CreateDateColumn()
     created: Date;

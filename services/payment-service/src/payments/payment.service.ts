@@ -21,7 +21,7 @@ export class PaymentService {
             method: payment.method,
             status: payment.status ?? PaymentStatus.PENDING,
             transaction_id: payment.transaction_id ?? '',
-            paid_at: payment.paid_at ?? null,
+            paid_at: payment.paid_at ? payment.paid_at : undefined,
             currency: payment.currency,
         });
         return transactionalManager.save(newPayment);

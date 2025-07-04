@@ -20,6 +20,7 @@ import { OrderInfoRequest } from "@farmera/grpc-proto/dist/payment/payment";
 import { Issue, ShippingFeeDetails } from "src/delivery/enitites/cart.entity";
 import { GhnService } from "src/ghn/ghn.service";
 import { Payment } from "src/payments/entities/payment.entity";
+import { use } from "passport";
 
 @Injectable()
 export class BusinessValidationService {
@@ -154,9 +155,10 @@ export class BusinessValidationService {
         let resultValidation: ShippingFeeDetails = {
             farm_id: value.farm_id,
             farm_name: farmResponse.farm_name,
+            phone: farmResponse.phone,
             shipping_fee: 0, // Sẽ cập nhật sau khi tính toán
             avatar_url: farmResponse.avatar_url,
-            final_fee: 0, // Sẽ cập nhật sau khi tính toán
+            total: 0, // Sẽ cập nhật sau khi tính toán
             currency: 'VND', // Giả định là VND, có thể thay đổi tùy theo yêu cầu
             city: farmResponse.address?.city || '',
             district: farmResponse.address?.district || '',
@@ -224,7 +226,8 @@ export class BusinessValidationService {
             resultValidation.products.push({
                 product_id: actualProduct.product_id,
                 product_name: actualProduct.product_name,
-                quantity: requestedItem.quantity,
+                quantity: actualProduct.stock_quantity,
+                requested_quantity: requestedItem.quantity,
                 unit: actualProduct.unit,
                 price_per_unit: actualProduct.price_per_unit,
                 total_price: requestedItem.quantity * actualProduct.price_per_unit,
@@ -239,7 +242,7 @@ export class BusinessValidationService {
             for (const product of resultValidation.products) {
                 totalFee += product.total_price;
             }
-            resultValidation.final_fee = totalFee;
+            resultValidation.total = totalFee;
             return resultValidation;
         }
         return result;
@@ -333,7 +336,7 @@ export class BusinessValidationService {
         }
     }
 
-    async validateOrderInfo(value: OrderInfoRequestDto): Promise<{ user: User, address: Location } | Issue[]> { 
+    async validateOrderInfo(value: OrderInfoRequestDto): Promise<{ user: User, address: Location } | Issue[]> {
         const result: Issue[] = [];
         if (!value || !value.user_id) {
             result.push({
@@ -377,6 +380,20 @@ export class BusinessValidationService {
                     details: 'Address information (city, district, ward) is missing.'
                 });
                 return result;
+            }
+            if (!userLocation.phone || userLocation.phone.trim() === '') {
+                if (!user.phone || user.phone.trim() === '') {
+                    result.push({
+                        reason: 'PHONE_NUMBER_MISSING',
+                        user_id: value.user_id,
+                        details: 'Phone number is missing or invalid.'
+                    });
+                    return result;
+                }
+                userLocation.phone = user.phone; // Sử dụng số điện thoại của người dùng nếu địa chỉ không có
+            }
+            if (!userLocation.name || userLocation.name.trim() === '') {
+                userLocation.name = user.last_name + ' ' + user.first_name; // Sử dụng tên người dùng nếu địa chỉ không có
             }
             return {
                 user,

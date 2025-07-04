@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, Or, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, Or, PrimaryGeneratedColumn } from "typeorm";
 import { Order } from "./order.entity";
 import { SubOrderStatus } from "src/common/enums/payment/sub-order-status.enum";
 import { Delivery } from "src/delivery/enitites/delivery.entity";
@@ -9,8 +9,8 @@ export class SubOrder {
     @PrimaryGeneratedColumn('increment')
     sub_order_id: number;
 
-    @ManyToOne(() => Order)
-    @JoinColumn({ name: 'order' })
+    @ManyToOne(() => Order, (order) => order.sub_orders, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'order_id' })
     order: Order;
 
     @Column({ name: 'farm_id', type: 'uuid' })
@@ -30,9 +30,9 @@ export class SubOrder {
     shipping_amount: number;
     @Column()
     final_amount: number;
-    @Column()
+    @CreateDateColumn()
     created: Date;
-    @OneToOne(() => Delivery)
+    @OneToOne(() => Delivery, (delivery) => delivery.sub_order, { cascade: true })
     delivery: Delivery;
     @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.sub_order, { cascade: true })
     order_details: OrderDetail[];

@@ -37,7 +37,7 @@ export class Order {
 
     @OneToMany(() => DiscountUsage, (discountUsage) => discountUsage.order_id, { cascade: true })
     discount_usage: DiscountUsage[];
-    @OneToOne(() => Payment)
+    @OneToOne(() => Payment, (payment) => payment.order,)
     payment: Payment;
     @OneToMany(() => SubOrder, (subOrder) => subOrder.order, { cascade: true })
     sub_orders: SubOrder[];
@@ -45,9 +45,9 @@ export class Order {
     @Column()
     currency: string;
     @Column({
-            type: 'enum',
-            enum: OrderStatus,
-            default: OrderStatus.PENDING,
-        })
-        status: OrderStatus;
+        type: 'enum',
+        enum: OrderStatus,
+        default: OrderStatus.PENDING,
+    })
+    status: OrderStatus;
 }   

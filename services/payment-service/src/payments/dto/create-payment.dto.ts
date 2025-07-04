@@ -5,6 +5,6 @@ export class CreatePaymentDto {
     amount: number;
     transaction_id?: string;
     currency: string;
-    paid_at: Date;
+    paid_at: Date | null;
     status?: PaymentStatus;
 }

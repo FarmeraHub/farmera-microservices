@@ -62,10 +62,9 @@ message Order {
   double shipping_amount = 5;
   double final_amount = 6;
   farmera.common.OrderStatus status = 7;
-  optional Payment payment = 8;
-  farmera.common.Timestamp created = 9;
-  farmera.common.Timestamp updated = 10;
-  string currency = 11;
+  farmera.common.Timestamp created = 8;
+  farmera.common.Timestamp updated = 9;
+  string currency = 10;
 }
 
 message SubOrder{
@@ -81,7 +80,6 @@ message SubOrder{
   string currency = 10;
   optional string avatar_url = 11;
   optional string notes = 12;
-
 }
 // Order item
 message OrderItem {

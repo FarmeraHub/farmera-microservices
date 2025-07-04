@@ -20,7 +20,7 @@ export class OrderDetail{
     @Column()
     unit: string;
 
-    @ManyToOne(() => SubOrder)
+    @ManyToOne(() => SubOrder, (subOrder) => subOrder.order_details)
     @JoinColumn({ name: 'sub_order' })
     sub_order: SubOrder;
 

@@ -13,7 +13,6 @@ export class OrderDetailMapper {
             quantity: value.quantity,
             price_per_unit: value.price_per_unit,
             unit: value.unit,
-            sub_order: value.sub_order ? SubOrderMapper.toGrpcSubOrder(value.sub_order) : undefined,
             weight: value.weight,
             image_url: value.image_url,
             total_price: value.total_price,

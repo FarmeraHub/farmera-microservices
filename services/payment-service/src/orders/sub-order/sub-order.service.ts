@@ -4,6 +4,7 @@ import { SubOrder } from '../entities/sub-order.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { SubOrderDto } from '../dto/sub-order.dto';
 import { Order } from '../entities/order.entity';
+import { CreateSubOrderDto } from '../dto/create-sub-order.dto';
 
 @Injectable()
 export class SubOrderService {
@@ -13,10 +14,10 @@ export class SubOrderService {
 
     ) { }
 
-    create(subOrder: SubOrderDto,
+    create(subOrder: CreateSubOrderDto,
         order: Order,
         transactionalManager: EntityManager): Promise<SubOrder>;
-    async create(subOrder: SubOrderDto,
+    async create(subOrder: CreateSubOrderDto,
         order: Order,
         transactionalManager: EntityManager): Promise<SubOrder> {
         {

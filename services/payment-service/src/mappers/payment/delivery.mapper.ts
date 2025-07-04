@@ -29,27 +29,14 @@ export class DeliveryEnumMapper {
             farm_name: values.farm_name,
             shipping_fee: values.shipping_fee,
             avatar_url: values.avatar_url,
-            final_fee: values.final_fee,
+            final_fee: values.total,
             currency: values.currency,
             products: values.products.map((item) => this.toGrpcItem(item)),
         };
     }
-
-    static toGrpcIssue(issue: Issue): GrpcIssue {
-        return {
-            reason: issue.reason,
-            details: issue.details,
-            product_id: issue.product_id,
-            farm_id: issue.farm_id,
-            user_id: issue.user_id,
-            address_id: issue.address_id,
-        };
-    }
-
     static toGrpcDelivery(value: Delivery): GrpcDelivery{
         return {
             delivery_id: value.delivery_id,
-            sub_order: value.sub_order ? SubOrderMapper.toGrpcSubOrder(value.sub_order) : undefined,
             tracking_number: value.tracking_number,
             delivery_instructions: value.delivery_instructions,
             shipping_amount: value.shipping_amount,

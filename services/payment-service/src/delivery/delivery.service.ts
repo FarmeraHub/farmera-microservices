@@ -67,7 +67,7 @@ export class DeliveryService {
         this.ghnUrlCreateOrder = GHN_CREATE_ORDER;
         this.ghnUrlCancelOrder = GHN_CANCEL_ORDER;
     }
-
+    
     async calculateFeeByGHN(calculateDto: CalculateShippingFeeDto): Promise<GhnFeeData> {
 
 
@@ -93,7 +93,7 @@ export class DeliveryService {
                 }
             }
         }
-
+        calculateDto.weight = finalWeight; // Cập nhật trọng lượng cuối cùng vào DTO
         if ((calculateDto.length ?? 0) > 150 || (calculateDto.width ?? 0) > 150 || (calculateDto.height ?? 0) > 150 || calculateDto.weight > 20000 || finalWeight > 20000) {
             service_type_id = GhnServiceTypeId.HANG_NANG;
         }
@@ -207,7 +207,7 @@ export class DeliveryService {
                 }
             }
         }
-
+        createOrderDto.weight = finalWeight; // Cập nhật trọng lượng cuối cùng vào DTO
         if ((createOrderDto.length ?? 0) > 150 || (createOrderDto.width ?? 0) > 150 || (createOrderDto.height ?? 0) > 150 || createOrderDto.weight > 20000 || finalWeight > 20000) {
             service_type_id = GhnServiceTypeId.HANG_NANG;
         }
@@ -221,7 +221,7 @@ export class DeliveryService {
 
 
         this.logger.log(`[GHN Create Order] Calling API for client_order_code: ${createOrderDto.client_order_code || 'N/A'}`);
-        this.logger.debug(`[GHN Create Order] Payload: ${JSON.stringify(createOrderDto)}`);
+        this.logger.debug(`[GHN Create Order] Payload: ${JSON.stringify(createOrderDto,null,2)}`);
         this.logger.debug(`[GHN Create Order] Headers: Token: ${this.ghnToken.substring(0, 5)}..., ShopId: ${this.ghnShopId}`);
 
 
@@ -511,7 +511,7 @@ export class DeliveryService {
                 const shippingFeeDetails: ShippingFeeDetails = {
                     ...validSubOrder,
                     shipping_fee: ghnFeeData.total,
-                    final_fee: ghnFeeData.total + validSubOrder.shipping_fee,
+                    total: ghnFeeData.total + validSubOrder.shipping_fee,
                 };
                 this.logger.log(`Calculated shipping fee details: ${JSON.stringify(shippingFeeDetails)}`);
                 return shippingFeeDetails;
@@ -525,7 +525,7 @@ export class DeliveryService {
         this.logger.warn(`No valid suborder or order info found for shipping fee calculation.`);
         throw new BadRequestException('Không có thông tin hợp lệ để tính phí vận chuyển.');
     }
-
+    create(createOrderDto: GhnCreatedOrderDataDto, subOrder: SubOrder, codFee: number, transactionalManager: EntityManager): Promise<Delivery>;
     async create(createOrderDto: GhnCreatedOrderDataDto, subOrder: SubOrder,codFee: number, transactionalManager: EntityManager): Promise<Delivery> {
         const deliveryToCreate = transactionalManager.create(Delivery, {
             sub_order: subOrder,

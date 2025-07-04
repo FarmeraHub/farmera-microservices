@@ -33,8 +33,8 @@ export class Delivery {
     @UpdateDateColumn()
     updated: Date;
     
-    @OneToOne(() => SubOrder)
-    @JoinColumn({ name: 'sub_order' })
+    @OneToOne(() => SubOrder, (subOrder) => subOrder.delivery)
+    @JoinColumn({ name: 'sub_order_id' })
     sub_order: SubOrder;
     @Column()
     tracking_number: string;
