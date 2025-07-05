@@ -5,6 +5,8 @@ import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { CreateProcessTemplateDto } from './dto/create-process-template.dto';
 import { UpdateProcessTemplateDto } from './dto/update-process-template.dto';
 import { AssignProductToProcessDto } from './dto/assign-product-process.dto';
+import { CreateStepDiaryDto } from './dto/create-step-diary.dto';
+import { TypesMapper } from '../../mappers/common/types.mapper';
 
 interface CreateProcessTemplateRequest {
   process_name: string;
@@ -244,12 +246,32 @@ export class ProcessTemplateService {
   }
 
   // Step Diary methods
-  async createStepDiary(createDto: any, user: UserInterface) {
+  async createStepDiary(createDto: CreateStepDiaryDto, user: UserInterface) {
+    // Convert the DTO to the correct format for gRPC
+    const grpcRequest = {
+      assignment_id: createDto.assignment_id,
+      step_id: createDto.step_id,
+      product_id: createDto.product_id,
+      step_name: createDto.step_name,
+      step_order: createDto.step_order,
+      notes: createDto.notes,
+      completion_status: createDto.completion_status || 'IN_PROGRESS',
+      image_urls: createDto.image_urls || [],
+      video_urls: createDto.video_urls || [],
+      recorded_date: TypesMapper.toGrpcTimestamp(createDto.recorded_date),
+      latitude: createDto.latitude,
+      longitude: createDto.longitude,
+      weather_conditions: createDto.weather_conditions,
+      quality_rating: createDto.quality_rating,
+      issues_encountered: createDto.issues_encountered,
+      additional_data: createDto.additional_data
+        ? JSON.stringify(createDto.additional_data)
+        : undefined,
+      user_id: user.id,
+    };
+
     return await firstValueFrom(
-      this.productsService.createStepDiary({
-        ...createDto,
-        user_id: user.id,
-      }),
+      this.productsService.createStepDiary(grpcRequest),
     );
   }
 

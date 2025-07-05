@@ -14,6 +14,7 @@ import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { CreateProcessTemplateDto } from './dto/create-process-template.dto';
 import { UpdateProcessTemplateDto } from './dto/update-process-template.dto';
 import { AssignProductToProcessDto } from './dto/assign-product-process.dto';
+import { CreateStepDiaryDto } from './dto/create-step-diary.dto';
 
 @Controller('process-template')
 export class ProcessTemplateController {
@@ -127,5 +128,38 @@ export class ProcessTemplateController {
       productId,
       user,
     );
+  }
+
+  // Step Diary endpoints
+  @Post('step-diary')
+  async createStepDiary(
+    @Body() createStepDiaryDto: CreateStepDiaryDto,
+    @User() user: UserInterface,
+  ) {
+    return await this.processTemplateService.createStepDiary(
+      createStepDiaryDto,
+      user,
+    );
+  }
+
+  @Get('product/:productId/step/:stepId/diaries')
+  async getStepDiaries(
+    @Param('productId', ParseIntPipe) productId: number,
+    @Param('stepId', ParseIntPipe) stepId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processTemplateService.getStepDiaries(
+      productId,
+      stepId,
+      user,
+    );
+  }
+
+  @Get('product/:productId/diaries')
+  async getProductDiaries(
+    @Param('productId', ParseIntPipe) productId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processTemplateService.getProductDiaries(productId, user);
   }
 }
