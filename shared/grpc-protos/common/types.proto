@@ -41,8 +41,10 @@ message UserLocation {
   string address_line = 6;
   string type = 7;
   bool is_primary = 8;
-  Timestamp created_at = 9;
-  Timestamp updated_at = 10;
+  string name = 9;
+  string phone = 10;
+  Timestamp created_at = 11;
+  Timestamp updated_at = 12;
 }
 
 // Geohash location for spatial queries

@@ -7,6 +7,12 @@ export class Location {
   location_id: number;
 
   @Column({ nullable: false })
+  name: string;
+
+  @Column({ nullable: false })
+  phone: string
+
+  @Column({ nullable: false })
   city: string;
 
   @Column({ nullable: false })

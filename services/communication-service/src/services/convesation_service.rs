@@ -103,4 +103,14 @@ impl ConversationService {
             .insert_private_conversation(&title, user_a, user_b)
             .await
     }
+
+    pub async fn get_unread_count(&self, user_id: Uuid) -> Result<i64, DBError> {
+        self.conversation_repo.get_unread_count(user_id).await
+    }
+
+    pub async fn mark_as_read(&self, conversation_id: i32, user_id: Uuid) -> Result<bool, DBError> {
+        self.conversation_repo
+            .mark_as_read(conversation_id, user_id)
+            .await
+    }
 }

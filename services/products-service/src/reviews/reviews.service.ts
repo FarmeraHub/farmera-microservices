@@ -8,6 +8,7 @@ import { CreateReplyDto } from './dto/create-reply.dto';
 import { AzureBlobService } from 'src/services/azure-blob.service';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ErrorMapper } from 'src/grpc/server/mappers/common/error.mapper';
+import { RatingStatsDto } from './dto/rating-stat.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -101,6 +102,7 @@ export class ReviewsService {
         order: 'ASC' | 'DESC' = 'DESC',
         limit = 10,
         cursor: string,
+        raingFilter?: number,
     ) {
         const validSortBy = ['created', 'rating'];
         if (!validSortBy.includes(sortBy)) {
@@ -117,6 +119,10 @@ export class ReviewsService {
             qb.orderBy('review.created', order);
         } else {
             qb.orderBy('review.rating', order).addOrderBy('review.created', order);
+        }
+
+        if (raingFilter) {
+            qb.andWhere('review.rating = :rating', { rating: raingFilter });
         }
 
         if (cursor) {
@@ -336,4 +342,29 @@ export class ReviewsService {
         }
     }
 
+    async getReviewOverview(productId: number): Promise<RatingStatsDto> {
+        const ratings = await this.reviewRepository.createQueryBuilder('review')
+            .select('review.rating', 'rating')
+            .addSelect('review.rating', 'rating')
+            .addSelect('COUNT(*)', 'count')
+            .where('review.is_deleted = false')
+            .andWhere('review.product_id = :productId', { productId })
+            .groupBy('review.rating')
+            .getRawMany();
+
+        const counts: Record<number, number> = {
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0,
+            5: 0,
+        };
+
+        for (const row of ratings) {
+            const rating = Number(row.rating);
+            const count = Number(row.count);
+            counts[rating] = count;
+        }
+        return new RatingStatsDto(counts);
+    }
 }
