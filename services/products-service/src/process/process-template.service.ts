@@ -55,8 +55,17 @@ export class ProcessTemplateService {
       const farm = await this.farmRepository.findOne({
         where: { user_id: userId },
       });
+
       if (!farm) {
         throw new UnauthorizedException('User does not have a farm');
+      }
+
+      // Validate farm_id is a valid UUID
+      if (!farm.farm_id || farm.farm_id.trim() === '') {
+        this.logger.error(
+          `Invalid farm_id for user ${userId}: "${farm.farm_id}"`,
+        );
+        throw new InternalServerErrorException('Farm has invalid ID');
       }
 
       // Create process template
@@ -65,10 +74,27 @@ export class ProcessTemplateService {
         description: createDto.description,
         estimated_duration_days: createDto.estimated_duration_days,
         is_active: createDto.is_active,
+        farm_id: farm.farm_id,
         farm: farm,
       });
 
+      console.log('🔍 [DEBUG] Created process template entity:', {
+        processName: processTemplate.process_name,
+        farmId: processTemplate.farm_id,
+        farmIdType: typeof processTemplate.farm_id,
+        farmEntityId: processTemplate.farm?.farm_id,
+        farmEntityType: typeof processTemplate.farm?.farm_id,
+        hasValidFarmId: !!(
+          processTemplate.farm_id && processTemplate.farm_id.trim()
+        ),
+      });
+
+      console.log('🔍 [DEBUG] About to save process template...');
       const savedTemplate = await queryRunner.manager.save(processTemplate);
+      console.log(
+        '✅ [DEBUG] Successfully saved process template with ID:',
+        savedTemplate.process_id,
+      );
 
       // Create process steps
       const steps = createDto.steps.map((stepDto, index) =>
@@ -83,10 +109,10 @@ export class ProcessTemplateService {
 
       await queryRunner.commitTransaction();
 
-      // Reload with steps
+      // Reload with steps and farm
       const result = await this.processTemplateRepository.findOne({
         where: { process_id: savedTemplate.process_id },
-        relations: ['steps'],
+        relations: ['steps', 'farm'],
       });
 
       if (!result) {

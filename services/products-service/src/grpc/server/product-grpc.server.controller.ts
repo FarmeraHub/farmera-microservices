@@ -124,9 +124,13 @@ import {
   GetStepDiariesRequest,
   GetStepDiariesResponse,
   GetProductDiariesRequest,
-  GetProductDiariesResponse, GetReviewOverviewRequest,
+  GetProductDiariesResponse,
+  GetReviewOverviewRequest,
   GetReviewOverviewResponse,
-
+  DeleteStepDiaryRequest,
+  DeleteStepDiaryResponse,
+  UpdateStepDiaryRequest,
+  UpdateStepDiaryResponse,
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
@@ -168,7 +172,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
     private readonly processTemplateService: ProcessTemplateService,
     private readonly stepDiaryService: StepDiaryService,
     private readonly diaryService: DiaryService,
-  ) { }
+  ) {}
 
   // Product methods
   async createProduct(
@@ -986,34 +990,40 @@ export class ProductGrpcServerController implements ProductsServiceController {
       const result = await this.reviewService.getReviewsByCursor(
         request.product_id,
         request.pagination?.sort_by ?? 'created',
-        request.pagination?.order ? EnumsMapper.fromGrpcPaginationOrder(request.pagination.order) : 'DESC',
+        request.pagination?.order
+          ? EnumsMapper.fromGrpcPaginationOrder(request.pagination.order)
+          : 'DESC',
         request.pagination?.limit ?? 10,
         request.pagination?.cursor ?? '',
-        request.rating_filter
+        request.rating_filter,
       );
       return {
-        reviews: result.data.reviews.map((value) => ReviewMapper.toGrpcReview(value)),
+        reviews: result.data.reviews.map((value) =>
+          ReviewMapper.toGrpcReview(value),
+        ),
         pagination: {
-          next_cursor: result.data.nextCursor ?? undefined
-        }
-      }
-    }
-    catch (err) {
+          next_cursor: result.data.nextCursor ?? undefined,
+        },
+      };
+    } catch (err) {
       throw ErrorMapper.toRpcException(err);
     }
   }
 
-  async getReviewOverview(request: GetReviewOverviewRequest): Promise<GetReviewOverviewResponse> {
+  async getReviewOverview(
+    request: GetReviewOverviewRequest,
+  ): Promise<GetReviewOverviewResponse> {
     try {
-      const result = await this.reviewService.getReviewOverview(request.product_id);
+      const result = await this.reviewService.getReviewOverview(
+        request.product_id,
+      );
       return {
         total_count: result.totalCount,
         total_ratings: result.totalRating,
         average_rating: result.averageRating,
-        rating_overview: result.ratings
-      }
-    }
-    catch (err) {
+        rating_overview: result.ratings,
+      };
+    } catch (err) {
       throw ErrorMapper.toRpcException(err);
     }
   }
@@ -1139,8 +1149,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
           video_urls: request.video_urls?.list,
           recorded_date: request.recorded_date
             ? TypesMapper.fromGrpcTimestamp(
-              request.recorded_date,
-            )?.toISOString()
+                request.recorded_date,
+              )?.toISOString()
             : undefined,
           latitude: request.latitude,
           longitude: request.longitude,
@@ -1391,8 +1401,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
         notes: request.notes,
         completion_status: request.completion_status
           ? ProcessTemplateMapper.fromGrpcDiaryCompletionStatus(
-            request.completion_status,
-          )
+              request.completion_status,
+            )
           : undefined,
         image_urls: request.image_urls,
         video_urls: request.video_urls,
@@ -1455,6 +1465,62 @@ export class ProductGrpcServerController implements ProductsServiceController {
         diaries: result.map((diary) =>
           ProcessTemplateMapper.toGrpcStepDiaryEntry(diary),
         ),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async deleteStepDiary(
+    request: DeleteStepDiaryRequest,
+  ): Promise<DeleteStepDiaryResponse> {
+    try {
+      const result = await this.stepDiaryService.deleteStepDiary(
+        request.diary_id,
+        request.user_id,
+      );
+      return { success: result };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async updateStepDiary(
+    request: UpdateStepDiaryRequest,
+  ): Promise<UpdateStepDiaryResponse> {
+    try {
+      const updateDto = {
+        diary_id: request.diary_id,
+        step_name: request.step_name,
+        step_order: request.step_order,
+        notes: request.notes,
+        completion_status: request.completion_status
+          ? ProcessTemplateMapper.fromGrpcDiaryCompletionStatus(
+              request.completion_status,
+            )
+          : undefined,
+        image_urls: request.image_urls,
+        video_urls: request.video_urls,
+        recorded_date: request.recorded_date
+          ? TypesMapper.fromGrpcTimestamp(request.recorded_date)
+          : undefined,
+        latitude: request.latitude,
+        longitude: request.longitude,
+        weather_conditions: request.weather_conditions,
+        quality_rating: request.quality_rating,
+        issues_encountered: request.issues_encountered,
+        additional_data: request.additional_data
+          ? JSON.parse(request.additional_data)
+          : undefined,
+      };
+
+      const result = await this.stepDiaryService.updateStepDiary(
+        updateDto as any,
+        request.user_id,
+      );
+
+      return {
+        diary: ProcessTemplateMapper.toGrpcStepDiaryEntry(result),
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);
