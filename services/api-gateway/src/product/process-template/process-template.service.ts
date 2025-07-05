@@ -6,6 +6,7 @@ import { CreateProcessTemplateDto } from './dto/create-process-template.dto';
 import { UpdateProcessTemplateDto } from './dto/update-process-template.dto';
 import { AssignProductToProcessDto } from './dto/assign-product-process.dto';
 import { CreateStepDiaryDto } from './dto/create-step-diary.dto';
+import { UpdateStepDiaryDto } from './dto/update-step-diary.dto';
 import { TypesMapper } from '../../mappers/common/types.mapper';
 
 interface CreateProcessTemplateRequest {
@@ -98,6 +99,11 @@ interface ProductsGrpcService {
   }) => Observable<any>;
   getProductDiaries: (data: {
     product_id: number;
+    user_id: string;
+  }) => Observable<any>;
+  updateStepDiary: (data: any) => Observable<any>;
+  deleteStepDiary: (data: {
+    diary_id: number;
     user_id: string;
   }) => Observable<any>;
 }
@@ -289,6 +295,45 @@ export class ProcessTemplateService {
     return await firstValueFrom(
       this.productsService.getProductDiaries({
         product_id: productId,
+        user_id: user.id,
+      }),
+    );
+  }
+
+  // Step Diary update and delete methods
+  async updateStepDiary(updateDto: UpdateStepDiaryDto, user: UserInterface) {
+    // Convert the DTO to the correct format for gRPC
+    const grpcRequest: any = {
+      diary_id: updateDto.diary_id,
+      step_name: updateDto.step_name,
+      step_order: updateDto.step_order,
+      notes: updateDto.notes,
+      completion_status: updateDto.completion_status,
+      image_urls: updateDto.image_urls,
+      video_urls: updateDto.video_urls,
+      recorded_date: updateDto.recorded_date
+        ? TypesMapper.toGrpcTimestamp(updateDto.recorded_date)
+        : undefined,
+      latitude: updateDto.latitude,
+      longitude: updateDto.longitude,
+      weather_conditions: updateDto.weather_conditions,
+      quality_rating: updateDto.quality_rating,
+      issues_encountered: updateDto.issues_encountered,
+      additional_data: updateDto.additional_data
+        ? JSON.stringify(updateDto.additional_data)
+        : undefined,
+      user_id: user.id,
+    };
+
+    return await firstValueFrom(
+      this.productsService.updateStepDiary(grpcRequest),
+    );
+  }
+
+  async deleteStepDiary(diaryId: number, user: UserInterface) {
+    return await firstValueFrom(
+      this.productsService.deleteStepDiary({
+        diary_id: diaryId,
         user_id: user.id,
       }),
     );

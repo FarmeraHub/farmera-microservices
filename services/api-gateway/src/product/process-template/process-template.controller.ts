@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import { ProcessTemplateService } from './process-template.service';
 import { User } from '../../common/decorators/user.decorator';
@@ -15,6 +16,7 @@ import { CreateProcessTemplateDto } from './dto/create-process-template.dto';
 import { UpdateProcessTemplateDto } from './dto/update-process-template.dto';
 import { AssignProductToProcessDto } from './dto/assign-product-process.dto';
 import { CreateStepDiaryDto } from './dto/create-step-diary.dto';
+import { UpdateStepDiaryDto } from './dto/update-step-diary.dto';
 
 @Controller('process-template')
 export class ProcessTemplateController {
@@ -161,5 +163,24 @@ export class ProcessTemplateController {
     @User() user: UserInterface,
   ) {
     return await this.processTemplateService.getProductDiaries(productId, user);
+  }
+
+  @Patch('step-diary')
+  async updateStepDiary(
+    @Body() updateStepDiaryDto: UpdateStepDiaryDto,
+    @User() user: UserInterface,
+  ) {
+    return await this.processTemplateService.updateStepDiary(
+      updateStepDiaryDto,
+      user,
+    );
+  }
+
+  @Delete('step-diary/:diaryId')
+  async deleteStepDiary(
+    @Param('diaryId', ParseIntPipe) diaryId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processTemplateService.deleteStepDiary(diaryId, user);
   }
 }

@@ -125,6 +125,10 @@ import {
   GetStepDiariesResponse,
   GetProductDiariesRequest,
   GetProductDiariesResponse,
+  DeleteStepDiaryRequest,
+  DeleteStepDiaryResponse,
+  UpdateStepDiaryRequest,
+  UpdateStepDiaryResponse,
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
@@ -1440,6 +1444,62 @@ export class ProductGrpcServerController implements ProductsServiceController {
         diaries: result.map((diary) =>
           ProcessTemplateMapper.toGrpcStepDiaryEntry(diary),
         ),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async deleteStepDiary(
+    request: DeleteStepDiaryRequest,
+  ): Promise<DeleteStepDiaryResponse> {
+    try {
+      const result = await this.stepDiaryService.deleteStepDiary(
+        request.diary_id,
+        request.user_id,
+      );
+      return { success: result };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async updateStepDiary(
+    request: UpdateStepDiaryRequest,
+  ): Promise<UpdateStepDiaryResponse> {
+    try {
+      const updateDto = {
+        diary_id: request.diary_id,
+        step_name: request.step_name,
+        step_order: request.step_order,
+        notes: request.notes,
+        completion_status: request.completion_status
+          ? ProcessTemplateMapper.fromGrpcDiaryCompletionStatus(
+              request.completion_status,
+            )
+          : undefined,
+        image_urls: request.image_urls,
+        video_urls: request.video_urls,
+        recorded_date: request.recorded_date
+          ? TypesMapper.fromGrpcTimestamp(request.recorded_date)
+          : undefined,
+        latitude: request.latitude,
+        longitude: request.longitude,
+        weather_conditions: request.weather_conditions,
+        quality_rating: request.quality_rating,
+        issues_encountered: request.issues_encountered,
+        additional_data: request.additional_data
+          ? JSON.parse(request.additional_data)
+          : undefined,
+      };
+
+      const result = await this.stepDiaryService.updateStepDiary(
+        updateDto as any,
+        request.user_id,
+      );
+
+      return {
+        diary: ProcessTemplateMapper.toGrpcStepDiaryEntry(result),
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);
