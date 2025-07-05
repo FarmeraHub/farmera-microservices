@@ -5,16 +5,25 @@ import { EnumMapper } from "../common/enum.mapper";
 import { OrderMapper } from "./order.mapper";
 
 export class PaymentMapper {
-    static toGrpcPayment(value: Payment): GrpcPayment{
-        return {
+    static toGrpcPayment(value: Payment): GrpcPayment {
+        const grpcPayment: GrpcPayment = {
             payment_id: value.payment_id,
             order: value.order ? OrderMapper.toGrpcOrder(value.order) : undefined,
             amount: value.amount,
             currency: value.currency,
             method: EnumMapper.toGrpcPaymentMethod(value.method),
             status: EnumMapper.toGrpcPaymentStatus(value.status),
-            created_at: TypesMapper.toGrpcTimestamp(value.created), 
+            created_at: TypesMapper.toGrpcTimestamp(value.created),
             paid_at: TypesMapper.toGrpcTimestamp(value.paid_at),
         };
+
+        if (value.transaction_id) {
+            grpcPayment.transaction_id = value.transaction_id;
+        }
+        if (value.qr_code) {
+            grpcPayment.qr_code = value.qr_code;
+        }
+
+        return grpcPayment;
     }
 }

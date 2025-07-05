@@ -10,6 +10,7 @@ import { BusinessValidationModule } from 'src/business-validation/business-valid
 import { OrdersService } from './order/orders.service';
 import { OrderDetailService } from './order-detail/order-detail.service';
 import { SubOrderService } from './sub-order/sub-order.service';
+import { PayOSModule } from 'src/payos/payos.module';
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import { SubOrderService } from './sub-order/sub-order.service';
         DiscountModule,
         DeliveryModule,
         BusinessValidationModule,
+        PayOSModule,
     ],
     providers: [OrdersService,OrderDetailService, SubOrderService],
     exports: [OrdersService, OrderDetailService, SubOrderService],

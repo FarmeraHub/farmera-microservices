@@ -16,6 +16,9 @@ import { ErrorMapper } from "src/mappers/common/error.mapper";
 import { DeliveryEnumMapper } from "src/mappers/payment/delivery.mapper";
 import { IssueMapper } from "src/mappers/payment/Issue.mapper";
 import { OrderMapper } from "src/mappers/payment/order.mapper";
+import { PaymentMapper } from "src/mappers/payment/payment.mapper";
+import { SubOrderMapper } from "src/mappers/payment/suborder.mapper";
+import { OrderDetailMapper } from "src/mappers/payment/order-detail.mapper";
 
 
 @Controller()
@@ -71,7 +74,7 @@ export class PaymentGrpcController implements PaymentServiceController {
                 order_info: {
                     user_id: request.order_info!.user_id,
                     address_id: request.order_info!.address_id,
-                    payment_method: 'COD',
+                    payment_type: request.order_info?.payment_type ? request.order_info.payment_type : 'COD', 
                 },
             });
             if (Array.isArray(result)) {
@@ -81,15 +84,30 @@ export class PaymentGrpcController implements PaymentServiceController {
                 this.logger.log('Order created successfully', result);
                 this.logger.log(`OrderMapper.toGrpcOrder: ${JSON.stringify(result, null, 2)}`);
                 const order = OrderMapper.toGrpcOrder(result);
-                return { order: order };
+                const payment = result.payment ? PaymentMapper.toGrpcPayment(result.payment) : undefined;
+                const suborders = {
+                    suborders: result.sub_orders
+                        ? result.sub_orders.map(subOrder => ({
+                            sub_order: SubOrderMapper.toGrpcSubOrder(subOrder),
+                            order_items: subOrder.order_details
+                                ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem)
+                                : [],
+                        }))
+                        : [],
+                };
+                const fullOrderResponse = { order, payment, suborders };
+                this.logger.log(`FullOrderResponse: ${JSON.stringify(fullOrderResponse, null, 2)}`);
+                return {
+                    full_order: fullOrderResponse,
+                }
             }
 
-            } catch (error) {
-                this.logger.error('Error creating order', error);
-                throw ErrorMapper.toRpcException(error);
-            }
+        } catch (error) {
+            this.logger.error('Error creating order', error);
+            throw ErrorMapper.toRpcException(error);
         }
+    }
 
-    
+
 
 }

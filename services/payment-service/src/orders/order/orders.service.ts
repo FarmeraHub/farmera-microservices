@@ -1,3 +1,4 @@
+import { PayOSService } from './../../payos/payos.service';
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, EntityManager, Repository } from "typeorm";
@@ -37,6 +38,7 @@ export class OrdersService {
         private readonly businessValidationService: BusinessValidationService,
         @InjectDataSource()
         private dataSource: DataSource,
+        private readonly PayOSService: PayOSService,
         // private readonly entityManager: EntityManager,
     ) {
     }
@@ -71,78 +73,54 @@ export class OrdersService {
             }
         }
 
-        if (orderRequest.order_info.payment_method && orderRequest.order_info.payment_method !== 'COD') {
+        const paymentType = orderRequest.order_info.payment_type;
+        this.logger.debug(`Extracted payment type: "${paymentType}"`);
+        this.logger.debug(`Is COD: ${paymentType === 'COD'}`);
+        this.logger.debug(`Is PAYOS: ${paymentType === 'PAYOS'}`);
+        if (paymentType && paymentType !== 'COD' && paymentType !== 'PAYOS') {
             allIssues.push({ reason: 'PAYMENT_UNSUPPORTED', details: 'Unsupported payment method', user_id: orderRequest.order_info.user_id });
         }
 
+        this.logger.debug(`method payment: ${orderRequest.order_info.payment_type}`);
         if (allIssues.length > 0) {
 
             return allIssues;
         }
 
-        const queryRunner = this.dataSource.createQueryRunner();
+        if (paymentType === 'COD') {
+            this.logger.log(`Routing to COD payment for user: ${validOrderInfo?.user.id}`);
+            return await this.createOrderWithTransactionForCOD(validSubOrders, validOrderInfo!, orderRequest);
+        }
+        else if (paymentType === 'PAYOS') {
+            this.logger.log(`Routing to PAYOS payment for user: ${validOrderInfo?.user.id}`);
+            return await this.createOrderWithTransactionForPayOS(validSubOrders, validOrderInfo!, orderRequest);
+        }
+        throw new Error('Unsupported payment method');
 
-        // Kết nối queryRunner với database
+
+    }
+
+    async createOrderWithTransactionForCOD(validSubOrders: ShippingFeeDetails[], validOrderInfo: { user: User; address: Location; }, orderRequest: OrderRequestDto): Promise<Order | Issue[]> {
+        const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         // Bắt đầu một transaction
         await queryRunner.startTransaction();
         this.logger.log(`Starting order creation transaction for user: ${validOrderInfo?.user.id}`);
         const transactionalManager = queryRunner.manager;
 
-        try {
-            //Tính tiền tổng,
-            //Tính tiền ship
-            //Xác định loại thanh toán
-            //
+        this.logger.debug(`Valid suborders: ${JSON.stringify(validSubOrders, null, 2)}`);
 
-            //Giá tổng tất cả các sản phẩm trong các suborder
+        try {
             const totalAmount = validSubOrders.reduce((sum, subOrder) => {
                 return sum + subOrder.products.reduce((productSum, product) => {
                     return productSum + (product.price_per_unit * product.requested_quantity);
                 }, 0);
             }, 0);
-            //Tạo dto cho từng suborder để chuẩn bị tạo order theo GHN
-            const createGHN: CreateGhnOrderDto[] = validSubOrders.map(subOrder => {
-                return {
-                    from_name: subOrder.farm_name,
-                    from_phone: subOrder.phone,
-                    from_address: subOrder.street_number + ' ' + subOrder.street + ', ' + subOrder.ward + ', ' + subOrder.district + ', ' + subOrder.city,
-                    from_district_name: subOrder.district,
-                    from_province_name: subOrder.city,
-                    from_ward_name: subOrder.ward, to_name: validOrderInfo!.address.name,
-                    to_phone: validOrderInfo!.address.phone,
-                    to_address: validOrderInfo!.address.address_line,
-                    to_ward_name: validOrderInfo!.address.ward,
-                    to_district_name: validOrderInfo!.address.district,
-                    to_province_name: validOrderInfo!.address.city,
-                    return_phone: subOrder.phone,
-                    return_address: subOrder.street_number + ' ' + subOrder.street + ', ' + subOrder.ward + ', ' + subOrder.district + ', ' + subOrder.city,
-                    // nếu là cod thì phải thêm cdo
-                    cod_amount: subOrder.products.reduce((codSum, product) => {
-                        return codSum + (product.price_per_unit * product.quantity);
-                    }, 0),
-                    weight: 0,// trong hàm tạo order sẽ tính lại weight
-                    payment_type_id: GhnPaymentTypeId.NGUOI_NHAN_THANH_TOAN,
-                    required_note: GhnRequiredNote.CHO_XEM_HANG_KHONG_THU,
-                    items: subOrder.products.map(product => ({
-                        name: product.product_name,
-                        quantity: product.quantity,
-                        weight: product.weight,
-                        length: 0,
-                        height: 0,
-                        width: 0,
-                        price: product.price_per_unit,
-                    })),
-                };
-            });
-            // Tạo đơn hàng GHN
-            const resultGHNPromises = createGHN.map(ghnOrder => {
-                return this.deliveryService.createOrderByGHN(ghnOrder);
-            });
-            const resultGHN: GhnCreatedOrderDataDto[] = await Promise.all(resultGHNPromises);
 
 
+            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrdeGHN(validSubOrders, validOrderInfo);
 
+            //Tính tiền ship của tất cả các suborder (dựa tren kết quả từ GHN)
             const shippingAmount = resultGHN.reduce((sum, item) => sum + item.fee.main_service, 0)
             const discount = 0;
             const createOrder = transactionalManager.create(Order, {
@@ -185,13 +163,13 @@ export class OrdersService {
                     savedOrder,
                     transactionalManager);
 
-
                 for (const product of subOrderData.products) {
                     const orderDetail = await this.orderDetailService.create(
                         product, // Sử dụng Item (Item là sản phẩm đã được validate)
                         createSubOrder,
                         transactionalManager
                     );
+
                 }
                 const delivery = await this.deliveryService.create(
                     ghnOrderResult,
@@ -202,7 +180,7 @@ export class OrdersService {
 
             }
 
-            const payment = await this.paymentService.create(
+            const savePayment = await this.paymentService.create(
                 {
                     amount: savedOrder.final_amount,
                     method: PaymentMethod.COD, // Giả sử thanh toán COD
@@ -216,8 +194,25 @@ export class OrdersService {
             )
 
 
+
             await queryRunner.commitTransaction();
-            return savedOrder;
+            const order = await this.orderRepository.createQueryBuilder('order')
+                .leftJoinAndSelect('order.payment', 'payment')
+                .leftJoinAndSelect('order.sub_orders', 'sub_order')
+                .leftJoinAndSelect('sub_order.delivery', 'delivery')
+                .leftJoinAndSelect('sub_order.order_details', 'order_detail')
+                .where('order.order_id = :orderId', { orderId: savedOrder.order_id })
+                .getOne();
+
+            if (!order) {
+                return [{
+                    reason: 'ORDER_NOT_FOUND',
+                    details: `Order with ID ${savedOrder.order_id} not found after creation.`,
+                    user_id: validOrderInfo!.user.id,
+                }];
+            }
+            this.logger.log(`Order details: ${JSON.stringify(order, null, 2)}`);
+            return order;
         }
         catch (error) {
             this.logger.error(`Error during order creation transaction: ${error.message}`, error.stack);
@@ -228,6 +223,111 @@ export class OrdersService {
         } finally {
             // Always release the queryRunner
             await queryRunner.release();
+        }
+
+    }
+    async createOrderWithTransactionForPayOS(validSubOrders: ShippingFeeDetails[], validOrderInfo: { user: User; address: Location; }, orderRequest: OrderRequestDto): Promise<Order | Issue[]> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        // Bắt đầu một transaction
+        await queryRunner.startTransaction();
+        this.logger.log(`Starting order creation transaction for user: ${validOrderInfo?.user.id}`);
+        const transactionalManager = queryRunner.manager;
+
+        this.logger.debug(`Valid suborders: ${JSON.stringify(validSubOrders, null, 2)}`);
+        try {
+            const totalAmount = validSubOrders.reduce((sum, subOrder) => {
+                return sum + subOrder.products.reduce((productSum, product) => {
+                    return productSum + (product.price_per_unit * product.requested_quantity);
+                }, 0);
+            }, 0);
+            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrdeGHN(validSubOrders, validOrderInfo);
+            const shippingAmount = resultGHN.reduce((sum, item) => sum + item.fee.main_service, 0)
+            const discount = 0;
+            const createOrder = transactionalManager.create(Order, {
+                customer_id: validOrderInfo!.user.id,
+                address_id: validOrderInfo!.address.location_id.toString(),
+                total_amount: totalAmount,
+                shipping_amount: shippingAmount, // Tổng tiền ship từ GHN
+                final_amount: totalAmount + shippingAmount - discount, // Tổng tiền = tổng sản phẩm + tiền ship - discount
+                currency: 'VND',
+                status: OrderStatus.PENDING,
+                discount_amount: discount,
+            });
+            const savedOrder = await transactionalManager.save(createOrder);
+            const payosOrder = await this.PayOSService.createPayOSOrder(
+                savedOrder.final_amount,
+                'Thanh toán từ Farmera',
+                savedOrder.order_id);
+
+            this.logger.debug(`Paytos response: ${JSON.stringify(payosOrder, null, 2)}`)
+
+                
+
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            // Always release the queryRunner
+            await queryRunner.release();
+        }
+
+
+
+        throw new Error('PAYOS payment method is not supported yet');
+    }
+
+    //Nhận vào danh sách các suborder và thông tin order, trả về danh sách các đơn hàng GHN đã tạo
+    async createOrdeGHN(validSubOrders: ShippingFeeDetails[], validOrderInfo: { user: User; address: Location; }): Promise<GhnCreatedOrderDataDto[]> {
+        try {
+            const createGHN: CreateGhnOrderDto[] = validSubOrders.map(subOrder => {
+                return {
+                    from_name: subOrder.farm_name,
+                    from_phone: subOrder.phone,
+                    from_address: subOrder.street_number + ' ' + subOrder.street + ', ' + subOrder.ward + ', ' + subOrder.district + ', ' + subOrder.city,
+                    from_district_name: subOrder.district,
+                    from_province_name: subOrder.city,
+                    from_ward_name: subOrder.ward, to_name: validOrderInfo!.address.name,
+                    to_phone: validOrderInfo!.address.phone,
+                    to_address: validOrderInfo!.address.address_line,
+                    to_ward_name: validOrderInfo!.address.ward,
+                    to_district_name: validOrderInfo!.address.district,
+                    to_province_name: validOrderInfo!.address.city,
+                    return_phone: subOrder.phone,
+                    return_address: subOrder.street_number + ' ' + subOrder.street + ', ' + subOrder.ward + ', ' + subOrder.district + ', ' + subOrder.city,
+
+                    cod_amount: subOrder.products.reduce((codSum, product) => {
+                        return codSum + (product.price_per_unit * product.requested_quantity);
+                    }, 0),
+                    weight: 0,// trong hàm tạo order sẽ tính lại weight
+                    payment_type_id: GhnPaymentTypeId.NGUOI_NHAN_THANH_TOAN,
+                    required_note: GhnRequiredNote.CHO_XEM_HANG_KHONG_THU,
+                    items: subOrder.products.map(product => ({
+                        name: product.product_name,
+                        quantity: product.quantity,
+                        weight: product.weight,
+                        length: 0,
+                        height: 0,
+                        width: 0,
+                        price: product.price_per_unit,
+                    })),
+                };
+            });
+
+
+            this.logger.debug(`Valid suborders for GHN: ${JSON.stringify(createGHN, null, 2)}`);
+
+            // Tạo đơn hàng GHN
+            const resultGHNPromises = createGHN.map(ghnOrder => {
+                return this.deliveryService.createOrderByGHN(ghnOrder);
+            });
+            const resultGHN: GhnCreatedOrderDataDto[] = await Promise.all(resultGHNPromises);
+            return resultGHN;
+        }
+        catch (error) {
+            this.logger.error(`Error creating GHN order: ${error.message}`, error.stack);
+            throw error;
         }
     }
 

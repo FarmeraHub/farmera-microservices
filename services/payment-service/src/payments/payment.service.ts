@@ -1,18 +1,22 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { EntityManager, Repository } from "typeorm";
 import { Payment } from "./entities/payment.entity";
 import { CreatePaymentDto } from "./dto/create-payment.dto";
 import { Order } from "src/orders/entities/order.entity";
 import { PaymentStatus } from "src/common/enums/payment/payment.enum";
-
+import { ConfigService } from "@nestjs/config";
 @Injectable()
 export class PaymentService {
+    private readonly logger = new Logger(PaymentService.name);
+    
     constructor(
         @InjectRepository(Payment)
         private readonly paymentRepository: Repository<Payment>,
+        private readonly configService: ConfigService,
     ) {
-        // Initialize any dependencies or services here if needed
+       
+
     }
     async create(payment: CreatePaymentDto, orderRoot: Order, transactionalManager: EntityManager): Promise<Payment> {
         const newPayment = transactionalManager.create(Payment, {
@@ -26,4 +30,9 @@ export class PaymentService {
         });
         return transactionalManager.save(newPayment);
     }
+
+
+
+    
+
 }

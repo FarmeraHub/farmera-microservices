@@ -336,7 +336,7 @@ export class BusinessValidationService {
         }
     }
 
-    async validateOrderInfo(value: OrderInfoRequestDto): Promise<{ user: User, address: Location } | Issue[]> {
+    async validateOrderInfo(value: OrderInfoRequestDto): Promise<{ user: User, address: Location, payment_type: string } | Issue[]> {
         const result: Issue[] = [];
         if (!value || !value.user_id) {
             result.push({
@@ -395,9 +395,13 @@ export class BusinessValidationService {
             if (!userLocation.name || userLocation.name.trim() === '') {
                 userLocation.name = user.last_name + ' ' + user.first_name; // Sử dụng tên người dùng nếu địa chỉ không có
             }
+            if (value.payment_type && value.payment_type == 'PAYOS') {
+                value.payment_type = 'PAYOS';
+            }
             return {
                 user,
                 address: userLocation,
+                payment_type: value.payment_type || 'COD',
             };
         } catch (error) {
             this.logger.error('Error during order info validation:', error);

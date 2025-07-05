@@ -18,6 +18,8 @@ export class SubOrderMapper {
             created: TypesMapper.toGrpcTimestamp(value.created),
             currency: value.currency,
             status: EnumMapper.toGrpcSubOrderStatus(value.status),
+            delivery: value.delivery ? DeliveryEnumMapper.toGrpcDelivery(value.delivery) : undefined,
         };
     }
+    
 }

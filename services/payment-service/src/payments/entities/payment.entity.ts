@@ -25,7 +25,7 @@ export class Payment {
         default: PaymentStatus.PENDING,
     })
     status: PaymentStatus;
-    @Column()
+    @Column({ nullable: true })
     transaction_id: string;
     @Column({ nullable: true })
     paid_at: Date;
@@ -33,6 +33,8 @@ export class Payment {
     created: Date;
     @Column()
     currency: string;
+    @Column({ nullable: true })
+    qr_code: string;
    
 
 
