@@ -27,6 +27,8 @@ export class PaymentService {
             transaction_id: payment.transaction_id ?? '',
             paid_at: payment.paid_at ? payment.paid_at : undefined,
             currency: payment.currency,
+            qr_code: payment.qr_code ?? '',
+            checkout_url: payment.checkout_url ?? '', 
         });
         return transactionalManager.save(newPayment);
     }

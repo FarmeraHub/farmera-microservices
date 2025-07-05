@@ -7,4 +7,6 @@ export class CreatePaymentDto {
     currency: string;
     paid_at: Date | null;
     status?: PaymentStatus;
+    qr_code?: string; 
+    checkout_url?: string; // Link hình ảnh QR code
 }

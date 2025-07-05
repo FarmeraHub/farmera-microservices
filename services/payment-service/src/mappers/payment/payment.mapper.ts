@@ -14,14 +14,19 @@ export class PaymentMapper {
             method: EnumMapper.toGrpcPaymentMethod(value.method),
             status: EnumMapper.toGrpcPaymentStatus(value.status),
             created_at: TypesMapper.toGrpcTimestamp(value.created),
-            paid_at: TypesMapper.toGrpcTimestamp(value.paid_at),
+            
         };
-
+        if (value.paid_at) {
+            grpcPayment.paid_at = TypesMapper.toGrpcTimestamp(value.paid_at);
+        }
         if (value.transaction_id) {
             grpcPayment.transaction_id = value.transaction_id;
         }
         if (value.qr_code) {
             grpcPayment.qr_code = value.qr_code;
+        }
+        if(value.checkout_url) {
+            grpcPayment.checkout_url = value.checkout_url;
         }
 
         return grpcPayment;

@@ -118,7 +118,7 @@ export class OrdersService {
             }, 0);
 
 
-            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrdeGHN(validSubOrders, validOrderInfo);
+            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrderGHN(validSubOrders, validOrderInfo);
 
             //Tính tiền ship của tất cả các suborder (dựa tren kết quả từ GHN)
             const shippingAmount = resultGHN.reduce((sum, item) => sum + item.fee.main_service, 0)
@@ -241,8 +241,11 @@ export class OrdersService {
                     return productSum + (product.price_per_unit * product.requested_quantity);
                 }, 0);
             }, 0);
-            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrdeGHN(validSubOrders, validOrderInfo);
+            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrderGHN(validSubOrders, validOrderInfo);
+            //Tính tiền ship của tất cả các suborder (dựa tren kết quả từ GHN)
             const shippingAmount = resultGHN.reduce((sum, item) => sum + item.fee.main_service, 0)
+            //giả sử bằng không (Vì tiền ship cao quá không test được :'(( 
+            // const shippingAmount = 0;
             const discount = 0;
             const createOrder = transactionalManager.create(Order, {
                 customer_id: validOrderInfo!.user.id,
@@ -262,24 +265,105 @@ export class OrdersService {
 
             this.logger.debug(`Paytos response: ${JSON.stringify(payosOrder, null, 2)}`)
 
-                
+            let paymentStus: PaymentStatus;
+            if (payosOrder.data.status === 'PENDING') {
+                paymentStus = PaymentStatus.PENDING;
+            } else if (payosOrder.data.status === 'COMPLETED') {
+                paymentStus = PaymentStatus.COMPLETED;
+            } else if (payosOrder.data.status === 'FAILED') {
+                paymentStus = PaymentStatus.FAILED;
+            } else if (payosOrder.data.status === 'CANCELED') {
+                paymentStus = PaymentStatus.CANCELED;
+            } else if (payosOrder.data.status === 'PROCESSING') {
+                paymentStus = PaymentStatus.PROCESSING;
+            }
+            else {
+                paymentStus = PaymentStatus.PENDING;
+            }
+            this.logger.debug(`Payment response by PayOS: ${JSON.stringify(payosOrder.data, null, 2)}`);
+            const savepayment = await this.paymentService.create(
+                {
+                    amount: payosOrder.data.amount,
+                    method: PaymentMethod.PAYOS,
+                    status: paymentStus,
+                    currency: payosOrder.data.currency,
+                    transaction_id: payosOrder.data.paymentLinkId,
+                    paid_at: null, // Chưa thanh toán ngay
+                    qr_code: payosOrder.data.qrCode, // Đảm bảo orderCode là số
+                    checkout_url: payosOrder.data.checkoutUrl, // Link thanh toán
+                },
+                savedOrder,
+                transactionalManager
+            );
 
-        }
-        catch (error) {
+            for (let i = 0; i < validSubOrders.length; i++) {
+                const subOrderData = validSubOrders[i];
+                const ghnOrderResult = resultGHN[i];
+
+                this.logger.log(`Processing suborder ${i + 1}/${validSubOrders.length} for farm: ${subOrderData.farm_name}`);
+
+                // 1. Tạo SubOrder
+                const createSubOrder = await this.subOrderService.create(
+                    {
+                        farm_id: subOrderData.farm_id,
+                        status: SubOrderStatus.PENDING,
+                        total_amount: subOrderData.total,
+                        discount_amount: 0, // Giả sử không có discount
+                        shipping_amount: subOrderData.shipping_fee,
+                        final_amount: subOrderData.total + subOrderData.shipping_fee, // Tổng tiền = tổng sản phẩm + tiền ship
+                        currency: 'VND',
+                        avartar_url: subOrderData.avatar_url,
+                        notes: '', // Có thể thêm ghi chú nếu cần
+                    },
+                    savedOrder,
+                    transactionalManager);
+
+                for (const product of subOrderData.products) {
+                    const orderDetail = await this.orderDetailService.create(
+                        product, // Sử dụng Item (Item là sản phẩm đã được validate)
+                        createSubOrder,
+                        transactionalManager
+                    );
+
+                }
+                const delivery = await this.deliveryService.create(
+                    ghnOrderResult,
+                    createSubOrder,
+                    createSubOrder.total_amount,
+                    transactionalManager
+                );
+
+            }
+            await queryRunner.commitTransaction();
+            const order = await this.orderRepository.createQueryBuilder('order')
+                .leftJoinAndSelect('order.payment', 'payment')
+                .leftJoinAndSelect('order.sub_orders', 'sub_order')
+                .leftJoinAndSelect('sub_order.delivery', 'delivery')
+                .leftJoinAndSelect('sub_order.order_details', 'order_detail')
+                .where('order.order_id = :orderId', { orderId: savedOrder.order_id })
+                .getOne();
+            if (!order) {
+                return [{
+                    reason: 'ORDER_NOT_FOUND',
+                    details: `Order with ID ${savedOrder.order_id} not found after creation.`,
+                    user_id: validOrderInfo!.user.id,
+                }];
+            }
+            this.logger.log(`Order details for PAYOS: ${JSON.stringify(order, null, 2)}`);
+            return order;
+
+
+        } catch (error) {
             await queryRunner.rollbackTransaction();
-            throw error;
+            throw new Error(`Error during order creation transaction: ${error.message}`);
         } finally {
             // Always release the queryRunner
             await queryRunner.release();
         }
-
-
-
-        throw new Error('PAYOS payment method is not supported yet');
     }
 
     //Nhận vào danh sách các suborder và thông tin order, trả về danh sách các đơn hàng GHN đã tạo
-    async createOrdeGHN(validSubOrders: ShippingFeeDetails[], validOrderInfo: { user: User; address: Location; }): Promise<GhnCreatedOrderDataDto[]> {
+    async createOrderGHN(validSubOrders: ShippingFeeDetails[], validOrderInfo: { user: User; address: Location; }): Promise<GhnCreatedOrderDataDto[]> {
         try {
             const createGHN: CreateGhnOrderDto[] = validSubOrders.map(subOrder => {
                 return {
@@ -305,7 +389,7 @@ export class OrdersService {
                     required_note: GhnRequiredNote.CHO_XEM_HANG_KHONG_THU,
                     items: subOrder.products.map(product => ({
                         name: product.product_name,
-                        quantity: product.quantity,
+                        quantity: product.requested_quantity,
                         weight: product.weight,
                         length: 0,
                         height: 0,

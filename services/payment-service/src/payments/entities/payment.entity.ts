@@ -35,6 +35,8 @@ export class Payment {
     currency: string;
     @Column({ nullable: true })
     qr_code: string;
+    @Column({ nullable: true })
+    checkout_url: string; // Link hình ảnh QR code
    
 
 

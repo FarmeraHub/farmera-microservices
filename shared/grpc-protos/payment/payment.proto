@@ -110,10 +110,11 @@ message Payment {
   farmera.common.PaymentMethod method = 4;
   farmera.common.PaymentStatus status = 5;
   optional string transaction_id = 6;
-  farmera.common.Timestamp paid_at = 7;
+  optional farmera.common.Timestamp paid_at = 7;
   farmera.common.Timestamp created_at = 8;
   string currency = 9;
   optional string qr_code = 10;
+  optional string checkout_url = 11;
 }
 
 // Payment refund

@@ -12,7 +12,7 @@ export class ResponseOrderPayOSDataDto {
     amount: number;
     description: string;
     orderCode: string;
-    curency: string;
+    currency: string;
     paymentLinkId: string;
     status: string;
     checkoutUrl: string;
