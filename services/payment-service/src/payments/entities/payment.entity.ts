@@ -1,6 +1,6 @@
 import { PaymentMethod, PaymentStatus } from "src/common/enums/payment/payment.enum";
 import { Order } from "src/orders/entities/order.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('payment')
 export class Payment {
@@ -31,6 +31,8 @@ export class Payment {
     paid_at: Date;
     @CreateDateColumn()
     created: Date;
+    @UpdateDateColumn()
+    updated: Date;
     @Column()
     currency: string;
     @Column({ nullable: true })

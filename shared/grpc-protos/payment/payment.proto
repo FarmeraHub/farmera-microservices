@@ -94,7 +94,7 @@ message OrderItem {
   int32 product_id = 3;
   string product_name = 4;
   double price_per_unit = 5;
-  int32 quantity = 6;
+  int32 request_quantity = 6;
   string unit = 7;
   double total_price = 8;
   double weight = 9;
@@ -115,6 +115,7 @@ message Payment {
   string currency = 9;
   optional string qr_code = 10;
   optional string checkout_url = 11;
+  farmera.common.Timestamp updated_at = 12;
 }
 
 // Payment refund
@@ -178,6 +179,8 @@ message Delivery {
   string delivery_method = 10; //Hàng nhẹ/ hàng nặng
   farmera.common.Timestamp created_at = 11;
   farmera.common.Timestamp updated_at = 12;
+  farmera.common.DeliveryStatus status = 13;
+  
 }
 
 // Delivery event tracking
@@ -662,7 +665,7 @@ message OrderRequest{
 
 
 message CalculateShippingFeeRequest{
-  SubOrderRequest suborders = 1;
+  SubOrderRequest suborder = 1;
   OrderInfoRequest order_info = 2;
 }
 // =================== RESPONSE CalculateShippingFee MESSAGES ===================
@@ -708,7 +711,7 @@ message ValidationErrors {
 // **CẬP NHẬT**: Response chính sử dụng oneof
 message CalculateShippingFeeResponse {
   oneof result {
-    ShippingFeeDetails details = 1;     // Trả về khi MỌI THỨ đều hợp lệ
+    ShippingFeeDetails detail = 1;     // Trả về khi MỌI THỨ đều hợp lệ
     ValidationErrors errors = 2;        // Trả về khi có BẤT KỲ lỗi validation nào
   }
 }

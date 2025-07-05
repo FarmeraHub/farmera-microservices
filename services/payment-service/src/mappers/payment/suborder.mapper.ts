@@ -3,7 +3,7 @@ import { SubOrder as GrpcSubOrder } from "@farmera/grpc-proto/dist/payment/payme
 import { TypesMapper } from "../common/types.mapper";
 import { EnumMapper } from "../common/enum.mapper";
 import { OrderMapper } from "./order.mapper";
-import { DeliveryEnumMapper } from "./delivery.mapper";
+import { DeliveryMapper } from "./delivery.mapper";
 import { OrderDetailMapper } from "./order-detail.mapper";
 
 export class SubOrderMapper {
@@ -18,7 +18,7 @@ export class SubOrderMapper {
             created: TypesMapper.toGrpcTimestamp(value.created),
             currency: value.currency,
             status: EnumMapper.toGrpcSubOrderStatus(value.status),
-            delivery: value.delivery ? DeliveryEnumMapper.toGrpcDelivery(value.delivery) : undefined,
+            delivery: value.delivery ? DeliveryMapper.toGrpcDelivery(value.delivery) : undefined,
         };
     }
     

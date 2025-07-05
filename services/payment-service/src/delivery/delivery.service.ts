@@ -487,7 +487,7 @@ export class DeliveryService {
                 const listItemDelivery: ItemDeliveryDto[] = validSubOrder.products.map((item: Item) => {
                     return {
                         name: item.product_name,
-                        quantity: item.quantity,
+                        quantity: item.requested_quantity,
                         weight: item.weight,
                         length: 0, // Việc tạo sản phẩm chưa có các trường này, nên tạm thời để 0
                         width: 0,

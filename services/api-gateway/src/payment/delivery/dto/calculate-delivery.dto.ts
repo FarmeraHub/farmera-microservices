@@ -55,7 +55,7 @@ export class OrderInfoRequestDto {
 
     @ApiProperty({
         description: 'Payment method type',
-        example: 'credit_card',
+        example: 'PAYOS',
     })
     @IsOptional()
     @IsString()
@@ -70,7 +70,7 @@ export class CalculateDeliveryRequestDto {
     @IsNotEmpty()
     @ValidateNested({ each: true })
     @Type(() => SubOrderRequestDto)
-    suborders: SubOrderRequestDto;
+    suborder: SubOrderRequestDto;
 
     @ApiProperty({
         description: 'Order information including user ID and address ID',

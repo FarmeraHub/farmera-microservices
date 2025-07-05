@@ -6,6 +6,8 @@ import { PaymentController } from "./payment.controller";
 import { PaymentClientService } from "./payment.client.service";
 import { DeliveryController } from './delivery/delivery.controller';
 import { DeliveryService } from './delivery/delivery.service';
+import { OrderController } from "./order/order.controller";
+import { OrderService } from "./order/order.service";
 
 @Module({
     imports: [
@@ -30,8 +32,8 @@ import { DeliveryService } from './delivery/delivery.service';
             }
         ])
     ],
-    controllers: [PaymentController, DeliveryController],
-    providers: [PaymentClientService, DeliveryService],
+    controllers: [PaymentController, DeliveryController,OrderController],
+    providers: [PaymentClientService, DeliveryService,OrderService],
     exports: [],
 })
 export class PaymentModule { }

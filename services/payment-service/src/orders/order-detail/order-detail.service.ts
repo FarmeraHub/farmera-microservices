@@ -22,7 +22,7 @@ export class OrderDetailService {
         const newOrderDetail = transactionalManager.create(OrderDetail, {
             product_id: product.product_id,
             product_name: product.product_name,
-            quantity: product.requested_quantity,
+            request_quantity: product.requested_quantity,
             price_per_unit: product.price_per_unit,
             unit: product.unit,
             weight: product.weight,

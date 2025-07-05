@@ -14,7 +14,7 @@ export class OrderDetail{
     product_name: string;
 
     @Column()
-    quantity: number;
+    request_quantity: number;
     @Column()
     price_per_unit: number;
     @Column()

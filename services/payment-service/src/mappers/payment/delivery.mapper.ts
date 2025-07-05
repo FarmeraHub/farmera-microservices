@@ -8,8 +8,9 @@ import { Issue, Item, ShippingFeeDetails } from "src/delivery/enitites/cart.enti
 import { Delivery } from "src/delivery/enitites/delivery.entity";
 import { SubOrderMapper } from "./suborder.mapper";
 import { TypesMapper } from "../common/types.mapper";
+import { EnumMapper } from "../common/enum.mapper";
 
-export class DeliveryEnumMapper {
+export class DeliveryMapper {
     static toGrpcItem(values: Item): GrpcItemResponse {
         return {
             product_id: values.product_id,
@@ -47,6 +48,7 @@ export class DeliveryEnumMapper {
             created_at: TypesMapper.toGrpcTimestamp(value.created),
             updated_at: TypesMapper.toGrpcTimestamp(value.updated),
             delivery_method: value.delivery_method,
+            status: EnumMapper.toGrpcDeliveryStatus(value.status),
         } 
     }
 

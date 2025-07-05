@@ -14,6 +14,7 @@ export class PaymentMapper {
             method: EnumMapper.toGrpcPaymentMethod(value.method),
             status: EnumMapper.toGrpcPaymentStatus(value.status),
             created_at: TypesMapper.toGrpcTimestamp(value.created),
+            updated_at: TypesMapper.toGrpcTimestamp(value.updated),
             
         };
         if (value.paid_at) {

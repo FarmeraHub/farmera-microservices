@@ -13,7 +13,7 @@ import { DeliveryService } from "src/delivery/delivery.service";
 import { OrdersService } from "src/orders/order/orders.service";
 import { BusinessValidationService } from "src/business-validation/business-validation.service";
 import { ErrorMapper } from "src/mappers/common/error.mapper";
-import { DeliveryEnumMapper } from "src/mappers/payment/delivery.mapper";
+import { DeliveryMapper } from "src/mappers/payment/delivery.mapper";
 import { IssueMapper } from "src/mappers/payment/Issue.mapper";
 import { OrderMapper } from "src/mappers/payment/order.mapper";
 import { PaymentMapper } from "src/mappers/payment/payment.mapper";
@@ -37,8 +37,8 @@ export class PaymentGrpcController implements PaymentServiceController {
 
             const result = await this.deliveryService.CalculateShippingFee({
                 suborder: {
-                    farm_id: request.suborders!.farm_id,
-                    products: request.suborders!.products.map(product => ({
+                    farm_id: request.suborder!.farm_id,
+                    products: request.suborder!.products.map(product => ({
                         product_id: product.product_id,
                         quantity: product.quantity,
                     })),
@@ -52,8 +52,8 @@ export class PaymentGrpcController implements PaymentServiceController {
                 const issues = result.map(issue => IssueMapper.toGrpcIssue(issue));
                 return { errors: { issues } };
             } else {
-                const shippingFeeDetails = DeliveryEnumMapper.toGrpcShippingFeeDetails(result);
-                return { details: shippingFeeDetails };
+                const shippingFeeDetails = DeliveryMapper.toGrpcShippingFeeDetails(result);
+                return { detail: shippingFeeDetails };
             }
         }
         catch (error) {

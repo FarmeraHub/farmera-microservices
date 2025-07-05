@@ -4,7 +4,6 @@ import {
 } from "@farmera/grpc-proto/dist/payment/payment";
 import { ClientGrpc } from "@nestjs/microservices";
 import { OrderMapper } from "src/mappers/payment/order.mapper";
-import { CalculateShippingFeeDto } from "./order/dto/calculate-shipping-fee-multi-item.dto";
 @Injectable()
 export class PaymentClientService implements OnModuleInit {
     private readonly logger = new Logger(PaymentClientService.name);
@@ -21,8 +20,8 @@ export class PaymentClientService implements OnModuleInit {
         } else {
             this.logger.log('PaymentService gRPC client initialized successfully.');
         }
-    } 
-    
-    
+    }
+
+
 
 }

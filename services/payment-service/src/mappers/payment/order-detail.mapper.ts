@@ -10,7 +10,7 @@ export class OrderDetailMapper {
             item_id: value.order_detail_id,
             product_id: value.product_id,
             product_name: value.product_name,
-            quantity: value.quantity,
+            request_quantity: value.request_quantity,
             price_per_unit: value.price_per_unit,
             unit: value.unit,
             weight: value.weight,

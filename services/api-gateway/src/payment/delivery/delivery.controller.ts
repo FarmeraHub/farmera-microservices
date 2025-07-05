@@ -4,6 +4,8 @@ import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiInternalServerErrorRe
 import { CalculateDeliveryRequestDto } from './dto/calculate-delivery.dto';
 import { User } from 'src/common/decorators/user.decorator';
 import { User as UserInterface } from 'src/common/interfaces/user.interface';
+import { ShippingDetail } from '../order/entities/shipping-detail.entity';
+import { Issue } from '../order/entities/issue.entity';
 
 @ApiTags('Delivery')
 @Controller('delivery')
@@ -21,10 +23,10 @@ export class DeliveryController {
     async calculateShippingFee(
         @User() user: UserInterface,
         @Body() calculateDeliveryRequestDto: CalculateDeliveryRequestDto,
-    ) {
+    ):Promise<ShippingDetail| Issue []> {
         // This method will handle the logic for calculating shipping fees
         // The actual implementation will depend on the business logic and requirements
-        console.log(`calculateShippingFee called with userId: ${user.id}, suborders: ${JSON.stringify(calculateDeliveryRequestDto.suborders)}, address_id: ${calculateDeliveryRequestDto.order_info.address_id}`, 'DeliveryController');
+        console.log(`calculateShippingFee called with userId: ${user.id}, suborders: ${JSON.stringify(calculateDeliveryRequestDto.suborder)}, address_id: ${calculateDeliveryRequestDto.order_info.address_id}`, 'DeliveryController');
         return await this.deliveryService.calculateShippingFee(user.id, calculateDeliveryRequestDto);
     }
 
