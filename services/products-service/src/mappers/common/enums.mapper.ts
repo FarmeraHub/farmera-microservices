@@ -1,10 +1,19 @@
-import { FarmStatus as GrpcFarmStatus, IdentificationMethod as GrpcIdentificationMethod, IdentificationStatus as GrpcIdentificationStatus, ProductStatus as GrpcProductStatus, PaginationOrder as GrpcPaginationOrder, ProcessStage as GrpcProcessStage } from "@farmera/grpc-proto/dist/common/enums";
+import {
+    FarmStatus as GrpcFarmStatus,
+    IdentificationMethod as GrpcIdentificationMethod,
+    IdentificationStatus as GrpcIdentificationStatus,
+    ProductStatus as GrpcProductStatus,
+    PaginationOrder as GrpcPaginationOrder,
+    ProcessStage as GrpcProcessStage,
+    UpdateProductQuantityOperation as GrpcUpdateProductQuantityOperation,
+} from "@farmera/grpc-proto/dist/common/enums";
 import { BadRequestException, InternalServerErrorException } from "@nestjs/common";
 import { FarmStatus } from "src/common/enums/farm-status.enum";
 import { ProductStatus } from "src/common/enums/product-status.enum";
 import { IdentificationMethod, IdentificationStatus } from "src/farms/entities/identification.entity";
 import { Order } from "src/pagination/dto/pagination-options.dto";
 import { ProcessStage } from "src/common/enums/process-stage.enum";
+import { UpdateProductQuantityOperation } from "src/common/enums/update-product-quantity-operation.enum";
 
 export class EnumsMapper {
     static toGrpcProductStatus(status: ProductStatus): GrpcProductStatus {
@@ -104,6 +113,13 @@ export class EnumsMapper {
             case "PROCESS_STAGE_PRODUCTION": return ProcessStage.PRODUCTION;
             case "PROCESS_STAGE_COMPLETION": return ProcessStage.COMPLETION;
             default: throw new BadRequestException("Invalid process stage");
+        }
+    }
+    static fromGrpcUpdateProductQuantityOperation(value: GrpcUpdateProductQuantityOperation): UpdateProductQuantityOperation {
+        switch (value.toString()) {
+            case "UPDATE_PRODUCT_QUANTITY_OPERATION_INCREASE": return UpdateProductQuantityOperation.INCREASE;
+            case "UPDATE_PRODUCT_QUANTITY_OPERATION_DECREASE": return UpdateProductQuantityOperation.DECREASE;
+            default: throw new Error("Invalid update product quantity operation");
         }
     }
 }

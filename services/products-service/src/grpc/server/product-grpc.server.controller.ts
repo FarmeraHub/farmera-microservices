@@ -126,6 +126,10 @@ import {
   GetProductDiariesRequest,
   GetProductDiariesResponse, GetReviewOverviewRequest,
   GetReviewOverviewResponse,
+  UpdateQuantityRequest,
+  UpdateQuantityResponse,
+  UpdateQuantitiesRequest,
+  UpdateQuantitiesResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
@@ -152,6 +156,7 @@ import { StepDiaryService } from 'src/diary/step-diary.service';
 import { DiaryService } from 'src/diary/diary.service';
 import { ProcessTemplateMapper } from 'src/mappers/product/process-template.mapper';
 import { DiaryMapper } from 'src/mappers/product/diary.mapper';
+import { UpdateProductQuantityOperation } from 'src/common/enums/update-product-quantity-operation.enum';
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -1458,6 +1463,90 @@ export class ProductGrpcServerController implements ProductsServiceController {
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);
+    }
+  }
+  async updateProductQuantity(request: UpdateQuantityRequest): Promise<UpdateQuantityResponse> {
+    try {
+      if (!request || !request.item) {
+        return {
+          success: false,
+          message: 'Thiếu thông tin bắt buộc: item'
+        };
+      }
+      if (!request.item.product_id || !request.item.request_quantity || !request.item.operation) {
+        return {
+          success: false,
+          message: 'Thiếu thông tin bắt buộc: product_id, request_quantity, operation'
+        };
+      }
+
+      if (request.item.request_quantity <= 0) {
+        return {
+          success: false,
+          message: 'Số lượng yêu cầu phải lớn hơn 0'
+        };
+      }
+      const operation: UpdateProductQuantityOperation = EnumsMapper.fromGrpcUpdateProductQuantityOperation(request.item.operation);
+      if (!operation) {
+        return {
+          success: false,
+          message: 'Phương thức cập nhật không hợp lệ'
+        };
+      }
+
+      const result = await this.productsService.updateProductQuantity(
+        request.item.product_id,
+        request.item.request_quantity,
+        operation
+      );
+      return {
+        success: result.success,
+        message: result.message,
+      };
+
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Lỗi hệ thống khi cập nhật số lượng sản phẩm'
+      };
+    }
+  }
+
+  async updateProductsQuantity(request: UpdateQuantitiesRequest): Promise<UpdateQuantitiesResponse> {
+    try {
+      if (!request || !request.items || request.items.length === 0) {
+        return {
+          success: false,
+          message: 'Thiếu thông tin bắt buộc: items',
+          results: []
+        };
+      }
+
+      const items = request.items.map(item => ({
+        product_id: item.product_id,
+        request_quantity: item.request_quantity,
+        operation: EnumsMapper.fromGrpcUpdateProductQuantityOperation(item.operation)
+      }));
+
+      const result = await this.productsService.updateProductQuantities(items);
+      return {
+        success: result.success,
+        message: result.message,
+        results: result.results.map(res => ({
+          product_id: res.product_id,
+          success: res.success,
+          message: res.message,
+          previous_quantity: res.previous_quantity ?? 0,
+          new_quantity: res.new_quantity ?? 0
+        }))
+      };
+
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Lỗi hệ thống khi cập nhật số lượng sản phẩm',
+        results: []
+      };
     }
   }
 }
