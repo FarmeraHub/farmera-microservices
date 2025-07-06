@@ -16,6 +16,7 @@ import {
     SubOrderStatus as GrpcSubOrderStatus,
     PaymentStatus as GrpcPaymentStatus,
     DeliveryStatus as GrpcDeliveryStatus,
+    UpdateProductQuantityOperation as GrpcUpdateProductQuantityOperation,
 } from "@farmera/grpc-proto/dist/common/enums";
 import { FarmStatus } from "src/common/enums/product/farm-status.enum";
 import { ProductStatus } from "src/common/enums/product/product-status.enum";
@@ -30,6 +31,7 @@ import { OrderStatus } from "src/common/enums/payment/order-status.enum";
 import { SubOrderStatus } from "src/common/enums/payment/sub-order-status.enum";
 import { PaymentMethod, PaymentStatus } from "src/common/enums/payment/payment.enum";
 import { DeliveryStatus } from "src/common/enums/payment/delivery.enum";
+import { UpdateProductQuantityOperation } from "src/common/enums/product/update-product-quantity-operation.enum";
 
 export class EnumMapper {
     static fromGrpcIdentificationMethod(value: GrpcIdentificationMethod): IdentificationMethod {
@@ -291,6 +293,21 @@ export class EnumMapper {
             case DeliveryStatus.CANCELED: return GrpcDeliveryStatus.DELIVERY_STATUS_CANCELED;
             case DeliveryStatus.RETURNED: return GrpcDeliveryStatus.DELIVERY_STATUS_RETURNED;
             default: throw new Error("Invalid delivery status");
+        }
+    }
+
+    static toGrpcUpdateProductQuantityOperation(value:UpdateProductQuantityOperation) : GrpcUpdateProductQuantityOperation {
+        switch (value) {
+            case UpdateProductQuantityOperation.INCREASE: return GrpcUpdateProductQuantityOperation.INCREASE;
+            case UpdateProductQuantityOperation.DECREASE: return GrpcUpdateProductQuantityOperation.DECREASE;
+            default: throw new Error("Invalid update product quantity operation");
+        }
+    }
+    static fromGrpcUpdateProductQuantityOperation(value: GrpcUpdateProductQuantityOperation): UpdateProductQuantityOperation {
+        switch (value.toString()) {
+            case "INCREASE": return UpdateProductQuantityOperation.INCREASE;
+            case "DECREASE": return UpdateProductQuantityOperation.DECREASE;
+            default: throw new Error("Invalid update product quantity operation");
         }
     }
 }

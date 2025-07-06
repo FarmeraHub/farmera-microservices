@@ -489,7 +489,7 @@ export class ProductsService implements OnModuleInit {
       this.logger.log(
         `(findProductsByIds) Tìm thấy ${products.length} sản phẩm với ID: ${productIds.join(', ')}`,
       );
-      this.logger.log(`(Products) ${JSON.stringify(products, null, 2)}`);
+      //this.logger.log(`(Products) ${JSON.stringify(products, null, 2)}`);
       return products;
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
@@ -1119,6 +1119,7 @@ export class ProductsService implements OnModuleInit {
     await queryRunner.startTransaction();
 
     try {
+
       const results: Array<{
         product_id: number;
         success: boolean;
@@ -1131,7 +1132,7 @@ export class ProductsService implements OnModuleInit {
 
       for (const item of items) {
         try {
-          if (!item.product_id || !item.request_quantity || !item.operation) {
+          if (item.product_id === undefined || !item.request_quantity || !item.operation) {
             results.push({
               product_id: item.product_id || 0,
               success: false,
@@ -1150,7 +1151,6 @@ export class ProductsService implements OnModuleInit {
             failCount++;
             continue;
           }
-
           const product = await queryRunner.manager.findOne(Product, {
             where: { product_id: item.product_id }
           });
@@ -1160,15 +1160,6 @@ export class ProductsService implements OnModuleInit {
               product_id: item.product_id,
               success: false,
               message: 'Sản phẩm không tồn tại'
-            });
-            failCount++;
-            continue;
-          }
-          if (product.status !== ProductStatus.OPEN_FOR_SALE) {
-            results.push({
-              product_id: item.product_id,
-              success: false,
-              message: 'Sản phẩm không thể cập nhật số lượng (status không hợp lệ)'
             });
             failCount++;
             continue;

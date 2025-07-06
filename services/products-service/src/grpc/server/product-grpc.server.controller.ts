@@ -1527,8 +1527,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
         request_quantity: item.request_quantity,
         operation: EnumsMapper.fromGrpcUpdateProductQuantityOperation(item.operation)
       }));
-
       const result = await this.productsService.updateProductQuantities(items);
+      this.logger.debug(`Kết quả giảm quanties:${JSON.stringify(result, null, 2)}`)
       return {
         success: result.success,
         message: result.message,

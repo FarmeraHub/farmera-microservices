@@ -21,6 +21,8 @@ import { CreateGhnOrderDto, GhnPaymentTypeId, GhnRequiredNote } from "src/delive
 import { GhnFeeData } from "src/delivery/dto/ghn-fee-response.dto";
 import { GhnCreatedOrderDataDto } from "src/delivery/dto/ghn-order-response.dto";
 import { PaymentMethod, PaymentStatus } from "src/common/enums/payment/payment.enum";
+import { ProductsGrpcClientService } from 'src/grpc/client/product.service';
+import { UpdateProductQuantityOperation } from 'src/common/enums/product/update-product-quantity-operation.enum';
 
 @Injectable()
 export class OrdersService {
@@ -39,6 +41,7 @@ export class OrdersService {
         @InjectDataSource()
         private dataSource: DataSource,
         private readonly PayOSService: PayOSService,
+        private readonly productsGrpcClientService: ProductsGrpcClientService,
         // private readonly entityManager: EntityManager,
     ) {
     }
@@ -101,6 +104,18 @@ export class OrdersService {
     }
 
     async createOrderWithTransactionForCOD(validSubOrders: ShippingFeeDetails[], validOrderInfo: { user: User; address: Location; }, orderRequest: OrderRequestDto): Promise<Order | Issue[]> {
+        //Trừ số lượng sản phẩm
+        try {
+            await this.updateProductQuantities(validSubOrders, UpdateProductQuantityOperation.DECREASE);
+            this.logger.log(`Successfully decreased product quantities before transaction`);
+        } catch (error) {
+            this.logger.error(`Failed to decrease product quantities: ${error.message}`);
+            return [{
+                reason: 'INSUFFICIENT_STOCK',
+                details: `Không đủ số lượng sản phẩm: ${error.message}`,
+                user_id: validOrderInfo.user.id,
+            }];
+        }
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         // Bắt đầu một transaction
@@ -139,7 +154,7 @@ export class OrdersService {
             //     await this.subOrderService.create(subOrder, createOrder, transactionalManager);
             // });
             // await Promise.all(createSuborders);
-
+            let subOrderTemp: SubOrder[] = []
             // lưu mỗi suborder vào db
             for (let i = 0; i < validSubOrders.length; i++) {
                 const subOrderData = validSubOrders[i];
@@ -162,6 +177,7 @@ export class OrdersService {
                     },
                     savedOrder,
                     transactionalManager);
+                subOrderTemp.push(createSubOrder);
 
                 for (const product of subOrderData.products) {
                     const orderDetail = await this.orderDetailService.create(
@@ -205,11 +221,13 @@ export class OrdersService {
                 .getOne();
 
             if (!order) {
-                return [{
-                    reason: 'ORDER_NOT_FOUND',
-                    details: `Order with ID ${savedOrder.order_id} not found after creation.`,
-                    user_id: validOrderInfo!.user.id,
-                }];
+                //nếu không query lại được thì trả về savedOrder
+                return {
+                    ...savedOrder,
+                    payment: savePayment,
+                    sub_orders: subOrderTemp,
+
+                }
             }
             this.logger.log(`Order details: ${JSON.stringify(order, null, 2)}`);
             return order;
@@ -219,6 +237,7 @@ export class OrdersService {
             // Rollback transaction if any error occurs
             // chưa có logic huỷ đơn hàng của gian hàng nhanh.
             await queryRunner.rollbackTransaction();
+            await this.updateProductQuantities(validSubOrders, UpdateProductQuantityOperation.INCREASE);
             throw error;
         } finally {
             // Always release the queryRunner
@@ -227,6 +246,18 @@ export class OrdersService {
 
     }
     async createOrderWithTransactionForPayOS(validSubOrders: ShippingFeeDetails[], validOrderInfo: { user: User; address: Location; }, orderRequest: OrderRequestDto): Promise<Order | Issue[]> {
+
+        try {
+            await this.updateProductQuantities(validSubOrders, UpdateProductQuantityOperation.DECREASE);
+            this.logger.log(`Successfully decreased product quantities before transaction`);
+        } catch (error) {
+            this.logger.error(`Failed to decrease product quantities: ${error.message}`);
+            return [{
+                reason: 'INSUFFICIENT_STOCK',
+                details: `Không đủ số lượng sản phẩm: ${error.message}`,
+                user_id: validOrderInfo.user.id,
+            }];
+        }
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         // Bắt đầu một transaction
@@ -281,7 +312,7 @@ export class OrdersService {
                 paymentStus = PaymentStatus.PENDING;
             }
             this.logger.debug(`Payment response by PayOS: ${JSON.stringify(payosOrder.data, null, 2)}`);
-            const savepayment = await this.paymentService.create(
+            const savePayment = await this.paymentService.create(
                 {
                     amount: payosOrder.data.amount,
                     method: PaymentMethod.PAYOS,
@@ -295,6 +326,7 @@ export class OrdersService {
                 savedOrder,
                 transactionalManager
             );
+            let subOrderTemp: SubOrder[] = [];
 
             for (let i = 0; i < validSubOrders.length; i++) {
                 const subOrderData = validSubOrders[i];
@@ -317,6 +349,7 @@ export class OrdersService {
                     },
                     savedOrder,
                     transactionalManager);
+                subOrderTemp.push(createSubOrder);
 
                 for (const product of subOrderData.products) {
                     const orderDetail = await this.orderDetailService.create(
@@ -343,11 +376,12 @@ export class OrdersService {
                 .where('order.order_id = :orderId', { orderId: savedOrder.order_id })
                 .getOne();
             if (!order) {
-                return [{
-                    reason: 'ORDER_NOT_FOUND',
-                    details: `Order with ID ${savedOrder.order_id} not found after creation.`,
-                    user_id: validOrderInfo!.user.id,
-                }];
+                return {
+                    ...savedOrder,
+                    payment: savePayment,
+                    sub_orders: subOrderTemp,
+
+                }
             }
             this.logger.log(`Order details for PAYOS: ${JSON.stringify(order, null, 2)}`);
             return order;
@@ -355,7 +389,8 @@ export class OrdersService {
 
         } catch (error) {
             await queryRunner.rollbackTransaction();
-            throw new Error(`Error during order creation transaction: ${error.message}`);
+            await this.updateProductQuantities(validSubOrders, UpdateProductQuantityOperation.INCREASE);
+            throw error;
         } finally {
             // Always release the queryRunner
             await queryRunner.release();
@@ -414,5 +449,50 @@ export class OrdersService {
             throw error;
         }
     }
+    private async updateProductQuantities(
+        validSubOrders: ShippingFeeDetails[],
+        operation: UpdateProductQuantityOperation
+    ): Promise<void> {
+        try {
+            const productUpdates: {
+                product_id: number;
+                operation: UpdateProductQuantityOperation;
+                request_quantity: number;
+            }[] = [];
 
+            for (const subOrder of validSubOrders) {
+                for (const product of subOrder.products) {
+                    productUpdates.push({
+                        product_id: product.product_id,
+                        operation: operation,
+                        request_quantity: product.requested_quantity
+
+                    });
+                }
+            }
+
+            this.logger.debug(`${operation} quantities for ${productUpdates.length} products`);
+
+            const updateResult = await this.productsGrpcClientService.updateProductsQuantity(productUpdates);
+            this.logger.debug(`kết quả giảm sản phẩm: ${JSON.stringify(updateResult, null, 2)}`)
+            updateResult.results.map(test => 
+                this.logger.log(`kết quả chi tiết giảm sản phẩm: ${JSON.stringify(test, null, 2)}`)
+            )
+             
+
+            if (!updateResult.success) {
+                const failedProducts = updateResult.results
+                    .filter(r => !r.success)
+                    .map(r => `Product ${r.product_id}: ${r.message}`);
+
+                throw new Error(`Không thể cập nhật số lượng sản phẩm: ${failedProducts.join(', ')}`);
+            }
+
+            this.logger.log(`Successfully ${operation} quantities for ${productUpdates.length} products`);
+           
+        } catch (error) {
+            this.logger.error(`Error ${operation} product quantities: ${error.message}`);
+            throw error;
+        }
+    }
 }

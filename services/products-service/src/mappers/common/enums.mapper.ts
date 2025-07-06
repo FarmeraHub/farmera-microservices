@@ -117,8 +117,8 @@ export class EnumsMapper {
     }
     static fromGrpcUpdateProductQuantityOperation(value: GrpcUpdateProductQuantityOperation): UpdateProductQuantityOperation {
         switch (value.toString()) {
-            case "UPDATE_PRODUCT_QUANTITY_OPERATION_INCREASE": return UpdateProductQuantityOperation.INCREASE;
-            case "UPDATE_PRODUCT_QUANTITY_OPERATION_DECREASE": return UpdateProductQuantityOperation.DECREASE;
+            case "INCREASE": return UpdateProductQuantityOperation.INCREASE;
+            case "DECREASE": return UpdateProductQuantityOperation.DECREASE;
             default: throw new Error("Invalid update product quantity operation");
         }
     }

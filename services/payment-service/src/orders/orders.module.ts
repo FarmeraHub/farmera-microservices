@@ -11,6 +11,7 @@ import { OrdersService } from './order/orders.service';
 import { OrderDetailService } from './order-detail/order-detail.service';
 import { SubOrderService } from './sub-order/sub-order.service';
 import { PayOSModule } from 'src/payos/payos.module';
+import { PaymentClientModule } from 'src/grpc/client/payment-client.module';
 
 @Module({
     imports: [
@@ -21,6 +22,8 @@ import { PayOSModule } from 'src/payos/payos.module';
         DeliveryModule,
         BusinessValidationModule,
         PayOSModule,
+        PaymentClientModule,
+        
     ],
     providers: [OrdersService,OrderDetailService, SubOrderService],
     exports: [OrdersService, OrderDetailService, SubOrderService],
