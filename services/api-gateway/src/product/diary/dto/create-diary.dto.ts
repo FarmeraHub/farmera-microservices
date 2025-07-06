@@ -6,7 +6,17 @@ import {
   IsDateString,
   IsNumber,
   IsArray,
+  IsEnum,
 } from 'class-validator';
+
+export enum DiaryStatus {
+  DRAFT = 'DRAFT',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  PENDING_REVIEW = 'PENDING_REVIEW',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
 
 export class CreateDiaryDto {
   @ApiProperty({ description: 'ID of the process', example: 1 })
@@ -79,4 +89,13 @@ export class CreateDiaryDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Status of the diary entry',
+    enum: DiaryStatus,
+    example: DiaryStatus.IN_PROGRESS,
+  })
+  @IsOptional()
+  @IsEnum(DiaryStatus)
+  status?: DiaryStatus;
 }

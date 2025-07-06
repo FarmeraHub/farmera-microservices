@@ -5,7 +5,9 @@ import {
   IsDateString,
   IsNumber,
   IsArray,
+  IsEnum,
 } from 'class-validator';
+import { DiaryStatus } from '../../common/enums/diary-status.enum';
 
 export class CreateDiaryDto {
   @IsNotEmpty()
@@ -45,4 +47,8 @@ export class CreateDiaryDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsEnum(DiaryStatus)
+  status?: DiaryStatus;
 }
