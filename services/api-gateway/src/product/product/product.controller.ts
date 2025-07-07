@@ -64,10 +64,15 @@ export class ProductController {
 
   async getListProducts() {}
 
-  @Put()
+  @Put(':product_id')
   @ApiOperation({
     summary: 'Update a product',
     description: 'Updates an existing product.',
+  })
+  @ApiParam({
+    name: 'product_id',
+    description: 'ID of the product to update',
+    type: Number,
   })
   @ApiBody({ type: UpdateProductDto })
   @ApiResponse({
@@ -80,9 +85,14 @@ export class ProductController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async updateProduct(
     @User() user: UserInterface,
+    @Param('product_id', ParseIntPipe) productId: number,
     @Body() updateProductDto: UpdateProductDto,
   ) {
-    return await this.productService.updateProduct(user.id, updateProductDto);
+    return await this.productService.updateProduct(
+      user.id,
+      productId,
+      updateProductDto,
+    );
   }
 
   @Patch('status/:product_id')

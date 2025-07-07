@@ -76,6 +76,7 @@ service ProductsService {
   rpc GetProcessTemplateById(GetProcessTemplateByIdRequest) returns (GetProcessTemplateByIdResponse);
   rpc UpdateProcessTemplate(UpdateProcessTemplateRequest) returns (UpdateProcessTemplateResponse);
   rpc DeleteProcessTemplate(DeleteProcessTemplateRequest) returns (DeleteProcessTemplateResponse);
+  rpc GetProductsAssignedToProcess(GetProductsAssignedToProcessRequest) returns (GetProductsAssignedToProcessResponse);
   rpc GetProcessSteps(GetProcessStepsRequest) returns (GetProcessStepsResponse);
   rpc ReorderProcessSteps(ReorderProcessStepsRequest) returns (ReorderProcessStepsResponse);
   
@@ -118,6 +119,9 @@ message Product {
   int32 total_sold = 15;
   optional Farm farm = 16;
   optional ProcessList processes = 17;
+  optional string qr_code = 18;
+  bool blockchain_activated = 19;
+  optional string blockchain_hash = 20;
 }
 
 message SubcategoryList {
@@ -370,6 +374,7 @@ message UpdateFarmRequest {
   string farm_id = 1;
   optional string farm_name = 2;
   optional string description = 3;
+  string user_id = 4;
 }
 
 message UpdateFarmResponse {
@@ -905,6 +910,15 @@ message DeleteProcessTemplateResponse {
   bool success = 1;
 }
 
+message GetProductsAssignedToProcessRequest {
+  int32 process_id = 1;
+  string user_id = 2;
+}
+
+message GetProductsAssignedToProcessResponse {
+  repeated Product products = 1;
+}
+
 message GetProcessStepsRequest {
   int32 process_id = 1;
   string user_id = 2;
@@ -984,9 +998,9 @@ message UnassignProductFromProcessResponse {
 
 // Step Diary messages
 enum DiaryCompletionStatus {
-  DIARY_IN_PROGRESS = 0;
-  DIARY_COMPLETED = 1;
-  DIARY_SKIPPED = 2;
+  IN_PROGRESS = 0;
+  COMPLETED = 1;
+  SKIPPED = 2;
 }
 
 message StepDiaryEntry {

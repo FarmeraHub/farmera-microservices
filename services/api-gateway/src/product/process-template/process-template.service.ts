@@ -71,6 +71,10 @@ interface ProductsGrpcService {
     process_id: number;
     user_id: string;
   }) => Observable<any>;
+  getProductsAssignedToProcess: (data: {
+    process_id: number;
+    user_id: string;
+  }) => Observable<{ products: any[] }>;
   getProcessSteps: (data: {
     process_id: number;
     user_id: string;
@@ -161,6 +165,29 @@ export class ProcessTemplateService {
   }
 
   async deleteProcessTemplate(processId: number, user: UserInterface) {
+    // First check if any products are assigned to this process template
+    try {
+      const assignedProducts = await firstValueFrom(
+        this.productsService.getProductsAssignedToProcess({
+          process_id: processId,
+          user_id: user.id,
+        }),
+      );
+
+      if (assignedProducts?.products && assignedProducts.products.length > 0) {
+        throw new BadRequestException(
+          `Không thể xóa quy trình này vì đã có ${assignedProducts.products.length} sản phẩm được gán vào quy trình. Vui lòng hủy gán tất cả sản phẩm trước khi xóa.`,
+        );
+      }
+    } catch (error: any) {
+      // If the method doesn't exist or has other errors, proceed with deletion (unless it's our validation error)
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Log the error but continue with deletion
+      console.warn('Could not check for assigned products:', error.message);
+    }
+
     return await firstValueFrom(
       this.productsService.deleteProcessTemplate({
         process_id: processId,
@@ -301,10 +328,14 @@ export class ProcessTemplateService {
   }
 
   // Step Diary update and delete methods
-  async updateStepDiary(updateDto: UpdateStepDiaryDto, user: UserInterface) {
+  async updateStepDiary(
+    updateDto: UpdateStepDiaryDto,
+    diaryId: number,
+    user: UserInterface,
+  ) {
     // Convert the DTO to the correct format for gRPC
     const grpcRequest: any = {
-      diary_id: updateDto.diary_id,
+      diary_id: diaryId,
       step_name: updateDto.step_name,
       step_order: updateDto.step_order,
       notes: updateDto.notes,

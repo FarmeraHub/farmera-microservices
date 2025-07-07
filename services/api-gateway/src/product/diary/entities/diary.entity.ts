@@ -1,3 +1,5 @@
+import { DiaryStatus } from '../dto/create-diary.dto';
+
 export class Diary {
   diary_id: number;
   process_id: number;
@@ -9,5 +11,6 @@ export class Diary {
   latitude: number | null;
   longitude: number | null;
   notes: string | null;
+  status: DiaryStatus;
   created: Date;
 }

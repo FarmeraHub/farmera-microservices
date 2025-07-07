@@ -195,12 +195,13 @@ export class ProductService {
 
   async updateProduct(
     userId: string,
+    productId: number,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
     try {
       const result = await firstValueFrom(
         this.productGrpcService.updateProduct({
-          product_id: updateProductDto.product_id,
+          product_id: productId,
           user_id: userId,
           product_name: updateProductDto.product_name,
           description: updateProductDto.description,

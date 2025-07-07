@@ -179,25 +179,37 @@ export class ProcessTemplateMapper {
   ): GrpcDiaryCompletionStatus {
     switch (status) {
       case DiaryCompletionStatus.IN_PROGRESS:
-        return GrpcDiaryCompletionStatus.DIARY_IN_PROGRESS;
+        return GrpcDiaryCompletionStatus.IN_PROGRESS;
       case DiaryCompletionStatus.COMPLETED:
-        return GrpcDiaryCompletionStatus.DIARY_COMPLETED;
+        return GrpcDiaryCompletionStatus.COMPLETED;
       case DiaryCompletionStatus.SKIPPED:
-        return GrpcDiaryCompletionStatus.DIARY_SKIPPED;
+        return GrpcDiaryCompletionStatus.SKIPPED;
       default:
-        return GrpcDiaryCompletionStatus.DIARY_IN_PROGRESS;
+        return GrpcDiaryCompletionStatus.IN_PROGRESS;
     }
   }
 
   static fromGrpcDiaryCompletionStatus(
-    status: GrpcDiaryCompletionStatus,
+    status: GrpcDiaryCompletionStatus | string,
   ): DiaryCompletionStatus {
+    if (typeof status === 'string') {
+      switch (status) {
+        case 'IN_PROGRESS':
+          return DiaryCompletionStatus.IN_PROGRESS;
+        case 'COMPLETED':
+          return DiaryCompletionStatus.COMPLETED;
+        case 'SKIPPED':
+          return DiaryCompletionStatus.SKIPPED;
+        default:
+          return DiaryCompletionStatus.IN_PROGRESS;
+      }
+    }
     switch (status) {
-      case GrpcDiaryCompletionStatus.DIARY_IN_PROGRESS:
+      case GrpcDiaryCompletionStatus.IN_PROGRESS:
         return DiaryCompletionStatus.IN_PROGRESS;
-      case GrpcDiaryCompletionStatus.DIARY_COMPLETED:
+      case GrpcDiaryCompletionStatus.COMPLETED:
         return DiaryCompletionStatus.COMPLETED;
-      case GrpcDiaryCompletionStatus.DIARY_SKIPPED:
+      case GrpcDiaryCompletionStatus.SKIPPED:
         return DiaryCompletionStatus.SKIPPED;
       default:
         return DiaryCompletionStatus.IN_PROGRESS;
