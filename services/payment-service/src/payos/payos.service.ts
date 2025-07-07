@@ -4,6 +4,7 @@ import * as crypto from 'crypto';
 import { ResponseOrderPayOSDto } from "./dto/response-order-payos.dto";
 import { firstValueFrom, map } from "rxjs";
 import { HttpService } from "@nestjs/axios";
+import { PayosWebhookDto } from "./dto/payos-webhook.dto";
 
 @Injectable()
 export class PayOSService {
@@ -107,5 +108,77 @@ export class PayOSService {
         }
     }
 
-    
+    async verifySignature(webhook: PayosWebhookDto): Promise<boolean> {
+        if (!webhook || !webhook.data || !webhook.signature) {
+            this.logger.warn('Missing required fields to verify signature');
+            return false;
+        }
+        if (!webhook.data.virtualAccountNumber) {
+            webhook.data.virtualAccountNumber = "";
+        }
+        if (!webhook.data.virtualAccountName) {
+            webhook.data.virtualAccountName = "";
+        }
+        if (!webhook.data.counterAccountBankId) {
+            webhook.data.counterAccountBankId = "";
+        }
+        if (!webhook.data.counterAccountBankName) {
+            webhook.data.counterAccountBankName = "";
+        }
+        if (!webhook.data.counterAccountName) {
+            webhook.data.counterAccountName = "";
+        }
+        if (!webhook.data.counterAccountNumber) {
+            webhook.data.counterAccountNumber = "";
+        }
+        this.logger.debug(' Verifying webhook signature:', webhook);
+
+      
+        const sortedDataByKey = this.sortObjDataByKey(webhook.data);
+        const dataQueryStr = this.convertObjToQueryStr(sortedDataByKey);
+
+        this.logger.debug('Sorted data:', sortedDataByKey);
+        this.logger.debug('Query string:', dataQueryStr);
+
+        const calculatedSignature = crypto.createHmac('sha256', this.checksumKey)
+            .update(dataQueryStr)
+            .digest('hex');
+
+        this.logger.debug('Expected Signature:', calculatedSignature);
+        this.logger.debug('Received Signature:', webhook.signature);
+
+        return calculatedSignature === webhook.signature;
+    }
+
+    private sortObjDataByKey(object: Record<string, any>): Record<string, any> {
+        const orderedObject = Object.keys(object)
+            .sort()
+            .reduce((obj, key) => {
+                obj[key] = object[key];
+                return obj;
+            }, {});
+        return orderedObject;
+    }
+
+    private convertObjToQueryStr(object: Record<string, any>): string {
+        return Object.keys(object)
+            .filter((key) => object[key] !== undefined)
+            .map((key) => {
+                let value = object[key];
+
+                // Sort nested object
+                if (value && Array.isArray(value)) {
+                    value = JSON.stringify(value.map((val) => this.sortObjDataByKey(val)));
+                }
+
+                // Set empty string if null
+                if ([null, undefined, "undefined", "null"].includes(value)) {
+                    value = "";
+                }
+
+                return `${key}=${value}`;
+            })
+            .join("&");
+    }
+
 }

@@ -39,8 +39,6 @@ export class Payment {
     qr_code: string;
     @Column({ nullable: true })
     checkout_url: string; // Link hình ảnh QR code
-    @Column({ nullable: true })
-    signature: string; // Chữ ký xác thực từ hệ thống thanh toán
    
 
 

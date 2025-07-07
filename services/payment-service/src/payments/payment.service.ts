@@ -8,6 +8,7 @@ import { PaymentStatus } from "src/common/enums/payment/payment.enum";
 import { ConfigService } from "@nestjs/config";
 import { PayosWebhookDto } from "src/payos/dto/payos-webhook.dto";
 import { OrderStatus } from "src/common/enums/payment/order-status.enum";
+import { PayOSService } from "src/payos/payos.service";
 @Injectable()
 export class PaymentService {
     private readonly logger = new Logger(PaymentService.name);
@@ -18,6 +19,7 @@ export class PaymentService {
         private readonly configService: ConfigService,
         @InjectDataSource()
         private dataSource: DataSource,
+        private readonly payOSService: PayOSService,
     ) {
 
 
@@ -33,7 +35,6 @@ export class PaymentService {
             currency: payment.currency,
             qr_code: payment.qr_code ?? '',
             checkout_url: payment.checkout_url ?? '',
-            signature: payment.signature ?? '',
         });
         return transactionalManager.save(newPayment);
     }
@@ -49,7 +50,12 @@ export class PaymentService {
                 await queryRunner.rollbackTransaction();
                 return false;
             }
-
+            const  verifySignature = await this.payOSService.verifySignature(data);
+            if (!verifySignature) {
+                this.logger.error(`PayOS signature verification failed for order: ${data.data.orderCode}`);
+                await queryRunner.rollbackTransaction();
+                return false;
+            }
             const payment = await queryRunner.manager.findOne(Payment, {
                 where: {
                     order: {
@@ -77,15 +83,6 @@ export class PaymentService {
                 this.logger.error(`Amount mismatch for order ${data.data.orderCode}:`, {
                     expected: payment.amount,
                     received: data.data.amount
-                });
-                await queryRunner.rollbackTransaction();
-                return false;
-            }
-
-            if (payment.signature !== data.signature) {
-                this.logger.error(`Signature mismatch for order ${data.data.orderCode}:`, {
-                    expected: payment.signature,
-                    received: data.signature
                 });
                 await queryRunner.rollbackTransaction();
                 return false;
