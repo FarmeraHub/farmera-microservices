@@ -34,7 +34,6 @@ import { PayOSModule } from './payos/payos.module';
     BusinessValidationModule,
     GhnModule,
     PayOSModule,
-
   ],
   controllers: [AppController],
   providers: [AppService],

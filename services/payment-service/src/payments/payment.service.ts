@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, EntityManager, Repository } from "typeorm";
 import { Payment } from "./entities/payment.entity";
 import { CreatePaymentDto } from "./dto/create-payment.dto";
@@ -16,7 +16,8 @@ export class PaymentService {
         @InjectRepository(Payment)
         private readonly paymentRepository: Repository<Payment>,
         private readonly configService: ConfigService,
-        private readonly dataSource: DataSource, 
+        @InjectDataSource()
+        private dataSource: DataSource,
     ) {
 
 
@@ -56,7 +57,7 @@ export class PaymentService {
                     },
                     transaction_id: data.data.paymentLinkId,
                 },
-                relations: ['order'] 
+                relations: ['order']
             });
 
             if (!payment) {

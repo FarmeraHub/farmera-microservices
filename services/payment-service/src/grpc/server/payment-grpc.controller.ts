@@ -7,6 +7,9 @@ import {
     CalculateShippingFeeResponse,
     CreateOrderRequest,
     CreateOrderResponse,
+    HandlePaymentCallbackRequest,
+    HandlePaymentCallbackResponse,
+
 } from "@farmera/grpc-proto/dist/payment/payment";
 import { Observable } from "rxjs";
 import { DeliveryService } from "src/delivery/delivery.service";
@@ -19,6 +22,9 @@ import { OrderMapper } from "src/mappers/payment/order.mapper";
 import { PaymentMapper } from "src/mappers/payment/payment.mapper";
 import { SubOrderMapper } from "src/mappers/payment/suborder.mapper";
 import { OrderDetailMapper } from "src/mappers/payment/order-detail.mapper";
+import { PayosWebhookDto } from "src/payos/dto/payos-webhook.dto";
+import { PaymentService } from "src/payments/payment.service";
+import { DataPaymentCallbackMapper } from "src/mappers/payment/data_payment_callback.mapper";
 
 
 @Controller()
@@ -29,6 +35,7 @@ export class PaymentGrpcController implements PaymentServiceController {
         private readonly deliveryService: DeliveryService,
         private readonly ordersService: OrdersService,
         private readonly businessValidationService: BusinessValidationService,
+        private readonly paymentService: PaymentService,
     ) {
     }
 
@@ -74,7 +81,7 @@ export class PaymentGrpcController implements PaymentServiceController {
                 order_info: {
                     user_id: request.order_info!.user_id,
                     address_id: request.order_info!.address_id,
-                    payment_type: request.order_info?.payment_type ? request.order_info.payment_type : 'COD', 
+                    payment_type: request.order_info?.payment_type ? request.order_info.payment_type : 'COD',
                 },
             });
             if (Array.isArray(result)) {
@@ -108,6 +115,27 @@ export class PaymentGrpcController implements PaymentServiceController {
         }
     }
 
+    async handlePaymentCallback(request: HandlePaymentCallbackRequest): Promise<HandlePaymentCallbackResponse> {
+        try {
+            if (request.data === null || request.data === undefined) {
+                throw new Error('PayOS callback data is null or undefined');
+            }
+            const payosData = DataPaymentCallbackMapper.fromGrpcDataPaymentCallback(request.data);
+            const result = await this.paymentService.handlePayOSCallback({
+                code: request.code,
+                desc: request.desc,
+                success: request.success,
+                data: payosData!,
+                signature: request.signature,
+            });
+            return {
+                success: result,
+            }
+        } catch (error) {
+            this.logger.error('Error processing payment callback', error);
+            throw error;
+        }
+    }
 
 
 }

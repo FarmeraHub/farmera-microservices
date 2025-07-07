@@ -744,7 +744,7 @@ message DataPaymentCallback {
    optional string virtual_account_number = 16;
 }
 message HandlePaymentCallbackResponse {
-  string success = 1;
+  bool success = 1;
 }
 
 

@@ -8,6 +8,7 @@ import { DeliveryController } from './delivery/delivery.controller';
 import { DeliveryService } from './delivery/delivery.service';
 import { OrderController } from "./order/order.controller";
 import { OrderService } from "./order/order.service";
+import { PayosController } from "./payos/payos.controller";
 
 @Module({
     imports: [
@@ -32,7 +33,7 @@ import { OrderService } from "./order/order.service";
             }
         ])
     ],
-    controllers: [PaymentController, DeliveryController,OrderController],
+    controllers: [PaymentController, DeliveryController,OrderController, PayosController],
     providers: [PaymentClientService, DeliveryService,OrderService],
     exports: [],
 })
