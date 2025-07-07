@@ -280,6 +280,10 @@ export class FarmService implements OnModuleInit {
         };
       }).reverse();
 
+      this.logger.log(
+        `Farm analytics for ${farmId}: total_products=${totalProducts}, products=${products.length}`,
+      );
+
       return {
         total_products: totalProducts,
         total_sales: totalSales,
@@ -323,6 +327,7 @@ export class FarmService implements OnModuleInit {
           farm_id: farmId,
           farm_name: updateFarmDto.farm_name,
           description: updateFarmDto.description,
+          user_id: userId,
         }),
       );
 

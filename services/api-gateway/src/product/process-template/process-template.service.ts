@@ -328,10 +328,14 @@ export class ProcessTemplateService {
   }
 
   // Step Diary update and delete methods
-  async updateStepDiary(updateDto: UpdateStepDiaryDto, user: UserInterface) {
+  async updateStepDiary(
+    updateDto: UpdateStepDiaryDto,
+    diaryId: number,
+    user: UserInterface,
+  ) {
     // Convert the DTO to the correct format for gRPC
     const grpcRequest: any = {
-      diary_id: updateDto.diary_id,
+      diary_id: diaryId,
       step_name: updateDto.step_name,
       step_order: updateDto.step_order,
       notes: updateDto.notes,

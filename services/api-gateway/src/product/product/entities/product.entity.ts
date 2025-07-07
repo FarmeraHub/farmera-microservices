@@ -21,4 +21,7 @@ export class Product {
   updated: Date;
   subcategories?: Subcategory[];
   processes?: Process[];
+  qr_code?: string;
+  blockchain_activated: boolean;
+  blockchain_hash?: string;
 }

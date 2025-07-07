@@ -125,6 +125,8 @@ import {
   GetStepDiariesResponse,
   GetProductDiariesRequest,
   GetProductDiariesResponse,
+  GetProductsAssignedToProcessRequest,
+  GetProductsAssignedToProcessResponse,
   GetReviewOverviewRequest,
   GetReviewOverviewResponse,
   DeleteStepDiaryRequest,
@@ -643,13 +645,26 @@ export class ProductGrpcServerController implements ProductsServiceController {
     }
   }
 
-  updateFarm(
-    request: UpdateFarmRequest,
-  ):
-    | Promise<UpdateFarmResponse>
-    | Observable<UpdateFarmResponse>
-    | UpdateFarmResponse {
-    throw new Error('Method not implemented.');
+  async updateFarm(request: UpdateFarmRequest): Promise<UpdateFarmResponse> {
+    try {
+      const userId = request.user_id;
+      const updateFarmDto: any = {
+        farm_name: request.farm_name,
+        description: request.description,
+        // Add more fields here if proto is extended
+      };
+      const updatedFarm = await this.farmsService.updateFarm(
+        request.farm_id,
+        updateFarmDto,
+        userId,
+      );
+      return {
+        farm: FarmMapper.toGrpcFarm(updatedFarm),
+      };
+    } catch (err) {
+      this.logger.error(err.message);
+      throw ErrorMapper.toRpcException(err);
+    }
   }
 
   async listFarms(request: ListFarmsRequest): Promise<ListFarmsResponse> {
@@ -1392,6 +1407,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
     request: CreateStepDiaryRequest,
   ): Promise<CreateStepDiaryResponse> {
     try {
+      console.log('request', request);
+
       const createDto = {
         assignment_id: request.assignment_id,
         step_id: request.step_id,
@@ -1418,6 +1435,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
           ? JSON.parse(request.additional_data)
           : undefined,
       };
+
+      console.log('createDto', createDto);
 
       const result = await this.stepDiaryService.createStepDiary(
         createDto,
@@ -1521,6 +1540,30 @@ export class ProductGrpcServerController implements ProductsServiceController {
 
       return {
         diary: ProcessTemplateMapper.toGrpcStepDiaryEntry(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getProductsAssignedToProcess(
+    request: GetProductsAssignedToProcessRequest,
+  ): Promise<GetProductsAssignedToProcessResponse> {
+    try {
+      // This is a placeholder implementation
+      // In a real implementation, you would query the database for products assigned to this process
+      const products = await this.productsService.findProductsByFarmId(
+        request.user_id,
+        { include_farm: true },
+        { page: 1, limit: 1000, all: true, skip: 0 },
+      );
+
+      return {
+        products: products.data
+          .filter(
+            (product) => product.processes && product.processes.length > 0,
+          )
+          .map((product) => ProductMapper.toGrpcProduct(product)),
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);

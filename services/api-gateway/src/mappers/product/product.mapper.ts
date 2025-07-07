@@ -31,6 +31,9 @@ export class ProductMapper {
       processes: value.processes?.process.map((value) =>
         ProcessMapper.fromGrpcProcessLite(value),
       ),
+      qr_code: value.qr_code,
+      blockchain_activated: value.blockchain_activated,
+      blockchain_hash: value.blockchain_hash,
     };
   }
 }

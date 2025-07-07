@@ -51,7 +51,7 @@ export class ProcessTemplateController {
     );
   }
 
-  @Put(':id')
+  @Patch(':id')
   async updateProcessTemplate(
     @Param('id', ParseIntPipe) processId: number,
     @Body() updateDto: UpdateProcessTemplateDto,
@@ -165,13 +165,15 @@ export class ProcessTemplateController {
     return await this.processTemplateService.getProductDiaries(productId, user);
   }
 
-  @Patch('step-diary')
+  @Patch('step-diary/:diaryId')
   async updateStepDiary(
-    @Body() updateStepDiaryDto: UpdateStepDiaryDto,
+    @Param('diaryId', ParseIntPipe) diaryId: number,
+    @Body() updateDto: UpdateStepDiaryDto,
     @User() user: UserInterface,
   ) {
     return await this.processTemplateService.updateStepDiary(
-      updateStepDiaryDto,
+      updateDto,
+      diaryId,
       user,
     );
   }

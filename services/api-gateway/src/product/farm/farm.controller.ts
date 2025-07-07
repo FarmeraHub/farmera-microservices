@@ -9,6 +9,7 @@ import {
   Get,
   Query,
   Put,
+  Patch,
   ParseIntPipe,
 } from '@nestjs/common';
 import { FarmService } from './farm.service';
@@ -207,7 +208,7 @@ export class FarmController {
     return await this.farmsService.getFarm(farmId);
   }
 
-  @Put(':farmId')
+  @Patch(':farmId')
   @ApiOperation({
     summary: 'Update farm information',
     description: 'Updates the farm information for the authenticated user.',
