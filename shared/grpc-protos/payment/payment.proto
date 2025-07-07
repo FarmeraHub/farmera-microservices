@@ -12,6 +12,7 @@ option go_package = "github.com/farmera/grpc-protos/payment";
 service PaymentService {
 
   rpc CalculateShippingFee(CalculateShippingFeeRequest) returns (CalculateShippingFeeResponse);
+  rpc HandlePaymentCallback(HandlePaymentCallbackRequest) returns (HandlePaymentCallbackResponse);
   // Order management
   rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
   //rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
@@ -715,7 +716,36 @@ message CalculateShippingFeeResponse {
     ValidationErrors errors = 2;        // Trả về khi có BẤT KỲ lỗi validation nào
   }
 }
+message HandlePaymentCallbackRequest{
+   string code = 1;
+   string desc = 2;
+   bool success = 3;
+   DataPaymentCallback data = 4;
+   string signature = 5;
 
+}
+
+message DataPaymentCallback {
+   int32 order_code = 1;
+   int32 amount = 2;
+   string description = 3;
+   string account_number = 4;
+   string reference = 5;
+   string transaction_date_time = 6;
+   string currency = 7;
+   string payment_link_id =8;
+   string code = 9;
+   string desc = 10;
+   optional string counter_account_bank_id = 11;
+   optional string counter_account_bank_name = 12;
+   optional string counter_account_name = 13;
+   optional string counter_account_number = 14;
+   optional string virtual_account_name = 15;
+   optional string virtual_account_number = 16;
+}
+message HandlePaymentCallbackResponse {
+  string success = 1;
+}
 
 
 

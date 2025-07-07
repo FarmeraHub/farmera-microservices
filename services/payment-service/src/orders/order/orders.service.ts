@@ -322,6 +322,7 @@ export class OrdersService {
                     paid_at: null, // Chưa thanh toán ngay
                     qr_code: payosOrder.data.qrCode, // Đảm bảo orderCode là số
                     checkout_url: payosOrder.data.checkoutUrl, // Link thanh toán
+                    signature: payosOrder.signature, // Chữ ký xác thực từ hệ thống thanh toán
                 },
                 savedOrder,
                 transactionalManager

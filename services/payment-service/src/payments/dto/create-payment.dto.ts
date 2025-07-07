@@ -9,4 +9,5 @@ export class CreatePaymentDto {
     status?: PaymentStatus;
     qr_code?: string; 
     checkout_url?: string; // Link hình ảnh QR code
+    signature?: string; // Chữ ký xác thực từ hệ thống thanh toán
 }
