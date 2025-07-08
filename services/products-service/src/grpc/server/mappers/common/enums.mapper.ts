@@ -106,4 +106,15 @@ export class EnumsMapper {
             default: throw new BadRequestException("Invalid process stage");
         }
     }
+
+    static fromGrpcFarmStatus(valuse: GrpcFarmStatus): FarmStatus {
+        switch (valuse.toString()) {
+            case "FARM_STATUS_PENDING": return FarmStatus.PENDING;
+            case "FARM_STATUS_VERIFIED": return FarmStatus.VERIFIED;
+            case "FARM_STATUS_APPROVED": return FarmStatus.APPROVED;
+            case "FARM_STATUS_BLOCKED": return FarmStatus.BLOCKED;
+            case "FARM_STATUS_REJECTED": return FarmStatus.REJECTED;
+            default: return FarmStatus.UNSPECIFIED
+        }
+    }
 }

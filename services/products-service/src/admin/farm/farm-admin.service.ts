@@ -202,20 +202,15 @@ export class FarmAdminService {
     adminId: string,
   ): Promise<Farm> {
     if (!isUUID(farmId)) {
-      throw new BadRequestException('Invalid UUID format)');
+      throw new BadRequestException('Invalid UUID format');
     }
-    const farmExists = await this.farmRepository.findOne({
-      where: { farm_id: farmId },
-    });
-    if (!farmExists) {
-      throw new NotFoundException('Farm not found');
-    }
+
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const farm = await transactionalEntityManager.findOne(Farm, {
         where: { farm_id: farmId },
       });
       if (!farm) {
-        throw new NotFoundException('Farm not found within transaction');
+        throw new NotFoundException('Farm not found');
       }
       farm.status = dto.status;
       farm.updated = new Date();

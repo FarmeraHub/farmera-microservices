@@ -37,7 +37,6 @@ service ProductsService {
   rpc SearchFarm(SearchFarmRequest) returns (SearchFarmResponse);
   //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
   rpc GetFarmByUser(GetFarmByUserRequest) returns (GetFarmByUserResponse);
-  rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
 
   // Category management
   rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
@@ -95,6 +94,10 @@ service ProductsService {
   rpc CreateStepDiary(CreateStepDiaryRequest) returns (CreateStepDiaryResponse);
   rpc GetStepDiaries(GetStepDiariesRequest) returns (GetStepDiariesResponse);
   rpc GetProductDiaries(GetProductDiariesRequest) returns (GetProductDiariesResponse);
+
+  // Admin
+  rpc UpdateProductStatusForAdmin(UpdateProductStatusForAdminRequest) returns (UpdateProductStatusForAdminResponse);
+  rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
 }
 
 // ======================================Product==========================================
@@ -262,6 +265,27 @@ message OpenProductForSaleResponse {
   string qr_code = 1;
 }
 
+// ==================================Admin==================================
+message UpdateProductStatusForAdminRequest {
+  int32 product_id = 1;
+  farmera.common.ProductStatus status = 2;
+}
+
+message UpdateProductStatusForAdminResponse {
+  bool success = 1;
+}
+
+message UpdateFarmStatusRequest{
+  string farm_id = 1;
+  string user_id = 2;
+  string status = 3;
+  optional string reason = 4;
+ }
+
+message UpdateFarmStatusResponse{
+  Farm farm = 1;
+}
+
 // ==================================Farm==================================
 // Farm
 message Farm {
@@ -400,17 +424,6 @@ message GetFarmByUserRequest{
 }
 
 message GetFarmByUserResponse {
-  Farm farm = 1;
-}
-
-message UpdateFarmStatusRequest{
-  string farm_id = 1;
-  string user_id = 2;
-  string status = 3;
-  optional string reason = 4;
- }
-
-message UpdateFarmStatusResponse{
   Farm farm = 1;
 }
 
