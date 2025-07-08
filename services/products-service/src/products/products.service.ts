@@ -54,7 +54,7 @@ export class ProductsService implements OnModuleInit {
     private readonly processRepository: Repository<Process>,
     private readonly fileStorageService: AzureBlobService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async create(
     createProductDto: CreateProductDto,
