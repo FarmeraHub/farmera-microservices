@@ -14,6 +14,13 @@ const PROCESS_TRACKING_ABI = [
     'event ProcessAdded(string indexed productId, uint64 processId, uint64 timestamp, uint64 location, string dataHash)',
 ];
 
+const PRODUCT_TRACKING_ABI = [
+    'function addProduct(uint64 productId, uint64 timestamp, uint64 location, string dataHash) external',
+    'function getProduct(uint64 productId) external view returns (tuple(string dataHash, uint64 productId, uint64 timestamp, uint64 location) product)',
+    'event ProductAdded(uint64 indexed productId, uint64 timestamp, uint64 location, string dataHash)',
+];
+
+
 export interface BlockchainProcess {
     dataHash: string;
     processId: bigint;
@@ -24,6 +31,13 @@ export interface BlockchainProcess {
 export interface VerificationResult {
     isValid: boolean;
     error?: string;
+}
+
+export interface BlockChainProduct {
+    dataHash: string,
+    productId: bigint,
+    timestamp: bigint;
+    location: bigint;
 }
 
 @Injectable()
@@ -48,9 +62,54 @@ export class BlockchainService {
         if (!contractAddress) {
             throw new BadRequestException('CONTRACT_ADDRESS is not defined in environment variables');
         }
-        this.contract = new ethers.Contract(contractAddress, PROCESS_TRACKING_ABI, this.wallet);
+        // this.contract = new ethers.Contract(contractAddress, PROCESS_TRACKING_ABI, this.wallet);
+        this.contract = new ethers.Contract(contractAddress, PRODUCT_TRACKING_ABI, this.wallet);
     }
 
+    async addProduct(product: BlockChainProduct) {
+        try {
+            // Add to blockchain
+            const result = await this.contract.addProduct(
+                product.productId,
+                product.timestamp,
+                product.dataHash,
+                product.dataHash,
+            );
+            this.logger.log(`Transaction: ${result.hash}`);
+
+            return result.hash;
+
+        } catch (error) {
+            this.logger.error(`Error adding product ${product.productId}`);
+            throw error;
+        }
+    }
+
+    async getProduct(productId: number): Promise<BlockChainProduct> {
+        try {
+            const result = await this.contract.getProcess(productId);
+
+            // Parse the result
+            const product: BlockChainProduct = {
+                dataHash: result[0],
+                productId: result[1],
+                timestamp: result[2],
+                location: result[3],
+            };
+
+            if (product.productId === 0n) {
+                throw new BadRequestException(`Product ${productId} not found on blockchain`);
+            }
+
+            return product;
+
+        } catch (error) {
+            this.logger.error(`Error getting product ${productId}: ${error}`);
+            throw error;
+        }
+    }
+
+    // deprecated
     async addProcess(process: Process) {
         try {
             this.logger.log(`Adding process ${process.process_id} for product ${process.process_id}`);
@@ -84,6 +143,7 @@ export class BlockchainService {
         }
     }
 
+    // deprecated
     async getProcess(processId: number): Promise<BlockchainProcess> {
         try {
             this.logger.log(`Getting process ${processId}`);
@@ -110,6 +170,7 @@ export class BlockchainService {
         }
     }
 
+    // deprecated
     async verifyProcess(process: Process): Promise<VerificationResult> {
         try {
             const onChainProcess = await this.getProcess(process.process_id);
@@ -157,6 +218,7 @@ export class BlockchainService {
         }
     }
 
+    // deprecated
     async getProductProcessIds(productId: string): Promise<bigint[]> {
         try {
             this.logger.log(`Getting process ids for product ${productId}`);

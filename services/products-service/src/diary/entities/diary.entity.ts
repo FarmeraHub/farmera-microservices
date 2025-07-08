@@ -7,6 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Process } from '../../process/entities/process.entity';
+import { DiaryStatus } from '../../common/enums/diary-status.enum';
 
 @Entity('diary')
 export class Diary {
@@ -40,6 +41,13 @@ export class Diary {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null; // Additional notes from farmer
+
+  @Column({
+    type: 'enum',
+    enum: DiaryStatus,
+    default: DiaryStatus.IN_PROGRESS,
+  })
+  status: DiaryStatus;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created: Date;

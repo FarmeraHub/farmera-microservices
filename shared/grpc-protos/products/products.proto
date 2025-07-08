@@ -78,6 +78,7 @@ service ProductsService {
   rpc GetProcessTemplateById(GetProcessTemplateByIdRequest) returns (GetProcessTemplateByIdResponse);
   rpc UpdateProcessTemplate(UpdateProcessTemplateRequest) returns (UpdateProcessTemplateResponse);
   rpc DeleteProcessTemplate(DeleteProcessTemplateRequest) returns (DeleteProcessTemplateResponse);
+  rpc GetProductsAssignedToProcess(GetProductsAssignedToProcessRequest) returns (GetProductsAssignedToProcessResponse);
   rpc GetProcessSteps(GetProcessStepsRequest) returns (GetProcessStepsResponse);
   rpc ReorderProcessSteps(ReorderProcessStepsRequest) returns (ReorderProcessStepsResponse);
   
@@ -97,6 +98,8 @@ service ProductsService {
   rpc CreateStepDiary(CreateStepDiaryRequest) returns (CreateStepDiaryResponse);
   rpc GetStepDiaries(GetStepDiariesRequest) returns (GetStepDiariesResponse);
   rpc GetProductDiaries(GetProductDiariesRequest) returns (GetProductDiariesResponse);
+  rpc UpdateStepDiary(UpdateStepDiaryRequest) returns (UpdateStepDiaryResponse);
+  rpc DeleteStepDiary(DeleteStepDiaryRequest) returns (DeleteStepDiaryResponse);
 }
 
 // ======================================Product==========================================
@@ -118,6 +121,9 @@ message Product {
   int32 total_sold = 15;
   optional Farm farm = 16;
   optional ProcessList processes = 17;
+  optional string qr_code = 18;
+  bool blockchain_activated = 19;
+  optional string blockchain_hash = 20;
 }
 
 message SubcategoryList {
@@ -370,6 +376,7 @@ message UpdateFarmRequest {
   string farm_id = 1;
   optional string farm_name = 2;
   optional string description = 3;
+  string user_id = 4;
 }
 
 message UpdateFarmResponse {
@@ -905,6 +912,15 @@ message DeleteProcessTemplateResponse {
   bool success = 1;
 }
 
+message GetProductsAssignedToProcessRequest {
+  int32 process_id = 1;
+  string user_id = 2;
+}
+
+message GetProductsAssignedToProcessResponse {
+  repeated Product products = 1;
+}
+
 message GetProcessStepsRequest {
   int32 process_id = 1;
   string user_id = 2;
@@ -984,9 +1000,9 @@ message UnassignProductFromProcessResponse {
 
 // Step Diary messages
 enum DiaryCompletionStatus {
-  DIARY_IN_PROGRESS = 0;
-  DIARY_COMPLETED = 1;
-  DIARY_SKIPPED = 2;
+  IN_PROGRESS = 0;
+  COMPLETED = 1;
+  SKIPPED = 2;
 }
 
 message StepDiaryEntry {
@@ -1054,6 +1070,39 @@ message GetProductDiariesRequest {
 
 message GetProductDiariesResponse {
   repeated StepDiaryEntry diaries = 1;
+}
+
+// Update and Delete Step Diary messages
+
+message UpdateStepDiaryRequest {
+  int32 diary_id = 1;
+  optional string step_name = 2;
+  optional int32 step_order = 3;
+  optional string notes = 4;
+  optional DiaryCompletionStatus completion_status = 5;
+  repeated string image_urls = 6;
+  repeated string video_urls = 7;
+  optional farmera.common.Timestamp recorded_date = 8;
+  optional double latitude = 9;
+  optional double longitude = 10;
+  optional string weather_conditions = 11;
+  optional int32 quality_rating = 12;
+  optional string issues_encountered = 13;
+  optional string additional_data = 14;
+  string user_id = 15;
+}
+
+message UpdateStepDiaryResponse {
+  StepDiaryEntry diary = 1;
+}
+
+message DeleteStepDiaryRequest {
+  int32 diary_id = 1;
+  string user_id = 2;
+}
+
+message DeleteStepDiaryResponse {
+  bool success = 1;
 }
 message UpdateQuantityItem{
   int32 product_id = 1;

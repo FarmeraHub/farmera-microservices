@@ -124,9 +124,15 @@ import {
   GetStepDiariesRequest,
   GetStepDiariesResponse,
   GetProductDiariesRequest,
-  GetProductDiariesResponse, GetReviewOverviewRequest,
+  GetProductDiariesResponse,
+  GetProductsAssignedToProcessRequest,
+  GetProductsAssignedToProcessResponse,
+  GetReviewOverviewRequest,
   GetReviewOverviewResponse,
-  UpdateQuantityRequest,
+  DeleteStepDiaryRequest,
+  DeleteStepDiaryResponse,
+  UpdateStepDiaryRequest,
+  UpdateStepDiaryResponse, UpdateQuantityRequest,
   UpdateQuantityResponse,
   UpdateQuantitiesRequest,
   UpdateQuantitiesResponse,
@@ -644,13 +650,26 @@ export class ProductGrpcServerController implements ProductsServiceController {
     }
   }
 
-  updateFarm(
-    request: UpdateFarmRequest,
-  ):
-    | Promise<UpdateFarmResponse>
-    | Observable<UpdateFarmResponse>
-    | UpdateFarmResponse {
-    throw new Error('Method not implemented.');
+  async updateFarm(request: UpdateFarmRequest): Promise<UpdateFarmResponse> {
+    try {
+      const userId = request.user_id;
+      const updateFarmDto: any = {
+        farm_name: request.farm_name,
+        description: request.description,
+        // Add more fields here if proto is extended
+      };
+      const updatedFarm = await this.farmsService.updateFarm(
+        request.farm_id,
+        updateFarmDto,
+        userId,
+      );
+      return {
+        farm: FarmMapper.toGrpcFarm(updatedFarm),
+      };
+    } catch (err) {
+      this.logger.error(err.message);
+      throw ErrorMapper.toRpcException(err);
+    }
   }
 
   async listFarms(request: ListFarmsRequest): Promise<ListFarmsResponse> {
@@ -991,34 +1010,40 @@ export class ProductGrpcServerController implements ProductsServiceController {
       const result = await this.reviewService.getReviewsByCursor(
         request.product_id,
         request.pagination?.sort_by ?? 'created',
-        request.pagination?.order ? EnumsMapper.fromGrpcPaginationOrder(request.pagination.order) : 'DESC',
+        request.pagination?.order
+          ? EnumsMapper.fromGrpcPaginationOrder(request.pagination.order)
+          : 'DESC',
         request.pagination?.limit ?? 10,
         request.pagination?.cursor ?? '',
-        request.rating_filter
+        request.rating_filter,
       );
       return {
-        reviews: result.data.reviews.map((value) => ReviewMapper.toGrpcReview(value)),
+        reviews: result.data.reviews.map((value) =>
+          ReviewMapper.toGrpcReview(value),
+        ),
         pagination: {
-          next_cursor: result.data.nextCursor ?? undefined
-        }
-      }
-    }
-    catch (err) {
+          next_cursor: result.data.nextCursor ?? undefined,
+        },
+      };
+    } catch (err) {
       throw ErrorMapper.toRpcException(err);
     }
   }
 
-  async getReviewOverview(request: GetReviewOverviewRequest): Promise<GetReviewOverviewResponse> {
+  async getReviewOverview(
+    request: GetReviewOverviewRequest,
+  ): Promise<GetReviewOverviewResponse> {
     try {
-      const result = await this.reviewService.getReviewOverview(request.product_id);
+      const result = await this.reviewService.getReviewOverview(
+        request.product_id,
+      );
       return {
         total_count: result.totalCount,
         total_ratings: result.totalRating,
         average_rating: result.averageRating,
-        rating_overview: result.ratings
-      }
-    }
-    catch (err) {
+        rating_overview: result.ratings,
+      };
+    } catch (err) {
       throw ErrorMapper.toRpcException(err);
     }
   }
@@ -1387,6 +1412,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
     request: CreateStepDiaryRequest,
   ): Promise<CreateStepDiaryResponse> {
     try {
+      console.log('request', request);
+
       const createDto = {
         assignment_id: request.assignment_id,
         step_id: request.step_id,
@@ -1413,6 +1440,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
           ? JSON.parse(request.additional_data)
           : undefined,
       };
+
+      console.log('createDto', createDto);
 
       const result = await this.stepDiaryService.createStepDiary(
         createDto,
@@ -1460,6 +1489,86 @@ export class ProductGrpcServerController implements ProductsServiceController {
         diaries: result.map((diary) =>
           ProcessTemplateMapper.toGrpcStepDiaryEntry(diary),
         ),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async deleteStepDiary(
+    request: DeleteStepDiaryRequest,
+  ): Promise<DeleteStepDiaryResponse> {
+    try {
+      const result = await this.stepDiaryService.deleteStepDiary(
+        request.diary_id,
+        request.user_id,
+      );
+      return { success: result };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async updateStepDiary(
+    request: UpdateStepDiaryRequest,
+  ): Promise<UpdateStepDiaryResponse> {
+    try {
+      const updateDto = {
+        diary_id: request.diary_id,
+        step_name: request.step_name,
+        step_order: request.step_order,
+        notes: request.notes,
+        completion_status: request.completion_status
+          ? ProcessTemplateMapper.fromGrpcDiaryCompletionStatus(
+            request.completion_status,
+          )
+          : undefined,
+        image_urls: request.image_urls,
+        video_urls: request.video_urls,
+        recorded_date: request.recorded_date
+          ? TypesMapper.fromGrpcTimestamp(request.recorded_date)
+          : undefined,
+        latitude: request.latitude,
+        longitude: request.longitude,
+        weather_conditions: request.weather_conditions,
+        quality_rating: request.quality_rating,
+        issues_encountered: request.issues_encountered,
+        additional_data: request.additional_data
+          ? JSON.parse(request.additional_data)
+          : undefined,
+      };
+
+      const result = await this.stepDiaryService.updateStepDiary(
+        updateDto as any,
+        request.user_id,
+      );
+
+      return {
+        diary: ProcessTemplateMapper.toGrpcStepDiaryEntry(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getProductsAssignedToProcess(
+    request: GetProductsAssignedToProcessRequest,
+  ): Promise<GetProductsAssignedToProcessResponse> {
+    try {
+      // This is a placeholder implementation
+      // In a real implementation, you would query the database for products assigned to this process
+      const products = await this.productsService.findProductsByFarmId(
+        request.user_id,
+        { include_farm: true },
+        { page: 1, limit: 1000, all: true, skip: 0 },
+      );
+
+      return {
+        products: products.data
+          .filter(
+            (product) => product.processes && product.processes.length > 0,
+          )
+          .map((product) => ProductMapper.toGrpcProduct(product)),
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);

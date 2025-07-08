@@ -16,6 +16,7 @@ import { ProductProcessAssignment } from '../process/entities/product-process-as
 import { ProcessStep } from '../process/entities/process-step.entity';
 import { Product } from '../products/entities/product.entity';
 import { CreateStepDiaryDto } from './dto/create-step-diary.dto';
+import { UpdateStepDiaryDto } from './dto/update-step-diary.dto';
 
 @Injectable()
 export class StepDiaryService {
@@ -184,6 +185,86 @@ export class StepDiaryService {
       this.logger.error(`Error fetching product diaries: ${error.message}`);
       throw new InternalServerErrorException('Failed to fetch product diaries');
     }
+  }
+
+  async updateStepDiary(
+    updateDto: UpdateStepDiaryDto,
+    userId: string,
+  ): Promise<StepDiaryEntry> {
+    // Find diary entry
+    const diary = await this.stepDiaryRepository.findOne({
+      where: { diary_id: updateDto.diary_id },
+      relations: [
+        'assignment',
+        'assignment.product',
+        'assignment.product.farm',
+      ],
+    });
+
+    if (!diary) {
+      throw new NotFoundException('Diary entry not found');
+    }
+
+    // Verify ownership
+    if (diary.assignment?.product?.farm?.user_id !== userId) {
+      throw new BadRequestException(
+        'You can only update your own diary entries',
+      );
+    }
+
+    const previousStatus = diary.completion_status;
+
+    // Apply updates
+    const updateData: any = { ...updateDto };
+    if (updateData.recorded_date) {
+      updateData.recorded_date = new Date(updateData.recorded_date) as any;
+    }
+
+    await this.stepDiaryRepository.update(updateDto.diary_id, updateData);
+
+    const updatedDiary = (await this.stepDiaryRepository.findOne({
+      where: { diary_id: updateDto.diary_id },
+      relations: ['assignment', 'step'],
+    })) as StepDiaryEntry;
+
+    // If completion status changed to COMPLETED, update assignment progress
+    if (
+      updateDto.completion_status === DiaryCompletionStatus.COMPLETED &&
+      previousStatus !== DiaryCompletionStatus.COMPLETED
+    ) {
+      await this.updateAssignmentProgress(diary.assignment.assignment_id);
+    }
+
+    return updatedDiary;
+  }
+
+  async deleteStepDiary(diaryId: number, userId: string): Promise<boolean> {
+    const diary = await this.stepDiaryRepository.findOne({
+      where: { diary_id: diaryId },
+      relations: [
+        'assignment',
+        'assignment.product',
+        'assignment.product.farm',
+      ],
+    });
+
+    if (!diary) {
+      throw new NotFoundException('Diary entry not found');
+    }
+
+    if (diary.assignment?.product?.farm?.user_id !== userId) {
+      throw new BadRequestException(
+        'You can only delete your own diary entries',
+      );
+    }
+
+    await this.stepDiaryRepository.delete(diaryId);
+
+    if (diary.completion_status === DiaryCompletionStatus.COMPLETED) {
+      await this.updateAssignmentProgress(diary.assignment.assignment_id);
+    }
+
+    return true;
   }
 
   private async updateAssignmentProgress(assignmentId: number): Promise<void> {
