@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { NotificationMapper } from 'src/mappers/notification/notification.mapper';
 import { ErrorMapper } from 'src/mappers/common/error.mapper';
 import { Template } from './entities/template.entity';
-import { SendNotificationDto } from './entities/send.entity';
+import { SendNotificationDto } from './dto/send.dto';
 
 @Injectable()
 export class NotificationService {

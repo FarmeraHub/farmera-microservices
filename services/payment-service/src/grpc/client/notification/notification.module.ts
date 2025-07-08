@@ -13,7 +13,7 @@ import { NotificationService } from './notification.service';
                 transport: Transport.GRPC,
                 options: {
                     package: "farmera.notification",
-                    protoPath: join(__dirname, '../../../../../shared/grpc-protos/notification/notification.proto'),
+                    protoPath: join(__dirname, '../../../../../../shared/grpc-protos/notification/notification.proto'),
                     url: configService.get<string>('NOTIFICATION_GRPC_URL', 'localhost:50054'),
                     loader: {
                         keepCase: true,
@@ -21,13 +21,13 @@ import { NotificationService } from './notification.service';
                         enums: String,
                         defaults: true,
                         oneofs: true,
-                        includeDirs: [join(__dirname, '../../../../../shared/grpc-protos')],
+                        includeDirs: [join(__dirname, '../../../../../../shared/grpc-protos')],
                     }
                 }
             }),
             inject: [ConfigService]
         }])
     ],
-    providers: [NotificationService]
+    providers: [NotificationService],
 })
 export class NotificationModule { }

@@ -1,7 +1,7 @@
 import { NotificationChannel as GrpcNotificationChannel, NotificationType as GrpcNotificationType, PushMessageType as GrpcPushMessageType } from "@farmera/grpc-proto/dist/common/enums";
-import { NotificationChannel } from "src/clients/notification/enums/channel";
-import { NotificationType } from "src/clients/notification/enums/notification_type";
-import { PushMessageType } from "src/clients/notification/enums/push";
+import { NotificationChannel } from "src/grpc/client/notification/enums/channel";
+import { NotificationType } from "src/grpc/client/notification/enums/notification_type";
+import { PushMessageType } from "src/grpc/client/notification/enums/push";
 
 export class EnumsMapper {
 
