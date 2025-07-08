@@ -4,6 +4,11 @@ import { ConfigModule } from "@nestjs/config";
 import { join } from "path";
 import { PaymentController } from "./payment.controller";
 import { PaymentClientService } from "./payment.client.service";
+import { DeliveryController } from './delivery/delivery.controller';
+import { DeliveryService } from './delivery/delivery.service';
+import { OrderController } from "./order/order.controller";
+import { OrderService } from "./order/order.service";
+import { PayosController } from "./payos/payos.controller";
 
 @Module({
     imports: [
@@ -28,8 +33,8 @@ import { PaymentClientService } from "./payment.client.service";
             }
         ])
     ],
-    controllers: [PaymentController],
-    providers: [PaymentClientService],
+    controllers: [PaymentController, DeliveryController,OrderController, PayosController],
+    providers: [PaymentClientService, DeliveryService,OrderService],
     exports: [],
 })
 export class PaymentModule { }

@@ -13,9 +13,9 @@ export class User {
   first_name: string;
   last_name: string;
   hashed_pwd?: string;
-  farm_id: string;
+  farm_id?: string;
   gender: string;
-  avatar: string;
+  avatar?: string;
   birthday?: Date;
   role: UserRole;
   points: number;

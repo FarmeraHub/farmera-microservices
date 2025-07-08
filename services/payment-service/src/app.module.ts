@@ -14,6 +14,7 @@ import { PaymentClientModule } from './grpc/client/payment-client.module';
 import { NotificationModule } from './clients/notification/notification.module';
 import { BusinessValidationModule } from './business-validation/business-validation.module';
 import { GhnModule } from './ghn/ghn.module';
+import { PayOSModule } from './payos/payos.module';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { GhnModule } from './ghn/ghn.module';
     NotificationModule,
     BusinessValidationModule,
     GhnModule,
-
+    PayOSModule,
   ],
   controllers: [AppController],
   providers: [AppService],

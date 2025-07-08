@@ -1,5 +1,6 @@
+
 import { SubOrder } from "src/orders/entities/sub-order.entity";
-import { Column, Entity, ManyToMany, ManyToOne, OneToOne,  PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToOne,  PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('order_detail')
 export class OrderDetail{
@@ -10,15 +11,29 @@ export class OrderDetail{
     product_id: number;
 
     @Column()
-    prodcut_name: string;
+    product_name: string;
 
     @Column()
-    quantity: number;
+    request_quantity: number;
     @Column()
     price_per_unit: number;
     @Column()
-    unit: number;
+    unit: string;
 
-    @ManyToOne(() =>SubOrder)
-    sub_order_id: SubOrder;
+    @ManyToOne(() => SubOrder, (subOrder) => subOrder.order_details)
+    @JoinColumn({ name: 'sub_order' })
+    sub_order: SubOrder;
+
+    @Column()
+    weight: number;
+
+    @Column()
+    image_url: string;
+
+    @Column()
+    total_price: number;
+
+    
+
+
 }

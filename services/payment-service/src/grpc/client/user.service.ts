@@ -4,12 +4,14 @@ import {
     GetUserLocationsResponse
 } from "@farmera/grpc-proto/dist/users/users";
 import { ClientGrpc } from "@nestjs/microservices";
-import { Location } from "../../user/entities/location.entity";
+import { Location } from "src/user/entities/location.entity";
 import { firstValueFrom, map } from "rxjs";
 import { LocationMapper } from "src/mappers/user/location.mapper";
 import { ErrorMapper } from "src/mappers/common/error.mapper";
 import { UserMapper } from "src/mappers/user/user.mapper";
 import { User } from "src/user/entities/user.entity";
+import { PaymentMethod } from "src/user/entities/payment_method.entity";
+import { PaymentMethodMapper } from "src/mappers/user/payment-method.mapper";
 
 @Injectable()
 export class UserGrpcClientService implements OnModuleInit {
@@ -34,18 +36,19 @@ export class UserGrpcClientService implements OnModuleInit {
                 throw new Error(`User with ID ${userId} not found or gRPC result is malformed`);
             }
             const user = UserMapper.fromGrpcUser(result.user);
+            this.logger.log(`User with ID ${userId} found: ${JSON.stringify(user,null, 2)}`);
             if (!user) {
                 throw new Error(`User mapping failed for ID ${userId}`);
             }
             return user;
         } catch (err) {
             this.logger.error(err.message);
-            throw ErrorMapper.fromGrpcError(err);
+            throw new Error(`Failed to get user with ID ${userId}: ${err.message}`);
         }
     }
     async getLocationById(LocationId: string): Promise<Location> {
         try {
-            const result = await firstValueFrom(this.userGrpcService.getLocationById({ id: LocationId }));
+            const result = await firstValueFrom(this.userGrpcService.getLocationById({ id: Number(LocationId) }));
             if (!result || !result.location) {
                 throw new Error(`Location with ID ${LocationId} not found or gRPC result is malformed`);
             }
@@ -59,7 +62,21 @@ export class UserGrpcClientService implements OnModuleInit {
         }
         catch (err) {
             this.logger.error(err.message);
-            throw ErrorMapper.fromGrpcError(err);
+            throw new Error(`Failed to get location with ID ${LocationId}: ${err.message}`);
+        }
+    }
+    async getPaymentMethods(userId: string) :Promise<PaymentMethod[]> {
+        try {
+            const result = await firstValueFrom(this.userGrpcService.getPaymentMethods({ user_id: userId }));
+            if (!result || !result.payment_methods) {
+                throw new Error(`Payment methods for user ID ${userId} not found or gRPC result is malformed`);
+            }
+            this.logger.log(`Payment methods for user ID ${userId} found: ${JSON.stringify(result.payment_methods)}`);
+
+            return result.payment_methods.map(pm => PaymentMethodMapper.fromGrpcPaymentMethod(pm));
+        } catch (err) {
+            this.logger.error(err.message);
+            throw new Error(`Failed to get payment methods for user ID ${userId}: ${err.message}`);
         }
     }
 }

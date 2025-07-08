@@ -6,6 +6,8 @@ export class LocationMapper {
   static toGrpcLocation(location: Location): GrpcUserLocation {
     return {
       id: location.location_id,
+      name: location.name,
+      phone: location.phone,
       city: location.city,
       district: location.district,
       ward: location.ward,
@@ -15,8 +17,6 @@ export class LocationMapper {
       is_primary: location.is_primary,
       created_at: TypesMapper.toGrpcTimestamp(location.created_at),
       updated_at: TypesMapper.toGrpcTimestamp(location.updated_at),
-      phone: location.phone,
-      name: location.name,
     };
   }
 }

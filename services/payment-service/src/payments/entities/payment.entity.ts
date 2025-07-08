@@ -1,22 +1,22 @@
 import { PaymentMethod, PaymentStatus } from "src/common/enums/payment/payment.enum";
 import { Order } from "src/orders/entities/order.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('payment')
 export class Payment {
     @PrimaryGeneratedColumn('increment')
     payment_id: number;
 
-    @OneToOne(() => Order)
+    @OneToOne(() => Order, (order) => order.payment,)
     @JoinColumn({ name: 'order_id' })
-    order_id: Order;
+    order: Order;
 
     @Column()
     amount: number;
     @Column({
         type: 'enum',
         enum: PaymentMethod,
-        default: PaymentMethod.CREDIT_CARD,
+        default: PaymentMethod.COD,
     })
     method: PaymentMethod;
     @Column({
@@ -25,12 +25,21 @@ export class Payment {
         default: PaymentStatus.PENDING,
     })
     status: PaymentStatus;
-    @Column()
+    @Column({ nullable: true })
     transaction_id: string;
-    @Column()
+    @Column({ nullable: true })
     paid_at: Date;
     @CreateDateColumn()
     created: Date;
+    @UpdateDateColumn()
+    updated: Date;
+    @Column()
+    currency: string;
+    @Column({ nullable: true })
+    qr_code: string;
+    @Column({ nullable: true })
+    checkout_url: string; // Link hình ảnh QR code
+   
 
 
 }

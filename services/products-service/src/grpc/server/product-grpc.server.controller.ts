@@ -132,32 +132,37 @@ import {
   DeleteStepDiaryRequest,
   DeleteStepDiaryResponse,
   UpdateStepDiaryRequest,
-  UpdateStepDiaryResponse,
+  UpdateStepDiaryResponse, UpdateQuantityRequest,
+  UpdateQuantityResponse,
+  UpdateQuantitiesRequest,
+  UpdateQuantitiesResponse,
+
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
 import { FarmStatus } from 'src/common/enums/farm-status.enum';
 import { GrpcStreamMethod, RpcException } from '@nestjs/microservices';
-import { FarmMapper } from './mappers/product/farm.mapper';
+import { FarmMapper } from '../../mappers/product/farm.mapper';
 import { VerifyStatusCode } from '@farmera/grpc-proto/dist/common/enums';
 import { Readable } from 'stream';
-import { CategoryMapper } from './mappers/product/category.mapper';
+import { CategoryMapper } from '../../mappers/product/category.mapper';
 import { ReviewsService } from 'src/reviews/reviews.service';
-import { ReviewMapper } from './mappers/product/review.mapper';
+import { ReviewMapper } from '../../mappers/product/review.mapper';
 import { ProcessService } from 'src/process/process.service';
-import { ProcessTemplateService } from 'src/process/process-template.service';
-import { StepDiaryService } from 'src/diary/step-diary.service';
-import { TypesMapper } from './mappers/common/types.mapper';
-import { ProcessMapper } from './mappers/product/process.mapper';
-import { ProcessTemplateMapper } from './mappers/product/process-template.mapper';
-import { DiaryService } from 'src/diary/diary.service';
-import { DiaryMapper } from './mappers/product/diary.mapper';
-import { EnumsMapper } from './mappers/common/enums.mapper';
+import { TypesMapper } from '../../mappers/common/types.mapper';
+import { ProcessMapper } from '../../mappers/product/process.mapper';
+import { EnumsMapper } from '../../mappers/common/enums.mapper';
 import { status } from '@grpc/grpc-js';
 import { CreateSubcategoryDto } from 'src/categories/dto/create-subcategories.dto';
-import { ErrorMapper } from './mappers/common/error.mapper';
-import { PaginationMapper } from './mappers/common/pagination.mapper';
-import { ProductMapper } from './mappers/product/product.mapper';
+import { ErrorMapper } from '../../mappers/common/error.mapper';
+import { PaginationMapper } from '../../mappers/common/pagination.mapper';
+import { ProductMapper } from "../../mappers/product/product.mapper";
+import { ProcessTemplateService } from 'src/process/process-template.service';
+import { StepDiaryService } from 'src/diary/step-diary.service';
+import { DiaryService } from 'src/diary/diary.service';
+import { ProcessTemplateMapper } from 'src/mappers/product/process-template.mapper';
+import { DiaryMapper } from 'src/mappers/product/diary.mapper';
+import { UpdateProductQuantityOperation } from 'src/common/enums/update-product-quantity-operation.enum';
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -174,7 +179,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
     private readonly processTemplateService: ProcessTemplateService,
     private readonly stepDiaryService: StepDiaryService,
     private readonly diaryService: DiaryService,
-  ) {}
+  ) { }
 
   // Product methods
   async createProduct(
@@ -1164,8 +1169,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
           video_urls: request.video_urls?.list,
           recorded_date: request.recorded_date
             ? TypesMapper.fromGrpcTimestamp(
-                request.recorded_date,
-              )?.toISOString()
+              request.recorded_date,
+            )?.toISOString()
             : undefined,
           latitude: request.latitude,
           longitude: request.longitude,
@@ -1418,8 +1423,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
         notes: request.notes,
         completion_status: request.completion_status
           ? ProcessTemplateMapper.fromGrpcDiaryCompletionStatus(
-              request.completion_status,
-            )
+            request.completion_status,
+          )
           : undefined,
         image_urls: request.image_urls,
         video_urls: request.video_urls,
@@ -1515,8 +1520,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
         notes: request.notes,
         completion_status: request.completion_status
           ? ProcessTemplateMapper.fromGrpcDiaryCompletionStatus(
-              request.completion_status,
-            )
+            request.completion_status,
+          )
           : undefined,
         image_urls: request.image_urls,
         video_urls: request.video_urls,
@@ -1567,6 +1572,90 @@ export class ProductGrpcServerController implements ProductsServiceController {
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);
+    }
+  }
+  async updateProductQuantity(request: UpdateQuantityRequest): Promise<UpdateQuantityResponse> {
+    try {
+      if (!request || !request.item) {
+        return {
+          success: false,
+          message: 'Thiếu thông tin bắt buộc: item'
+        };
+      }
+      if (!request.item.product_id || !request.item.request_quantity || !request.item.operation) {
+        return {
+          success: false,
+          message: 'Thiếu thông tin bắt buộc: product_id, request_quantity, operation'
+        };
+      }
+
+      if (request.item.request_quantity <= 0) {
+        return {
+          success: false,
+          message: 'Số lượng yêu cầu phải lớn hơn 0'
+        };
+      }
+      const operation: UpdateProductQuantityOperation = EnumsMapper.fromGrpcUpdateProductQuantityOperation(request.item.operation);
+      if (!operation) {
+        return {
+          success: false,
+          message: 'Phương thức cập nhật không hợp lệ'
+        };
+      }
+
+      const result = await this.productsService.updateProductQuantity(
+        request.item.product_id,
+        request.item.request_quantity,
+        operation
+      );
+      return {
+        success: result.success,
+        message: result.message,
+      };
+
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Lỗi hệ thống khi cập nhật số lượng sản phẩm'
+      };
+    }
+  }
+
+  async updateProductsQuantity(request: UpdateQuantitiesRequest): Promise<UpdateQuantitiesResponse> {
+    try {
+      if (!request || !request.items || request.items.length === 0) {
+        return {
+          success: false,
+          message: 'Thiếu thông tin bắt buộc: items',
+          results: []
+        };
+      }
+
+      const items = request.items.map(item => ({
+        product_id: item.product_id,
+        request_quantity: item.request_quantity,
+        operation: EnumsMapper.fromGrpcUpdateProductQuantityOperation(item.operation)
+      }));
+      const result = await this.productsService.updateProductQuantities(items);
+      this.logger.debug(`Kết quả giảm quanties:${JSON.stringify(result, null, 2)}`)
+      return {
+        success: result.success,
+        message: result.message,
+        results: result.results.map(res => ({
+          product_id: res.product_id,
+          success: res.success,
+          message: res.message,
+          previous_quantity: res.previous_quantity ?? 0,
+          new_quantity: res.new_quantity ?? 0
+        }))
+      };
+
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Lỗi hệ thống khi cập nhật số lượng sản phẩm',
+        results: []
+      };
     }
   }
 }

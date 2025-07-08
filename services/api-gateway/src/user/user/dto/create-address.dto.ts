@@ -2,6 +2,18 @@ import { IsBoolean, IsNotEmpty, IsPhoneNumber, IsString } from "class-validator"
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateAddressDto {
+
+    @ApiProperty({ example: 'Nguyễn văn A', description: 'Name associated with this address' })
+    @IsString()
+    @IsNotEmpty()
+    name: string;
+
+    @ApiProperty({ example: '+1234567890', description: 'Phone number for this address' })  
+    @IsString()
+    @IsNotEmpty()
+    @IsPhoneNumber("VN")
+    phone: string;
+    
     @ApiProperty({ example: 'Ho Chi Minh City', description: 'City name' })
     @IsString()
     @IsNotEmpty()
@@ -37,11 +49,5 @@ export class CreateAddressDto {
     @IsNotEmpty()
     is_primary: boolean;
 
-    @IsString()
-    @IsNotEmpty()
-    name: string;
 
-    @IsPhoneNumber("VN")
-    @IsNotEmpty()
-    phone: string
 }
