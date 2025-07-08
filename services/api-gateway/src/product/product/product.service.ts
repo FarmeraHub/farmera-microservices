@@ -347,9 +347,93 @@ export class ProductService {
           product_id: productId,
         }),
       );
-      return { qr_code: result.qr_code || null };
+      return { qr_code: (result as any).qr_code || null };
     } catch (err) {
       this.logger.error(`[getQRCode] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
+
+  async getTraceabilityData(productId: number): Promise<any> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.getTraceabilityData({
+          product_id: productId,
+        }),
+      );
+
+      // Map gRPC response to REST format like other endpoints
+      const traceabilityData = result.traceability_data;
+
+      return {
+        product: traceabilityData?.product
+          ? ProductMapper.fromGrpcProduct(traceabilityData.product)
+          : null,
+        assignments:
+          traceabilityData?.assignments?.map((assignment) => ({
+            assignment_id: assignment.assignment_id,
+            product_id: assignment.product_id,
+            process_id: assignment.process_id,
+            assigned_date: assignment.assigned_date,
+            status: assignment.status,
+            completion_percentage: assignment.completion_percentage,
+            created: assignment.created,
+            updated: assignment.updated,
+            current_step_order: assignment.current_step_order,
+            start_date: assignment.start_date,
+            actual_completion_date: assignment.actual_completion_date,
+            process_template: assignment.process_template
+              ? {
+                  process_id: assignment.process_template.process_id,
+                  process_name: assignment.process_template.process_name,
+                  description: assignment.process_template.description,
+                  farm_id: assignment.process_template.farm_id,
+                  is_active: assignment.process_template.is_active,
+                  created: assignment.process_template.created,
+                  updated: assignment.process_template.updated,
+                  estimated_duration_days:
+                    assignment.process_template.estimated_duration_days,
+                  steps:
+                    assignment.process_template.steps?.map((step) => ({
+                      step_id: step.step_id,
+                      process_id: step.process_id,
+                      step_order: step.step_order,
+                      step_name: step.step_name,
+                      step_description: step.step_description,
+                      is_required: step.is_required,
+                      created: step.created,
+                      estimated_duration_days: step.estimated_duration_days,
+                      instructions: step.instructions,
+                    })) || [],
+                }
+              : null,
+          })) || [],
+        step_diaries: traceabilityData?.step_diaries || [],
+      };
+    } catch (err) {
+      this.logger.error(`[getTraceabilityData] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
+
+  async verifyTraceability(productId: number): Promise<{
+    isValid: boolean;
+    error?: string;
+    verificationDate: string;
+  }> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.verifyTraceability({
+          product_id: productId,
+        }),
+      );
+      return {
+        isValid: result.is_valid,
+        error: result.error,
+        verificationDate: result.verification_date,
+      };
+    } catch (err) {
+      this.logger.error(`[verifyTraceability] ${err.message}`);
       throw ErrorMapper.fromGrpcError(err);
     }
   }

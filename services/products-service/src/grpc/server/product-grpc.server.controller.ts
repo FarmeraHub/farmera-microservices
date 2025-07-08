@@ -435,9 +435,45 @@ export class ProductGrpcServerController implements ProductsServiceController {
   async getQrCode(request: any): Promise<any> {
     try {
       const result = await this.productsService.getQRCode(request.product_id);
-      return { qr_code: result };
-    } catch (err) {
-      throw ErrorMapper.toRpcException(err);
+      return result;
+    } catch (error) {
+      throw ErrorMapper.toRpcException(error);
+    }
+  }
+
+  async getTraceabilityData(request: any): Promise<any> {
+    try {
+      const traceabilityData = await this.productsService.getTraceabilityData(
+        request.product_id,
+      );
+      return {
+        traceability_data: {
+          product: ProductMapper.toGrpcProduct(traceabilityData.product),
+          assignments: traceabilityData.assignments.map((assignment) =>
+            ProcessTemplateMapper.toGrpcProductProcessAssignment(assignment),
+          ),
+          step_diaries: traceabilityData.stepDiaries.map((diary) =>
+            ProcessTemplateMapper.toGrpcStepDiaryEntry(diary),
+          ),
+        },
+      };
+    } catch (error) {
+      throw ErrorMapper.toRpcException(error);
+    }
+  }
+
+  async verifyTraceability(request: any): Promise<any> {
+    try {
+      const result = await this.productsService.verifyProductTraceability(
+        request.product_id,
+      );
+      return {
+        is_valid: result.isValid,
+        error: result.error,
+        verification_date: result.verificationDate.toISOString(),
+      };
+    } catch (error) {
+      throw ErrorMapper.toRpcException(error);
     }
   }
 

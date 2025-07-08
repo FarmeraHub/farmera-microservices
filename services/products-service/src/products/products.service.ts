@@ -28,6 +28,12 @@ import { Process } from 'src/process/entities/process.entity';
 import * as QRCode from 'qrcode';
 import { ConfigService } from '@nestjs/config';
 import { ProcessStage } from 'src/common/enums/process-stage.enum';
+import { ProductProcessAssignment } from 'src/process/entities/product-process-assignment.entity';
+import { StepDiaryEntry } from 'src/diary/entities/step-diary-entry.entity';
+import {
+  BlockchainService,
+  TraceabilityData,
+} from 'src/services/blockchain.service';
 
 @Injectable()
 export class ProductsService implements OnModuleInit {
@@ -52,9 +58,14 @@ export class ProductsService implements OnModuleInit {
     private readonly farmRepository: Repository<Farm>,
     @InjectRepository(Process)
     private readonly processRepository: Repository<Process>,
+    @InjectRepository(ProductProcessAssignment)
+    private readonly assignmentRepository: Repository<ProductProcessAssignment>,
+    @InjectRepository(StepDiaryEntry)
+    private readonly stepDiaryRepository: Repository<StepDiaryEntry>,
     private readonly fileStorageService: AzureBlobService,
     private readonly configService: ConfigService,
-  ) { }
+    private readonly blockchainService: BlockchainService,
+  ) {}
 
   async create(
     createProductDto: CreateProductDto,
@@ -952,7 +963,7 @@ export class ProductsService implements OnModuleInit {
 
     const product = await this.productsRepository.findOne({
       where: { product_id: productId },
-      relations: ['farm', 'processes', 'processes.diaryEntries'],
+      relations: ['farm'],
     });
 
     if (!product) {
@@ -964,33 +975,52 @@ export class ProductsService implements OnModuleInit {
     }
 
     try {
-      // Generate blockchain data payload
-      const blockchainData = {
-        product_id: product.product_id,
-        product_name: product.product_name,
-        farm_id: product.farm?.farm_id,
-        farm_name: product.farm?.farm_name,
-        processes: product.processes?.map((process) => ({
-          process_id: process.process_id,
-          stage_name: process.stage_name,
-          description: process.description,
-          image_urls: process.image_urls,
-          start_date: process.start_date,
-          end_date: process.end_date,
-          diaryEntries: process.diaryEntries?.map((diary) => ({
-            diary_id: diary.diary_id,
-            step_name: diary.step_name,
-            step_description: diary.step_description,
-            recorded_date: diary.recorded_date,
-            image_urls: diary.image_urls,
-          })),
-        })),
-        timestamp: new Date().toISOString(),
+      // Get all process assignments for this product
+      const assignments = await this.assignmentRepository.find({
+        where: { product: { product_id: productId } },
+        relations: ['processTemplate', 'processTemplate.steps'],
+      });
+
+      if (!assignments || assignments.length === 0) {
+        throw new BadRequestException(
+          'Sản phẩm chưa có quy trình sản xuất nào được gán',
+        );
+      }
+
+      // Get all step diary entries for these assignments
+      const stepDiaries = await this.stepDiaryRepository.find({
+        where: {
+          assignment: {
+            assignment_id: In(assignments.map((a) => a.assignment_id)),
+          },
+        },
+        relations: ['assignment', 'step'],
+        order: { step_order: 'ASC', recorded_date: 'ASC' },
+      });
+
+      // Validate that all required steps are completed
+      const incompleteSteps = stepDiaries.filter(
+        (diary) => diary.completion_status !== 'COMPLETED',
+      );
+
+      if (incompleteSteps.length > 0) {
+        throw new BadRequestException(
+          `Không thể kích hoạt blockchain: còn ${incompleteSteps.length} bước chưa hoàn thành`,
+        );
+      }
+
+      // Create traceability data for blockchain
+      const traceabilityData: TraceabilityData = {
+        product,
+        assignments,
+        stepDiaries,
       };
 
-      // For now, simulate blockchain activation with a hash
-      // In production, this would integrate with actual blockchain service
-      const blockchainHash = this.generateBlockchainHash(blockchainData);
+      // Add to blockchain using the new service
+      const blockchainHash =
+        await this.blockchainService.addProductWithTraceability(
+          traceabilityData,
+        );
 
       // Update product with blockchain activation
       await this.productsRepository.update(productId, {
@@ -998,12 +1028,22 @@ export class ProductsService implements OnModuleInit {
         blockchain_hash: blockchainHash,
       });
 
+      this.logger.log(
+        `Blockchain activated for product ${productId} with hash: ${blockchainHash}`,
+      );
+
       return {
         blockchain_hash: blockchainHash,
         success: true,
       };
     } catch (error) {
       this.logger.error(`Blockchain activation failed: ${error.message}`);
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException('Không thể kích hoạt blockchain');
     }
   }
@@ -1027,5 +1067,83 @@ export class ProductsService implements OnModuleInit {
     }
 
     return { qr_code: product.qr_code || null };
+  }
+
+  async getTraceabilityData(productId: number): Promise<TraceabilityData> {
+    // Check if product exists
+    const product = await this.productsRepository.findOne({
+      where: { product_id: productId, status: Not(ProductStatus.DELETED) },
+      relations: ['farm'],
+    });
+
+    if (!product) {
+      throw new NotFoundException('Sản phẩm không tồn tại');
+    }
+
+    // Get all process assignments for this product
+    const assignments = await this.assignmentRepository.find({
+      where: { product: { product_id: productId } },
+      relations: ['processTemplate', 'processTemplate.steps'],
+      order: { assigned_date: 'ASC' },
+    });
+
+    // Get all step diary entries for these assignments
+    const assignmentIds = assignments.map((a) => a.assignment_id);
+    const stepDiaries =
+      assignmentIds.length > 0
+        ? await this.stepDiaryRepository.find({
+            where: {
+              assignment: { assignment_id: In(assignmentIds) },
+            },
+            relations: ['assignment', 'step'],
+            order: { step_order: 'ASC', recorded_date: 'ASC' },
+          })
+        : [];
+
+    return {
+      product,
+      assignments,
+      stepDiaries,
+    };
+  }
+
+  async verifyProductTraceability(productId: number): Promise<{
+    isValid: boolean;
+    error?: string;
+    verificationDate: Date;
+  }> {
+    try {
+      // Get traceability data
+      const traceabilityData = await this.getTraceabilityData(productId);
+
+      if (!traceabilityData.product.blockchain_activated) {
+        return {
+          isValid: false,
+          error: 'Sản phẩm chưa được kích hoạt blockchain',
+          verificationDate: new Date(),
+        };
+      }
+
+      // Verify with blockchain
+      const verificationResult =
+        await this.blockchainService.verifyProductTraceability(
+          traceabilityData,
+        );
+
+      return {
+        isValid: verificationResult.isValid,
+        error: verificationResult.error,
+        verificationDate: new Date(),
+      };
+    } catch (error) {
+      this.logger.error(
+        `Traceability verification failed for product ${productId}: ${error.message}`,
+      );
+      return {
+        isValid: false,
+        error: 'Không thể xác minh truy xuất nguồn gốc',
+        verificationDate: new Date(),
+      };
+    }
   }
 }
