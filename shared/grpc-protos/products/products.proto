@@ -98,6 +98,8 @@ service ProductsService {
   // Admin
   rpc UpdateProductStatusForAdmin(UpdateProductStatusForAdminRequest) returns (UpdateProductStatusForAdminResponse);
   rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
+  rpc SearchFarmForAdmin(SearchFarmForAdminRequest) returns (SearchFarmForAdminResponse);
+
 }
 
 // ======================================Product==========================================
@@ -415,6 +417,18 @@ message SearchFarmRequest {
 }
 
 message SearchFarmResponse {
+  repeated Farm farms = 1;
+  optional farmera.common.PaginationResponse pagination = 2;
+}
+
+message SearchFarmForAdminRequest {
+  optional string search_query = 1;
+  optional farmera.common.PaginationRequest pagination = 2;
+  optional farmera.common.FarmStatus status_filter = 3;
+  optional farmera.common.GeoLocation location_filter = 4;
+}
+
+message SearchFarmForAdminResponse {
   repeated Farm farms = 1;
   optional farmera.common.PaginationResponse pagination = 2;
 }

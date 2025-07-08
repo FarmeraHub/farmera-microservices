@@ -128,6 +128,8 @@ import {
   GetReviewOverviewResponse,
   UpdateProductStatusForAdminRequest,
   UpdateProductStatusForAdminResponse,
+  SearchFarmForAdminRequest,
+  SearchFarmForAdminResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
@@ -730,6 +732,35 @@ export class ProductGrpcServerController implements ProductsServiceController {
         success: result
       }
     } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async searchFarmForAdmin(request: SearchFarmForAdminRequest): Promise<SearchFarmForAdminResponse> {
+    try {
+      const geoLocation = TypesMapper.fromGrpcGeoLocation(
+        request.location_filter,
+      );
+      const pagination = PaginationMapper.fromGrpcPaginationRequest(
+        request.pagination,
+      );
+      const status = request.status_filter ? EnumsMapper.fromGrpcFarmStatus(request.status_filter) : undefined;
+      const farms = await this.farmAdminService.searchFarm(
+        {
+          query: request.search_query,
+          status_filter: status,
+          latitude: geoLocation?.latitude,
+          longitude: geoLocation?.longitude,
+          radius_km: geoLocation?.radius_km,
+        },
+        pagination,
+      );
+      return {
+        farms: farms.data.map((value) => FarmMapper.toGrpcFarm(value)),
+        pagination: PaginationMapper.toGrpcPaginationResponse(farms.meta),
+      };
+    } catch (err) {
+      this.logger.error(err.message);
       throw ErrorMapper.toRpcException(err);
     }
   }

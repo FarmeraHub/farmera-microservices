@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from 'src/common/interfaces/user.interface';
 import { AdminService } from './admin.service';
@@ -6,6 +6,7 @@ import { UpdateProductStatusForAdminDto } from './dto/update-product-status.dto'
 import { UpdateFarmStatusDto } from './dto/update-farm-status.dto';
 import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { User } from 'src/common/decorators/user.decorator';
+import { AdminSearchFarmDto } from './dto/search-farm-admin.dto';
 
 @Controller('admin')
 @Roles(UserRole.ADMIN)
@@ -25,4 +26,8 @@ export class AdminController {
         return await this.adminService.updateProductStatus(productId, updateStatusDto.status);
     }
 
+    @Get('farm/search')
+    async searchProducts(@Query() searchProductsDTo: AdminSearchFarmDto) {
+        return await this.adminService.searchFarm(searchProductsDTo);
+    }
 }

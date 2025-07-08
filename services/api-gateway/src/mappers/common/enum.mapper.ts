@@ -322,4 +322,16 @@ export class EnumMapper {
         throw new BadRequestException('Invalid payment provider');
     }
   }
+
+  static toGrpcFarmStatus(value: FarmStatus): GrpcFarmStatus | undefined {
+    if (!value) return undefined;
+    switch (value) {
+      case FarmStatus.PENDING: return GrpcFarmStatus.FARM_STATUS_PENDING;
+      case FarmStatus.VERIFIED: return GrpcFarmStatus.FARM_STATUS_VERIFIED;
+      case FarmStatus.APPROVED: return GrpcFarmStatus.FARM_STATUS_APPROVED;
+      case FarmStatus.BLOCKED: return GrpcFarmStatus.FARM_STATUS_BLOCKED;
+      case FarmStatus.REJECTED: return GrpcFarmStatus.FARM_STATUS_REJECTED;
+      default: return GrpcFarmStatus.FARM_STATUS_UNSPECIFIED;
+    }
+  }
 }
