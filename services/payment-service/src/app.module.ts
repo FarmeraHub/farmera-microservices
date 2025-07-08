@@ -11,7 +11,7 @@ import { DiscountModule } from './discounts/discount.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { PaymentGrpcServerModule } from './grpc/server/payment-grpc.server.module';
 import { PaymentClientModule } from './grpc/client/payment-client.module';
-import { NotificationModule } from './clients/notification/notification.module';
+import { NotificationModule } from './grpc/client/notification/notification.module';
 import { BusinessValidationModule } from './business-validation/business-validation.module';
 import { GhnModule } from './ghn/ghn.module';
 import { PayOSModule } from './payos/payos.module';

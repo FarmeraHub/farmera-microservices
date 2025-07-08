@@ -1,7 +1,7 @@
 import { CreateTemplateResponse, SendNotificationRequest } from "@farmera/grpc-proto/dist/notification/notification";
 import { Template } from "src/notification/notification/entities/template.entity";
 import { TypesMapper } from "../common/types.mapper";
-import { SendNotificationDto } from "src/notification/notification/entities/send.entity";
+import { SendNotificationDto } from "src/notification/notification/dto/send.dto";
 import { EnumMapper } from "../common/enum.mapper";
 
 export class NotificationMapper {

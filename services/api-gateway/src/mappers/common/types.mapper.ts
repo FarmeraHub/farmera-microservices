@@ -1,5 +1,5 @@
 import { Timestamp as GrpcTimestamp, ProductOptions as GrpcProductOptions, NotificationEmail, NotificationAttachment, StringMap } from "@farmera/grpc-proto/dist/common/types"
-import { Attachment, Email } from "src/notification/notification/entities/email.entity";
+import { Attachment, Email } from "src/notification/notification/dto/email.dto";
 import { ProductOptions } from "src/product/product/dto/product-options.dto";
 
 export class TypesMapper {

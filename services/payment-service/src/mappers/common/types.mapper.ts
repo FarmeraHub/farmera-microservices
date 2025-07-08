@@ -3,9 +3,9 @@ import {
     NotificationAttachment,
     NotificationEmail,
     StringMap,
-    ProductOptions as GrpcProductOptions 
+    ProductOptions as GrpcProductOptions
 } from "@farmera/grpc-proto/dist/common/types"
-import { Attachment, Email } from "src/clients/notification/entities/email.entity";
+import { Attachment, Email } from "src/grpc/client/notification/dtos/email.dto";
 import { ProductOptions } from "src/product/product/dto/product-options.dto";
 
 

@@ -1,11 +1,9 @@
 import { CreateTemplateResponse, GetTemplateResponse, GetUserPreferencesResponse, SendEmailNotificationRequest, SendNotificationRequest, SendPushNotificationRequest } from "@farmera/grpc-proto/dist/notification/notification";
-import { Template } from "src/clients/notification/entities/template.entity";
+import { Template } from "src/grpc/client/notification/entities/template.entity";
 import { TypesMapper } from "../common/types.mapper";
-import { UserPreferences } from "src/clients/notification/entities/user_preferences.entity";
+import { UserPreferences } from "src/grpc/client/notification/entities/user_preferences.entity";
 import { EnumsMapper } from "../common/enums.mapper";
-import { SendPushNotificationDto } from "src/clients/notification/dtos/send-push.dto";
-import { SendEmailNotificationDto } from "src/clients/notification/dtos/send-email.dto";
-import { SendNotification } from "src/clients/notification/dtos/send-notification.dto";
+import { SendNotification } from "src/grpc/client/notification/dtos/send-notification.dto";
 
 export class NotificationMapper {
     static fromGrpcGetTemplateResponse(value: GetTemplateResponse): Template {
@@ -38,34 +36,6 @@ export class NotificationMapper {
             do_not_disturb_start: value.do_not_disturb_start,
             do_not_disturb_end: value.do_not_disturb_end,
             time_zone: value.time_zone
-        }
-    }
-
-    static toGrpcSendPushNotificationRequest(value: SendPushNotificationDto): SendPushNotificationRequest {
-        return {
-            recipient: value.recipient,
-            type: EnumsMapper.toGrpcPushMessageType(value.type),
-            template_id: value.template_id,
-            template_props: TypesMapper.toGrpcStringMap(value.template_props),
-            title: value.title,
-            content: value.content,
-        }
-    }
-
-    static toGrpcSendEmailNotificationRequest(value: SendEmailNotificationDto): SendEmailNotificationRequest {
-        return {
-            to: value.to.map((value) => TypesMapper.toGrpcNotificationEmail(value)),
-            from: TypesMapper.toGrpcNotificationEmail(value.from),
-            template_id: value.template_id,
-            template_props: TypesMapper.toGrpcStringMap(value.template_props),
-            subject: value.subject,
-            content: value.content,
-            content_type: value.content_type,
-            attachments:
-                value.attachments ?
-                    { attachments: value.attachments.map((value) => TypesMapper.toGrpcNotificationAttachment(value)) } :
-                    undefined,
-            reply_to: value.reply_to ? TypesMapper.toGrpcNotificationEmail(value.reply_to) : undefined,
         }
     }
 

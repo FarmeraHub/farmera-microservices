@@ -6,8 +6,6 @@ import { NotificationMapper } from 'src/mappers/notification/notification.mapper
 import { Template } from './entities/template.entity';
 import { CreateTemplateDto } from './dtos/create-template.dto';
 import { UserPreferences } from './entities/user_preferences.entity';
-import { SendPushNotificationDto } from './dtos/send-push.dto';
-import { SendEmailNotificationDto } from './dtos/send-email.dto';
 import { SendNotification } from './dtos/send-notification.dto';
 
 @Injectable()
@@ -20,10 +18,6 @@ export class NotificationService implements OnModuleInit {
     onModuleInit() {
         this.grpcService = this.client.getService<NotificationServiceClient>("NotificationService");
     }
-
-    // async createNotification() { }
-
-    // async createTemplateNotification() { }
 
     async getTemplate(templateId: number): Promise<Template> {
         const result = await firstValueFrom(this.grpcService.getTemplate({ template_id: templateId }));
@@ -41,18 +35,6 @@ export class NotificationService implements OnModuleInit {
     async sendNotification(request: SendNotification) {
         return await firstValueFrom(this.grpcService.sendNotification(
             NotificationMapper.toGrpcSendNotificationRequest(request)
-        ));
-    }
-
-    async sendPushNotification(request: SendPushNotificationDto) {
-        return await firstValueFrom(this.grpcService.sendPushNotification(
-            NotificationMapper.toGrpcSendPushNotificationRequest(request)
-        ));
-    }
-
-    async sendEmailNotification(request: SendEmailNotificationDto) {
-        return await firstValueFrom(this.grpcService.sendEmailNotification(
-            NotificationMapper.toGrpcSendEmailNotificationRequest(request)
         ));
     }
 

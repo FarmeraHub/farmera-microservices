@@ -1,10 +1,10 @@
 import { ArrayNotEmpty, IsArray, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from "class-validator";
+import { Attachment, Email } from "../dtos/email.dto";
+import { NotificationChannel } from "../enums/channel";
+import { NotificationType } from "../enums/notification_type";
 import { Type } from "class-transformer";
-import { NotificationType } from "src/common/enums/notification/notification_type";
-import { NotificationChannel } from "src/common/enums/notification/notification-channel.enum";
-import { Attachment, Email } from "./email.entity";
 
-export class SendNotificationDto {
+export class SendNotification {
     @IsOptional()
     @IsString()
     recipient?: string;
@@ -47,6 +47,7 @@ export class SendNotificationDto {
     @Type(() => Attachment)
     attachments?: Attachment[];
 
+    @IsOptional()
     @ValidateNested()
     @Type(() => Email)
     reply_to: Email;
