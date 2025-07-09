@@ -24,6 +24,6 @@ import { BlockchainService } from 'src/services/blockchain.service';
   ],
   controllers: [ProductsController],
   providers: [ProductsService, AzureBlobService, BlockchainService],
-  exports: [ProductsService],
+  exports: [ProductsService, TypeOrmModule],
 })
-export class ProductsModule {}
+export class ProductsModule { }
