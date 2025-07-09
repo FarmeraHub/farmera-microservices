@@ -362,6 +362,14 @@ export class ProductService {
         }),
       );
 
+      // Helper function to convert gRPC timestamp to ISO string
+      const convertTimestamp = (timestamp: any): string => {
+        if (!timestamp?.value?.seconds) return new Date().toISOString();
+        const seconds = parseInt(timestamp.value.seconds);
+        const nanos = timestamp.value.nanos || 0;
+        return new Date(seconds * 1000 + nanos / 1000000).toISOString();
+      };
+
       // Map gRPC response to REST format like other endpoints
       const traceabilityData = result.traceability_data;
 
@@ -374,14 +382,18 @@ export class ProductService {
             assignment_id: assignment.assignment_id,
             product_id: assignment.product_id,
             process_id: assignment.process_id,
-            assigned_date: assignment.assigned_date,
+            assigned_date: convertTimestamp(assignment.assigned_date),
             status: assignment.status,
             completion_percentage: assignment.completion_percentage,
-            created: assignment.created,
-            updated: assignment.updated,
+            created: convertTimestamp(assignment.created),
+            updated: convertTimestamp(assignment.updated),
             current_step_order: assignment.current_step_order,
-            start_date: assignment.start_date,
-            actual_completion_date: assignment.actual_completion_date,
+            start_date: assignment.start_date
+              ? convertTimestamp(assignment.start_date)
+              : null,
+            actual_completion_date: assignment.actual_completion_date
+              ? convertTimestamp(assignment.actual_completion_date)
+              : null,
             process_template: assignment.process_template
               ? {
                   process_id: assignment.process_template.process_id,
@@ -389,8 +401,12 @@ export class ProductService {
                   description: assignment.process_template.description,
                   farm_id: assignment.process_template.farm_id,
                   is_active: assignment.process_template.is_active,
-                  created: assignment.process_template.created,
-                  updated: assignment.process_template.updated,
+                  created: convertTimestamp(
+                    assignment.process_template.created,
+                  ),
+                  updated: convertTimestamp(
+                    assignment.process_template.updated,
+                  ),
                   estimated_duration_days:
                     assignment.process_template.estimated_duration_days,
                   steps:
@@ -401,14 +417,36 @@ export class ProductService {
                       step_name: step.step_name,
                       step_description: step.step_description,
                       is_required: step.is_required,
-                      created: step.created,
+                      created: convertTimestamp(step.created),
                       estimated_duration_days: step.estimated_duration_days,
                       instructions: step.instructions,
                     })) || [],
                 }
               : null,
           })) || [],
-        step_diaries: traceabilityData?.step_diaries || [],
+        step_diaries:
+          traceabilityData?.step_diaries?.map((diary) => ({
+            entry_id: diary.diary_id, // Map diary_id to entry_id
+            assignment_id: diary.assignment_id,
+            step_id: diary.step_id,
+            step_name: diary.step_name,
+            step_order: diary.step_order,
+            notes: diary.notes,
+            image_urls: diary.image_urls || [], // Map image_urls directly
+            video_urls: diary.video_urls || [], // Map video_urls directly
+            recorded_date: convertTimestamp(diary.recorded_date),
+            is_completed: diary.completion_status === 1, // Fix: Use enum value instead of string
+            created_by: null, // Not available in gRPC response
+            updated_at: convertTimestamp(diary.updated),
+            // Additional fields for potential future use
+            latitude: diary.latitude,
+            longitude: diary.longitude,
+            weather_conditions: diary.weather_conditions,
+            quality_rating: diary.quality_rating,
+            issues_encountered: diary.issues_encountered,
+            additional_data: diary.additional_data,
+            created: convertTimestamp(diary.created),
+          })) || [],
       };
     } catch (err) {
       this.logger.error(`[getTraceabilityData] ${err.message}`);

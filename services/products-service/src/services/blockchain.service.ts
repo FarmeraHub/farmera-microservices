@@ -55,27 +55,37 @@ export class BlockchainService {
   private readonly provider: ethers.JsonRpcProvider;
   private readonly contract: ethers.Contract;
   private readonly wallet: ethers.Wallet;
+  private readonly isDevelopmentMode: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    this.provider = new ethers.JsonRpcProvider(
-      this.configService.get<string>('SEPOLIA_RPC_URL'),
-    );
+    const sepoliaUrl = this.configService.get<string>('SEPOLIA_RPC_URL');
     const walletKey = this.configService.get<string>('WALLET_PRIVATE_KEY');
-    if (!walletKey) {
-      throw new BadRequestException(
-        'WALLET_PRIVATE_KEY is not defined in environment variables',
-      );
-    }
-    this.wallet = new ethers.Wallet(walletKey, this.provider);
     const contractAddress = this.configService.get<string>('CONTRACT_ADDRESS');
-    if (!contractAddress) {
-      throw new BadRequestException(
-        'CONTRACT_ADDRESS is not defined in environment variables',
+
+    // Check if we're in development mode (missing or placeholder configs)
+    this.isDevelopmentMode =
+      !sepoliaUrl ||
+      !walletKey ||
+      !contractAddress ||
+      sepoliaUrl.includes('YOUR_INFURA_PROJECT_ID') ||
+      walletKey === 'your_wallet_private_key' ||
+      contractAddress === 'your_contract_address';
+
+    if (this.isDevelopmentMode) {
+      this.logger.warn(
+        '🔧 Running in DEVELOPMENT MODE - blockchain calls will be mocked',
       );
+      this.logger.warn(
+        '💡 To enable real blockchain: Set SEPOLIA_RPC_URL, WALLET_PRIVATE_KEY, CONTRACT_ADDRESS',
+      );
+      return;
     }
-    // this.contract = new ethers.Contract(contractAddress, PROCESS_TRACKING_ABI, this.wallet);
+
+    // Real blockchain setup
+    this.provider = new ethers.JsonRpcProvider(sepoliaUrl!);
+    this.wallet = new ethers.Wallet(walletKey!, this.provider);
     this.contract = new ethers.Contract(
-      contractAddress,
+      contractAddress!,
       PRODUCT_TRACKING_ABI,
       this.wallet,
     );
@@ -88,6 +98,19 @@ export class BlockchainService {
       this.logger.log(
         `Adding product ${traceabilityData.product.product_id} with traceability data to blockchain`,
       );
+
+      // Development mode: return mock hash
+      if (this.isDevelopmentMode) {
+        const blockchainData = this.createTraceabilityPayload(traceabilityData);
+        const mockHash = createHash('sha256')
+          .update(JSON.stringify(blockchainData))
+          .digest('hex');
+
+        this.logger.log(
+          `🔧 MOCK: Generated hash ${mockHash} for product ${traceabilityData.product.product_id}`,
+        );
+        return mockHash;
+      }
 
       // Create comprehensive traceability data for hashing
       const blockchainData = this.createTraceabilityPayload(traceabilityData);
@@ -128,6 +151,14 @@ export class BlockchainService {
       this.logger.log(
         `Verifying traceability data for product ${traceabilityData.product.product_id}`,
       );
+
+      // Development mode: always return valid
+      if (this.isDevelopmentMode) {
+        this.logger.log(
+          `🔧 MOCK: Verification passed for product ${traceabilityData.product.product_id}`,
+        );
+        return { isValid: true };
+      }
 
       // Get blockchain data
       const onChainProduct = await this.getProduct(
@@ -183,6 +214,16 @@ export class BlockchainService {
           description: assignment.processTemplate.description,
           estimated_duration_days:
             assignment.processTemplate.estimated_duration_days,
+          steps:
+            assignment.processTemplate.steps?.map((step) => ({
+              step_id: step.step_id,
+              step_name: step.step_name,
+              step_description: step.step_description,
+              step_order: step.step_order,
+              is_required: step.is_required,
+              estimated_duration_days: step.estimated_duration_days,
+              instructions: step.instructions,
+            })) || [],
         },
         assigned_date: assignment.assigned_date,
         status: assignment.status,
@@ -193,6 +234,8 @@ export class BlockchainService {
       })),
       stepDiaries: stepDiaries.map((diary) => ({
         diary_id: diary.diary_id,
+        assignment_id: diary.assignment.assignment_id,
+        step_id: diary.step.step_id,
         step_name: diary.step_name,
         step_order: diary.step_order,
         notes: diary.notes,
@@ -205,8 +248,13 @@ export class BlockchainService {
         issues_encountered: diary.issues_encountered,
         image_urls: diary.image_urls,
         video_urls: diary.video_urls,
+        additional_data: diary.additional_data,
       })),
-      timestamp: new Date().toISOString(),
+      blockchainMetadata: {
+        timestamp: new Date().toISOString(),
+        version: '2.0', // New version for the updated structure
+        data_structure: 'process_template_based',
+      },
     };
   }
 

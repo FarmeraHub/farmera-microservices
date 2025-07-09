@@ -397,7 +397,12 @@ export class ProductController {
   async getTraceabilityData(
     @Param('product_id', ParseIntPipe) productId: number,
   ) {
-    return await this.productService.getTraceabilityData(productId);
+    const traceabilityData =
+      await this.productService.getTraceabilityData(productId);
+    return {
+      data: traceabilityData,
+      message: 'Traceability data retrieved successfully',
+    };
   }
 
   @Public()

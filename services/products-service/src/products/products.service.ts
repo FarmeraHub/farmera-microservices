@@ -1004,8 +1004,25 @@ export class ProductsService implements OnModuleInit {
       );
 
       if (incompleteSteps.length > 0) {
+        const incompleteStepNames = incompleteSteps
+          .map((d) => d.step_name)
+          .join(', ');
         throw new BadRequestException(
-          `Không thể kích hoạt blockchain: còn ${incompleteSteps.length} bước chưa hoàn thành`,
+          `Không thể kích hoạt blockchain: còn ${incompleteSteps.length} bước chưa hoàn thành (${incompleteStepNames})`,
+        );
+      }
+
+      // Validate that all assignments are completed
+      const incompleteAssignments = assignments.filter(
+        (assignment) => assignment.status !== 'COMPLETED',
+      );
+
+      if (incompleteAssignments.length > 0) {
+        const incompleteProcessNames = incompleteAssignments
+          .map((a) => a.processTemplate.process_name)
+          .join(', ');
+        throw new BadRequestException(
+          `Không thể kích hoạt blockchain: còn ${incompleteAssignments.length} quy trình chưa hoàn thành (${incompleteProcessNames})`,
         );
       }
 
