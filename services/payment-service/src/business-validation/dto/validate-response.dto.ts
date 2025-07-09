@@ -13,6 +13,7 @@ export interface IssusesValidation {
     requested_product_id?: number; // ID sản phẩm được yêu cầu nếu có
     requested_quantity?: number; // Số lượng sản phẩm được yêu cầu nếu có
     available_stock?: number; // Số lượng tồn kho hiện có nếu có
+    actual_farm_id?: string; // ID farm thực tế nếu có
 }
 export interface ValidOrderItem {
     product_id: number; // ID sản phẩm

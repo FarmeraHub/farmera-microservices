@@ -124,8 +124,18 @@ import {
   GetStepDiariesRequest,
   GetStepDiariesResponse,
   GetProductDiariesRequest,
-  GetProductDiariesResponse, GetReviewOverviewRequest,
+  GetProductDiariesResponse,
+  GetProductsAssignedToProcessRequest,
+  GetProductsAssignedToProcessResponse,
+  GetReviewOverviewRequest,
   GetReviewOverviewResponse,
+  DeleteStepDiaryRequest,
+  DeleteStepDiaryResponse,
+  UpdateStepDiaryRequest,
+  UpdateStepDiaryResponse, UpdateQuantityRequest,
+  UpdateQuantityResponse,
+  UpdateQuantitiesRequest,
+  UpdateQuantitiesResponse,
   UpdateProductStatusForAdminRequest,
   UpdateProductStatusForAdminResponse,
   SearchFarmForAdminRequest,
@@ -136,26 +146,27 @@ import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
 import { FarmStatus } from 'src/common/enums/farm-status.enum';
 import { GrpcStreamMethod, RpcException } from '@nestjs/microservices';
-import { FarmMapper } from './mappers/product/farm.mapper';
+import { FarmMapper } from '../../mappers/product/farm.mapper';
 import { VerifyStatusCode } from '@farmera/grpc-proto/dist/common/enums';
 import { Readable } from 'stream';
-import { CategoryMapper } from './mappers/product/category.mapper';
+import { CategoryMapper } from '../../mappers/product/category.mapper';
 import { ReviewsService } from 'src/reviews/reviews.service';
-import { ReviewMapper } from './mappers/product/review.mapper';
+import { ReviewMapper } from '../../mappers/product/review.mapper';
 import { ProcessService } from 'src/process/process.service';
-import { ProcessTemplateService } from 'src/process/process-template.service';
-import { StepDiaryService } from 'src/diary/step-diary.service';
-import { TypesMapper } from './mappers/common/types.mapper';
-import { ProcessMapper } from './mappers/product/process.mapper';
-import { ProcessTemplateMapper } from './mappers/product/process-template.mapper';
-import { DiaryService } from 'src/diary/diary.service';
-import { DiaryMapper } from './mappers/product/diary.mapper';
-import { EnumsMapper } from './mappers/common/enums.mapper';
+import { TypesMapper } from '../../mappers/common/types.mapper';
+import { ProcessMapper } from '../../mappers/product/process.mapper';
+import { EnumsMapper } from '../../mappers/common/enums.mapper';
 import { status } from '@grpc/grpc-js';
 import { CreateSubcategoryDto } from 'src/categories/dto/create-subcategories.dto';
-import { ErrorMapper } from './mappers/common/error.mapper';
-import { PaginationMapper } from './mappers/common/pagination.mapper';
-import { ProductMapper } from './mappers/product/product.mapper';
+import { ErrorMapper } from '../../mappers/common/error.mapper';
+import { PaginationMapper } from '../../mappers/common/pagination.mapper';
+import { ProductMapper } from "../../mappers/product/product.mapper";
+import { ProcessTemplateService } from 'src/process/process-template.service';
+import { StepDiaryService } from 'src/diary/step-diary.service';
+import { DiaryService } from 'src/diary/diary.service';
+import { ProcessTemplateMapper } from 'src/mappers/product/process-template.mapper';
+import { DiaryMapper } from 'src/mappers/product/diary.mapper';
+import { UpdateProductQuantityOperation } from 'src/common/enums/update-product-quantity-operation.enum';
 import { ProductAdminService } from 'src/admin/product/product-admin.service';
 
 @Controller()
@@ -645,13 +656,26 @@ export class ProductGrpcServerController implements ProductsServiceController {
     }
   }
 
-  updateFarm(
-    request: UpdateFarmRequest,
-  ):
-    | Promise<UpdateFarmResponse>
-    | Observable<UpdateFarmResponse>
-    | UpdateFarmResponse {
-    throw new Error('Method not implemented.');
+  async updateFarm(request: UpdateFarmRequest): Promise<UpdateFarmResponse> {
+    try {
+      const userId = request.user_id;
+      const updateFarmDto: any = {
+        farm_name: request.farm_name,
+        description: request.description,
+        // Add more fields here if proto is extended
+      };
+      const updatedFarm = await this.farmsService.updateFarm(
+        request.farm_id,
+        updateFarmDto,
+        userId,
+      );
+      return {
+        farm: FarmMapper.toGrpcFarm(updatedFarm),
+      };
+    } catch (err) {
+      this.logger.error(err.message);
+      throw ErrorMapper.toRpcException(err);
+    }
   }
 
   async listFarms(request: ListFarmsRequest): Promise<ListFarmsResponse> {
@@ -1004,34 +1028,40 @@ export class ProductGrpcServerController implements ProductsServiceController {
       const result = await this.reviewService.getReviewsByCursor(
         request.product_id,
         request.pagination?.sort_by ?? 'created',
-        request.pagination?.order ? EnumsMapper.fromGrpcPaginationOrder(request.pagination.order) : 'DESC',
+        request.pagination?.order
+          ? EnumsMapper.fromGrpcPaginationOrder(request.pagination.order)
+          : 'DESC',
         request.pagination?.limit ?? 10,
         request.pagination?.cursor ?? '',
-        request.rating_filter
+        request.rating_filter,
       );
       return {
-        reviews: result.data.reviews.map((value) => ReviewMapper.toGrpcReview(value)),
+        reviews: result.data.reviews.map((value) =>
+          ReviewMapper.toGrpcReview(value),
+        ),
         pagination: {
-          next_cursor: result.data.nextCursor ?? undefined
-        }
-      }
-    }
-    catch (err) {
+          next_cursor: result.data.nextCursor ?? undefined,
+        },
+      };
+    } catch (err) {
       throw ErrorMapper.toRpcException(err);
     }
   }
 
-  async getReviewOverview(request: GetReviewOverviewRequest): Promise<GetReviewOverviewResponse> {
+  async getReviewOverview(
+    request: GetReviewOverviewRequest,
+  ): Promise<GetReviewOverviewResponse> {
     try {
-      const result = await this.reviewService.getReviewOverview(request.product_id);
+      const result = await this.reviewService.getReviewOverview(
+        request.product_id,
+      );
       return {
         total_count: result.totalCount,
         total_ratings: result.totalRating,
         average_rating: result.averageRating,
-        rating_overview: result.ratings
-      }
-    }
-    catch (err) {
+        rating_overview: result.ratings,
+      };
+    } catch (err) {
       throw ErrorMapper.toRpcException(err);
     }
   }
@@ -1400,6 +1430,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
     request: CreateStepDiaryRequest,
   ): Promise<CreateStepDiaryResponse> {
     try {
+      console.log('request', request);
+
       const createDto = {
         assignment_id: request.assignment_id,
         step_id: request.step_id,
@@ -1426,6 +1458,8 @@ export class ProductGrpcServerController implements ProductsServiceController {
           ? JSON.parse(request.additional_data)
           : undefined,
       };
+
+      console.log('createDto', createDto);
 
       const result = await this.stepDiaryService.createStepDiary(
         createDto,
@@ -1476,6 +1510,170 @@ export class ProductGrpcServerController implements ProductsServiceController {
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async deleteStepDiary(
+    request: DeleteStepDiaryRequest,
+  ): Promise<DeleteStepDiaryResponse> {
+    try {
+      const result = await this.stepDiaryService.deleteStepDiary(
+        request.diary_id,
+        request.user_id,
+      );
+      return { success: result };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async updateStepDiary(
+    request: UpdateStepDiaryRequest,
+  ): Promise<UpdateStepDiaryResponse> {
+    try {
+      const updateDto = {
+        diary_id: request.diary_id,
+        step_name: request.step_name,
+        step_order: request.step_order,
+        notes: request.notes,
+        completion_status: request.completion_status
+          ? ProcessTemplateMapper.fromGrpcDiaryCompletionStatus(
+            request.completion_status,
+          )
+          : undefined,
+        image_urls: request.image_urls,
+        video_urls: request.video_urls,
+        recorded_date: request.recorded_date
+          ? TypesMapper.fromGrpcTimestamp(request.recorded_date)
+          : undefined,
+        latitude: request.latitude,
+        longitude: request.longitude,
+        weather_conditions: request.weather_conditions,
+        quality_rating: request.quality_rating,
+        issues_encountered: request.issues_encountered,
+        additional_data: request.additional_data
+          ? JSON.parse(request.additional_data)
+          : undefined,
+      };
+
+      const result = await this.stepDiaryService.updateStepDiary(
+        updateDto as any,
+        request.user_id,
+      );
+
+      return {
+        diary: ProcessTemplateMapper.toGrpcStepDiaryEntry(result),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getProductsAssignedToProcess(
+    request: GetProductsAssignedToProcessRequest,
+  ): Promise<GetProductsAssignedToProcessResponse> {
+    try {
+      // This is a placeholder implementation
+      // In a real implementation, you would query the database for products assigned to this process
+      const products = await this.productsService.findProductsByFarmId(
+        request.user_id,
+        { include_farm: true },
+        { page: 1, limit: 1000, all: true, skip: 0 },
+      );
+
+      return {
+        products: products.data
+          .filter(
+            (product) => product.processes && product.processes.length > 0,
+          )
+          .map((product) => ProductMapper.toGrpcProduct(product)),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+  async updateProductQuantity(request: UpdateQuantityRequest): Promise<UpdateQuantityResponse> {
+    try {
+      if (!request || !request.item) {
+        return {
+          success: false,
+          message: 'Thiếu thông tin bắt buộc: item'
+        };
+      }
+      if (!request.item.product_id || !request.item.request_quantity || !request.item.operation) {
+        return {
+          success: false,
+          message: 'Thiếu thông tin bắt buộc: product_id, request_quantity, operation'
+        };
+      }
+
+      if (request.item.request_quantity <= 0) {
+        return {
+          success: false,
+          message: 'Số lượng yêu cầu phải lớn hơn 0'
+        };
+      }
+      const operation: UpdateProductQuantityOperation = EnumsMapper.fromGrpcUpdateProductQuantityOperation(request.item.operation);
+      if (!operation) {
+        return {
+          success: false,
+          message: 'Phương thức cập nhật không hợp lệ'
+        };
+      }
+
+      const result = await this.productsService.updateProductQuantity(
+        request.item.product_id,
+        request.item.request_quantity,
+        operation
+      );
+      return {
+        success: result.success,
+        message: result.message,
+      };
+
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Lỗi hệ thống khi cập nhật số lượng sản phẩm'
+      };
+    }
+  }
+
+  async updateProductsQuantity(request: UpdateQuantitiesRequest): Promise<UpdateQuantitiesResponse> {
+    try {
+      if (!request || !request.items || request.items.length === 0) {
+        return {
+          success: false,
+          message: 'Thiếu thông tin bắt buộc: items',
+          results: []
+        };
+      }
+
+      const items = request.items.map(item => ({
+        product_id: item.product_id,
+        request_quantity: item.request_quantity,
+        operation: EnumsMapper.fromGrpcUpdateProductQuantityOperation(item.operation)
+      }));
+      const result = await this.productsService.updateProductQuantities(items);
+      this.logger.debug(`Kết quả giảm quanties:${JSON.stringify(result, null, 2)}`)
+      return {
+        success: result.success,
+        message: result.message,
+        results: result.results.map(res => ({
+          product_id: res.product_id,
+          success: res.success,
+          message: res.message,
+          previous_quantity: res.previous_quantity ?? 0,
+          new_quantity: res.new_quantity ?? 0
+        }))
+      };
+
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Lỗi hệ thống khi cập nhật số lượng sản phẩm',
+        results: []
+      };
     }
   }
 }

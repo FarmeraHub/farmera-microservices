@@ -43,7 +43,7 @@ export class CreateStepDiaryDto {
 
   @IsOptional()
   @IsEnum(DiaryCompletionStatus)
-  completion_status?: DiaryCompletionStatus = DiaryCompletionStatus.IN_PROGRESS;
+  completion_status?: DiaryCompletionStatus;
 
   @IsOptional()
   @IsArray()

@@ -1,3 +1,4 @@
+import { map } from 'rxjs';
 import { Subcategory } from 'src/categories/entities/subcategory.entity';
 import { Farm } from './../farms/entities/farm.entity';
 import {
@@ -11,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
-import { In, Not, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { FarmStatus } from 'src/common/enums/farm-status.enum';
 import {
@@ -28,6 +29,7 @@ import { Process } from 'src/process/entities/process.entity';
 import * as QRCode from 'qrcode';
 import { ConfigService } from '@nestjs/config';
 import { ProcessStage } from 'src/common/enums/process-stage.enum';
+import { UpdateProductQuantityOperation } from 'src/common/enums/update-product-quantity-operation.enum';
 
 @Injectable()
 export class ProductsService implements OnModuleInit {
@@ -54,7 +56,8 @@ export class ProductsService implements OnModuleInit {
     private readonly processRepository: Repository<Process>,
     private readonly fileStorageService: AzureBlobService,
     private readonly configService: ConfigService,
-  ) {}
+    private readonly dataSource: DataSource,
+  ) { }
 
   async create(
     createProductDto: CreateProductDto,
@@ -486,7 +489,7 @@ export class ProductsService implements OnModuleInit {
       this.logger.log(
         `(findProductsByIds) Tìm thấy ${products.length} sản phẩm với ID: ${productIds.join(', ')}`,
       );
-      this.logger.log(`(Products) ${JSON.stringify(products, null, 2)}`);
+      //this.logger.log(`(Products) ${JSON.stringify(products, null, 2)}`);
       return products;
     } catch (err) {
       if (err instanceof NotFoundException) throw err;
@@ -1027,5 +1030,225 @@ export class ProductsService implements OnModuleInit {
     }
 
     return { qr_code: product.qr_code || null };
+  }
+
+  async updateProductQuantity(productId: number, request_quantity: number, operation: UpdateProductQuantityOperation): Promise<{ success: boolean, message: string }> {
+    try {
+
+      const product = await this.productsRepository.findOne({
+        where: { product_id: productId },
+      });
+
+      if (!product) {
+        return {
+          success: false,
+          message: 'Sản phẩm không tồn tại'
+        };
+      }
+
+      if (product.status !== ProductStatus.OPEN_FOR_SALE) {
+        return {
+          success: false,
+          message: 'Sản phẩm không thể cập nhật số lượng'
+        };
+      }
+
+      if (operation === UpdateProductQuantityOperation.DECREASE && product.stock_quantity < request_quantity) {
+        return {
+          success: false,
+          message: `Số lượng không đủ. Hiện có: ${product.stock_quantity}, yêu cầu: ${request_quantity}`
+        };
+      }
+
+      if (operation === UpdateProductQuantityOperation.INCREASE) {
+        product.stock_quantity += request_quantity;
+      } else if (operation === UpdateProductQuantityOperation.DECREASE) {
+        product.stock_quantity -= request_quantity;
+      } else {
+        return {
+          success: false,
+          message: 'Phương thức cập nhật không hợp lệ'
+        };
+      }
+
+      await this.productsRepository.save(product);
+
+      return {
+        success: true,
+        message: `Cập nhật số lượng thành công. Số lượng hiện tại: ${product.stock_quantity}`
+      };
+
+    } catch (error) {
+      this.logger.error(`Cập nhật số lượng sản phẩm thất bại: ${error.message}`);
+      return {
+        success: false,
+        message: 'Lỗi hệ thống khi cập nhật số lượng sản phẩm'
+      };
+    }
+  }
+  async updateProductQuantities(items: Array<{ product_id: number; request_quantity: number; operation: UpdateProductQuantityOperation }>)
+    : Promise<{
+      success: boolean,
+      message: string,
+      results: Array<{
+        product_id: number;
+        success: boolean;
+        message: string;
+        previous_quantity?: number;
+        new_quantity?: number;
+      }>;
+    }> {
+    if (!items || items.length === 0) {
+      return {
+        success: false,
+        message: 'Danh sách sản phẩm không được rỗng',
+        results: []
+      };
+    }
+
+    if (items.length > 100) {
+      return {
+        success: false,
+        message: 'Tối đa 100 sản phẩm mỗi lần cập nhật',
+        results: []
+      };
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+
+      const results: Array<{
+        product_id: number;
+        success: boolean;
+        message: string;
+        previous_quantity?: number;
+        new_quantity?: number;
+      }> = [];
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const item of items) {
+        try {
+          if (item.product_id === undefined || !item.request_quantity || !item.operation) {
+            results.push({
+              product_id: item.product_id || 0,
+              success: false,
+              message: 'Thiếu thông tin bắt buộc: productId, request_quantity, operation'
+            });
+            failCount++;
+            continue;
+          }
+
+          if (item.request_quantity <= 0) {
+            results.push({
+              product_id: item.product_id,
+              success: false,
+              message: 'Số lượng yêu cầu phải lớn hơn 0'
+            });
+            failCount++;
+            continue;
+          }
+          const product = await queryRunner.manager.findOne(Product, {
+            where: { product_id: item.product_id }
+          });
+
+          if (!product) {
+            results.push({
+              product_id: item.product_id,
+              success: false,
+              message: 'Sản phẩm không tồn tại'
+            });
+            failCount++;
+            continue;
+          }
+          if (item.operation === UpdateProductQuantityOperation.DECREASE &&
+            product.stock_quantity < item.request_quantity) {
+            results.push({
+              product_id: item.product_id,
+              success: false,
+              message: `Số lượng không đủ. Hiện có: ${product.stock_quantity}, yêu cầu: ${item.request_quantity}`
+            });
+            failCount++;
+            continue;
+          }
+
+          const previousQuantity = product.stock_quantity;
+
+          if (item.operation === UpdateProductQuantityOperation.INCREASE) {
+            product.stock_quantity += item.request_quantity;
+          } else if (item.operation === UpdateProductQuantityOperation.DECREASE) {
+            product.stock_quantity -= item.request_quantity;
+          } else {
+            results.push({
+              product_id: item.product_id,
+              success: false,
+              message: 'Phương thức cập nhật không hợp lệ'
+            });
+            failCount++;
+            continue;
+          }
+
+          await queryRunner.manager.save(Product, product);
+          results.push({
+            product_id: item.product_id,
+            success: true,
+            message: `Cập nhật thành công từ ${previousQuantity} thành ${product.stock_quantity}`,
+            previous_quantity: previousQuantity,
+            new_quantity: product.stock_quantity
+          });
+          successCount++;
+
+          this.logger.debug(`Product ${item.product_id} updated: ${previousQuantity} -> ${product.stock_quantity}`);
+
+        } catch (error) {
+          this.logger.error(`Error updating product ${item.product_id}:`, error);
+          results.push({
+            product_id: item.product_id,
+            success: false,
+            message: `Lỗi hệ thống: ${error.message}`
+          });
+          failCount++;
+        }
+      }
+
+      if (failCount === 0) {
+        await queryRunner.commitTransaction();
+        this.logger.log(`Successfully updated ${successCount} products`);
+        return {
+          success: true,
+          message: `Cập nhật thành công ${successCount} sản phẩm`,
+          results
+        };
+      } else {
+        await queryRunner.rollbackTransaction();
+        this.logger.warn(`Transaction rolled back: ${successCount} success, ${failCount} failed`);
+        return {
+          success: false,
+          message: `Có ${failCount} sản phẩm cập nhật thất bại. Đã hoàn tác tất cả thay đổi.`,
+          results
+        };
+      }
+
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error('Bulk update products quantity failed:', error);
+
+      return {
+        success: false,
+        message: `Lỗi hệ thống khi cập nhật hàng loạt: ${error.message}`,
+        results: items.map(item => ({
+          product_id: item.product_id || 0,
+          success: false,
+          message: 'Lỗi hệ thống'
+        }))
+      };
+    } finally {
+      await queryRunner.release();
+    }
+
+
   }
 }

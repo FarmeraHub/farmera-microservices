@@ -1,7 +1,6 @@
 export enum PaymentProvider {
-  STRIPE = 'stripe',
-  PAYPAL = 'paypal',
-  BANK_TRANSFER = 'bank_transfer',
-  CREDIT_CARD = 'credit_card',
+  VNPAY = 'vnpay',
+  MOMO = 'momo',
+  ZALOPAY = 'zalopay',
   OTHER = 'other',
 }

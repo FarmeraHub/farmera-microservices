@@ -12,6 +12,11 @@ import {
   PaymentProvider as GrpcPaymentProvider,
   NotificationChannel as GrpcNotificationChannel,
   NotificationType as GrpcNotificationType,
+  OrderStatus as GrpcOrderStatus,
+  SubOrderStatus as GrpcSubOrderStatus,
+  PaymentStatus as GrpcPaymentStatus,
+  PaymentMethod as GrpcPaymentMethod,
+  DeliveryStatus as GrpcDeliveryStatus,
 } from '@farmera/grpc-proto/dist/common/enums';
 import { MessageType } from 'src/communication/enums/message-type.enums';
 import { FarmStatus } from 'src/common/enums/product/farm-status.enum';
@@ -29,6 +34,10 @@ import { Gender } from 'src/common/enums/user/gender.enum';
 import { UserRole } from "src/common/interfaces/user.interface";
 import { UserStatus } from 'src/common/enums/user/status.enum';
 import { PaymentProvider } from 'src/common/enums/user/payment_method.enum';
+import { OrderStatus } from 'src/common/enums/payment/order-status.enum';
+import { SubOrderStatus } from 'src/common/enums/payment/sub-order-status.enum';
+import { PaymentMethod, PaymentStatus } from 'src/common/enums/payment/payment.enum';
+import { DeliveryStatus } from 'src/common/enums/payment/delivery.enum';
 
 export class EnumMapper {
   static fromGrpcIdentificationMethod(
@@ -319,6 +328,7 @@ export class EnumMapper {
     }
   }
 
+
   static fromGrpcPaymentProvider(value: GrpcPaymentProvider): PaymentProvider {
     switch (value.toString()) {
       case 'PAYMENT_PROVIDER_VNPAY':
@@ -331,6 +341,190 @@ export class EnumMapper {
         return PaymentProvider.OTHER;
       default:
         throw new BadRequestException('Invalid payment provider');
+    }
+  }
+
+  static fromGrpcOrderStatus(value: GrpcOrderStatus): OrderStatus {
+    switch (value.toString()) {
+      case 'ORDER_STATUS_PENDING':
+        return OrderStatus.PENDING;
+      case 'ORDER_STATUS_PROCESSING':
+        return OrderStatus.PROCESSING;
+      case 'ORDER_STATUS_PAID':
+        return OrderStatus.PAID;
+      case 'ORDER_STATUS_SHIPPED':
+        return OrderStatus.SHIPPED;
+      case 'ORDER_STATUS_DELIVERED':
+        return OrderStatus.DELIVERED;
+      case 'ORDER_STATUS_CANCELED':
+        return OrderStatus.CANCELED;
+      case 'ORDER_STATUS_RETURNED':
+        return OrderStatus.RETURNED;
+      case 'ORDER_STATUS_FAILED':
+        return OrderStatus.FAILED;
+      default:
+        throw new BadRequestException('Invalid order status');
+    }
+  }
+  static toGrpcOrderStatus(value: OrderStatus): GrpcOrderStatus {
+    switch (value) {
+      case OrderStatus.PENDING:
+        return GrpcOrderStatus.ORDER_STATUS_PENDING;
+      case OrderStatus.PROCESSING:
+        return GrpcOrderStatus.ORDER_STATUS_PROCESSING;
+      case OrderStatus.PAID:
+        return GrpcOrderStatus.ORDER_STATUS_PAID;
+      case OrderStatus.SHIPPED:
+        return GrpcOrderStatus.ORDER_STATUS_SHIPPED;
+      case OrderStatus.DELIVERED:
+        return GrpcOrderStatus.ORDER_STATUS_DELIVERED;
+      case OrderStatus.CANCELED:
+        return GrpcOrderStatus.ORDER_STATUS_CANCELED;
+      case OrderStatus.RETURNED:
+        return GrpcOrderStatus.ORDER_STATUS_RETURNED;
+      case OrderStatus.FAILED:
+        return GrpcOrderStatus.ORDER_STATUS_FAILED;
+      default:
+        return GrpcOrderStatus.ORDER_STATUS_UNSPECIFIED;
+    }
+  }
+
+  static fromGrpcSubOrderStatus(value: GrpcSubOrderStatus): SubOrderStatus {
+    switch (value.toString()) {
+      case 'SUB_ORDER_STATUS_PENDING':
+        return SubOrderStatus.PENDING;
+      case 'SUB_ORDER_STATUS_CONFIRMED':
+        return SubOrderStatus.CONFIRMED;
+      case 'SUB_ORDER_STATUS_PROCESSING':
+        return SubOrderStatus.PROCESSING;
+      case 'SUB_ORDER_STATUS_PAID':
+        return SubOrderStatus.PAID;
+      case 'SUB_ORDER_STATUS_SHIPPED':
+        return SubOrderStatus.SHIPPED;
+      case 'SUB_ORDER_STATUS_DELIVERED':
+        return SubOrderStatus.DELIVERED;
+      case 'SUB_ORDER_STATUS_CANCELED':
+        return SubOrderStatus.CANCELED;
+      case 'SUB_ORDER_STATUS_RETURNED':
+        return SubOrderStatus.RETURNED;
+      case 'SUB_ORDER_STATUS_FAILED':
+        return SubOrderStatus.FAILED;
+      default:
+        throw new BadRequestException('Invalid sub-order status');
+    }
+  }
+  static toGrpcSubOrderStatus(value: SubOrderStatus): GrpcSubOrderStatus {
+    switch (value) {
+      case SubOrderStatus.PENDING:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_PENDING;
+      case SubOrderStatus.CONFIRMED:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_CONFIRMED;
+      case SubOrderStatus.PROCESSING:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_PROCESSING;
+      case SubOrderStatus.PAID:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_PAID;
+      case SubOrderStatus.SHIPPED:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_SHIPPED;
+      case SubOrderStatus.DELIVERED:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_DELIVERED;
+      case SubOrderStatus.CANCELED:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_CANCELED;
+      case SubOrderStatus.RETURNED:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_RETURNED;
+      case SubOrderStatus.FAILED:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_FAILED;
+      default:
+        return GrpcSubOrderStatus.SUB_ORDER_STATUS_UNSPECIFIED;
+    }
+  }
+
+  static fromGrpcPaymentStatus(value: GrpcPaymentStatus): PaymentStatus {
+    switch (value.toString()) {
+      case 'PAYMENT_STATUS_PENDING':
+        return PaymentStatus.PENDING;
+      case 'PAYMENT_STATUS_COMPLETED':
+        return PaymentStatus.COMPLETED;
+      case 'PAYMENT_STATUS_FAILED':
+        return PaymentStatus.FAILED;
+      case 'PAYMENT_STATUS_PROCESSING':
+        return PaymentStatus.PROCESSING;
+      case 'PAYMENT_STATUS_CANCELED':
+        return PaymentStatus.CANCELED;
+      default:
+        throw new BadRequestException('Invalid payment status');
+    }
+  }
+  static toGrpcPaymentStatus(value: PaymentStatus): GrpcPaymentStatus {
+    switch (value) {
+      case PaymentStatus.PENDING:
+        return GrpcPaymentStatus.PAYMENT_STATUS_PENDING;
+      case PaymentStatus.COMPLETED:
+        return GrpcPaymentStatus.PAYMENT_STATUS_COMPLETED;
+      case PaymentStatus.FAILED:
+        return GrpcPaymentStatus.PAYMENT_STATUS_FAILED;
+      case PaymentStatus.PROCESSING:
+        return GrpcPaymentStatus.PAYMENT_STATUS_PROCESSING;
+      case PaymentStatus.CANCELED:
+        return GrpcPaymentStatus.PAYMENT_STATUS_CANCELED;
+      default:
+        return GrpcPaymentStatus.PAYMENT_STATUS_UNSPECIFIED;
+    }
+  }
+  static fromGrpcPaymentMethod(value: GrpcPaymentMethod): PaymentMethod {
+    switch (value.toString()) {
+      case 'PAYMENT_METHOD_COD':
+        return PaymentMethod.COD;
+      case 'PAYMENT_METHOD_PAYOS':
+        return PaymentMethod.PAYOS;
+      default:
+        throw new BadRequestException('Invalid payment method');
+    }
+  }
+  static toGrpcPaymentMethod(value: PaymentMethod): GrpcPaymentMethod {
+    switch (value) {
+      case PaymentMethod.COD:
+        return GrpcPaymentMethod.PAYMENT_METHOD_COD;
+      case PaymentMethod.PAYOS:
+        return GrpcPaymentMethod.PAYMENT_METHOD_PAYOS;
+      default:
+        return GrpcPaymentMethod.PAYMENT_METHOD_UNSPECIFIED;
+    }
+  }
+
+  static fromGrpcDeliveryStatus(value: GrpcDeliveryStatus): DeliveryStatus {
+    switch (value.toString()) {
+      case 'DELIVERY_STATUS_PENDING':
+        return DeliveryStatus.PENDING;
+      case 'DELIVERY_STATUS_PROCESSING':
+        return DeliveryStatus.PROCESSING;
+      case 'DELIVERY_STATUS_PAID':
+        return DeliveryStatus.PAID;
+      case 'DELIVERY_STATUS_DELIVERED':
+        return DeliveryStatus.DELIVERED;
+      case 'DELIVERY_STATUS_CANCELED':
+        return DeliveryStatus.CANCELED;
+      case 'DELIVERY_STATUS_RETURNED':
+        return DeliveryStatus.RETURNED;
+      default:
+        throw new BadRequestException('Invalid delivery status');
+    }
+  }
+  static toGrpcDeliveryStatus(value: DeliveryStatus): GrpcDeliveryStatus {
+    switch (value) {
+      case DeliveryStatus.PENDING:
+        return GrpcDeliveryStatus.DELIVERY_STATUS_PENDING;
+      case DeliveryStatus.PROCESSING:
+        return GrpcDeliveryStatus.DELIVERY_STATUS_PROCESSING;
+      case DeliveryStatus.PAID:
+        return GrpcDeliveryStatus.DELIVERY_STATUS_PAID;
+      case DeliveryStatus.DELIVERED:
+        return GrpcDeliveryStatus.DELIVERY_STATUS_DELIVERED;
+      case DeliveryStatus.CANCELED:
+        return GrpcDeliveryStatus.DELIVERY_STATUS_CANCELED;
+      case DeliveryStatus.RETURNED:
+        return GrpcDeliveryStatus.DELIVERY_STATUS_RETURNED;
+      default:
+        return GrpcDeliveryStatus.DELIVERY_STATUS_UNSPECIFIED;
     }
   }
 
