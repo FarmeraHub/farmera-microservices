@@ -1,13 +1,15 @@
 import { Module } from "@nestjs/common";
 import { BusinessValidationService } from "./business-validation.service";
 import { PaymentClientModule } from "src/grpc/client/payment-client.module";
-import { BusinessValidationController } from "./business-validation.controller";
+import { GhnModule } from "src/ghn/ghn.module";
 
 @Module({
     imports: [
         PaymentClientModule,
+        GhnModule,
     ],
-    controllers: [BusinessValidationController],
+    
+    controllers: [],
     providers: [BusinessValidationService],
     exports: [BusinessValidationService],
 })

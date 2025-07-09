@@ -1,9 +1,27 @@
-import { BaseOrderDto } from "./base-order.dto";
+import { ApiProperty } from "@nestjs/swagger";
+import { OrderInfoRequestDto, SubOrderRequestDto } from "src/payment/delivery/dto/calculate-delivery.dto";
+import { IsArray, IsNotEmpty, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
 
-export class OrderDto extends BaseOrderDto { 
-    customer_id: string;
-    total_amount?: number;
-    shipping_fee?: number;
-    created?: Date;
-    updated?: Date;
+export class OrderRequestDto {
+
+    @ApiProperty({
+        description: 'List of suborders with items to be delivered',
+        type: [SubOrderRequestDto],
+    })
+    @IsNotEmpty({ message: 'Suborders cannot be empty.' })
+    @ValidateNested({ each: true })
+    @Type(() => SubOrderRequestDto)
+    @IsNotEmpty()
+    @IsArray({ message: 'Suborders must be an array.' })
+    suborders: SubOrderRequestDto[];
+
+    @ApiProperty({
+        description: 'Order information including user ID and address ID',
+        type: OrderInfoRequestDto,
+    })
+    @IsNotEmpty()
+    @ValidateNested()
+    @Type(() => OrderInfoRequestDto)
+    order_info: OrderInfoRequestDto;
 }

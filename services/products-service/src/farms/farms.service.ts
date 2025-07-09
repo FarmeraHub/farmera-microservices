@@ -50,7 +50,7 @@ export class FarmsService {
     private dataSource: DataSource,
     private readonly fileStorageService: AzureBlobService,
     private readonly GhnService: GhnService,
-  ) {}
+  ) { }
 
   async farmRegister(
     registerDto: FarmRegistrationDto,
@@ -150,7 +150,7 @@ export class FarmsService {
       }
       throw new InternalServerErrorException(
         error.message ||
-          'Đã xảy ra lỗi không mong muốn trong quá trình đăng ký farm.',
+        'Đã xảy ra lỗi không mong muốn trong quá trình đăng ký farm.',
       );
     }
   }
@@ -236,7 +236,7 @@ export class FarmsService {
       }
       throw new InternalServerErrorException(
         error.message ||
-          'Đã xảy ra lỗi không mong muốn trong quá trình đăng ký farm.',
+        'Đã xảy ra lỗi không mong muốn trong quá trình đăng ký farm.',
       );
     }
   }
@@ -600,6 +600,11 @@ export class FarmsService {
 
     if (searchDto.approve_only) {
       qb.andWhere('farm.status = :status', { status: FarmStatus.APPROVED });
+    }
+    else {
+      qb.andWhere('farm.status IN (:...statuses)', {
+        statuses: [FarmStatus.APPROVED, FarmStatus.VERIFIED],
+      });
     }
 
     // Add sorting if specified

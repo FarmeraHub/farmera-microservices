@@ -1,35 +1,57 @@
-import { BadRequestException, UnauthorizedException, ForbiddenException, NotFoundException, ConflictException, InternalServerErrorException, GatewayTimeoutException, ServiceUnavailableException, HttpException } from '@nestjs/common';
-
-interface GrpcError extends Error {
-    code?: number;
-    details?: string;
-    metadata?: any;
-}
+import { HttpException, Logger } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
 
 export class ErrorMapper {
-    static fromGrpcError(error: GrpcError): HttpException {
-        const message = error.details || error.message || 'gRPC Error';
 
-        switch (error.code) {
-            case 3: // INVALID_ARGUMENT
-                return new BadRequestException(message);
-            case 16: // UNAUTHENTICATED
-                return new UnauthorizedException(message);
-            case 7: // PERMISSION_DENIED
-                return new ForbiddenException(message);
-            case 5: // NOT_FOUND
-                return new NotFoundException(message);
-            case 6: // ALREADY_EXISTS
-                return new ConflictException(message);
-            case 14: // UNAVAILABLE
-                return new ServiceUnavailableException(message);
-            case 4: // DEADLINE_EXCEEDED
-                return new GatewayTimeoutException(message);
-            case 13: // INTERNAL
-            case 2:  // UNKNOWN
-            default:
-                return new InternalServerErrorException(message);
+    private static readonly logger = new Logger(ErrorMapper.name);
+
+    static toRpcException(exception: any): RpcException {
+        if (exception instanceof HttpException) {
+            const message = exception.message || 'HTTP Error';
+            const statusCode = exception.getStatus();
+
+            let grpcCode: number;
+
+            switch (statusCode) {
+                case 400:
+                    grpcCode = status.INVALID_ARGUMENT;
+                    break;
+                case 401:
+                    grpcCode = status.UNAUTHENTICATED;
+                    break;
+                case 403:
+                    grpcCode = status.PERMISSION_DENIED;
+                    break;
+                case 404:
+                    grpcCode = status.NOT_FOUND;
+                    break;
+                case 409:
+                    grpcCode = status.ALREADY_EXISTS;
+                    break;
+                case 504:
+                    grpcCode = status.DEADLINE_EXCEEDED;
+                    break;
+                case 503:
+                    grpcCode = status.UNAVAILABLE;
+                    break;
+                case 500:
+                    grpcCode = status.INTERNAL;
+                    break;
+                default:
+                    grpcCode = status.UNKNOWN;
+                    break;
+            }
+
+            return new RpcException({
+                code: grpcCode,
+                message,
+            });
         }
+        this.logger.error(`Error in ErrorMapper: ${exception?.message}`);
+        return new RpcException({
+            code: status.INTERNAL,
+            message: "Internal Server Error",
+        });
     }
-
 }

@@ -6,6 +6,7 @@ export class Location {
   @PrimaryGeneratedColumn()
   location_id: number;
 
+
   @Column({ nullable: false })
   name: string;
 

@@ -43,6 +43,13 @@ export class CalculateShippingFeeDto {
     @IsOptional()
     coupon?: string;
 
+    @IsOptional()
+    @Type(() => Number)
+    cod_amount?: number;
+
+    @IsString()
+    @IsOptional()
+    content?: string;
     @IsNotEmpty()
     items: ItemDeliveryDto[];
 

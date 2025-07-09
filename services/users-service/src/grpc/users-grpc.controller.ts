@@ -238,7 +238,7 @@ export class UsersGrpcController implements UsersServiceController {
 
   async getUser(request: GetUserRequest): Promise<GetUserResponse> {
     try {
-      const user = await this.usersService.getUserById(request.user_id);
+      const user = await this.usersService.getUserById(request.user_id, request.include_locations, request.include_payment_methods);
       return {
         user: UserMapper.userToGrpcUser(user),
       };
@@ -285,9 +285,11 @@ export class UsersGrpcController implements UsersServiceController {
       if (request.pagination) {
         filters.page = request.pagination.page || 1;
         filters.limit = request.pagination.limit || 10;
+        filters.sort_by = request.pagination.sort_by;
+        filters.sort_order = request.pagination.order;
       }
-      if (request.role_filter) filters.role_filter = request.role_filter;
-      if (request.status_filter) filters.status_filter = request.status_filter;
+      if (request.role_filter) filters.role_filter = EnumsMapper.fromGrpcUserRole(request.role_filter);
+      if (request.status_filter) filters.status_filter = EnumsMapper.fromGrpcUserStatus(request.status_filter);
       if (request.search_query) filters.search_query = request.search_query;
       if (request.created_date_range) {
         filters.created_date_range = {
@@ -473,6 +475,8 @@ export class UsersGrpcController implements UsersServiceController {
       const location = await this.usersService.addUserLocation(
         request.user_id,
         {
+          name: request.name,
+          phone: request.phone,
           address_line: request.address_line,
           city: request.city,
           district: request.district,
@@ -481,8 +485,6 @@ export class UsersGrpcController implements UsersServiceController {
           is_primary: request.is_primary,
           type: request.type,
           user_id: request.user_id,
-          phone: request.phone,
-          name: request.name,
         },
       );
 
@@ -500,6 +502,8 @@ export class UsersGrpcController implements UsersServiceController {
   ): Promise<UpdateUserLocationResponse> {
     try {
       const locationData: UpdateAddressDto = {
+        name: request.name,
+        phone: request.phone,
         city: request.city,
         district: request.district,
         address_line: request.address_line,
@@ -507,8 +511,6 @@ export class UsersGrpcController implements UsersServiceController {
         is_primary: request.is_primary,
         type: request.type,
         ward: request.ward,
-        name: request.name,
-        phone: request.phone,
       };
 
       const location = await this.usersService.updateUserLocation(

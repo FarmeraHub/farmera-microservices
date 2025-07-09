@@ -3,6 +3,22 @@ import { IsOptional, IsString, IsBoolean, IsNotEmpty, IsPhoneNumber } from 'clas
 
 export class UpdateAddressDto {
   @ApiProperty({
+    example: 'Nguyễn Văn A',
+    description: 'Name associated with this address',
+  })  
+  @IsString()
+  name: string;
+
+  @ApiProperty({
+    example: '+1234567890',
+    description: 'Phone number for this address',
+  })
+  @IsString()
+  @IsPhoneNumber("VN")
+  @IsNotEmpty()
+  phone: string;
+
+  @ApiProperty({
     example: 'Ho Chi Minh City',
     description: 'City name',
   })
@@ -55,11 +71,4 @@ export class UpdateAddressDto {
   @IsBoolean()
   is_primary?: boolean;
 
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
-  @IsPhoneNumber("VN")
-  @IsNotEmpty()
-  phone: string
 }

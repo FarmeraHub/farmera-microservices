@@ -42,7 +42,13 @@ import { GrpcModule } from './grpc/grpc.module';
         database: configService.get<string>('DB_NAME'),
         entities: [join(__dirname, '**', '*.entity{.ts,.js}')],
         synchronize: configService.get<boolean>('DB_SYNC'),
-        ssl: configService.get<boolean>('DB_SSL', true),
+        ssl:
+          configService.get<string>('DB_SSL') === 'true'
+            ? {
+              require: true,
+              rejectUnauthorized: false,
+            }
+            : false,
       }),
     }),
     AuthModule,

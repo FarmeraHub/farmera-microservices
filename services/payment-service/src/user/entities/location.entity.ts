@@ -1,16 +1,18 @@
+import { User } from "./user.entity";
 
 export class Location {
-  id: number;
-  user_id: string;
-  address_line: string;
+  location_id: number;
+  name: string;
+  phone: string;
   city: string;
-  state: string;
-  postal_code: string;
-  country: string;
   district: string;
-  latitude: number;
-  longitude: number;
-  is_default: boolean;
+  ward: string;
+  street: string;
+  address_line: string;
+  type: string;
+  is_primary: boolean;
+  user?: User;
+  user_id?: string;
   created_at?: Date;
   updated_at?: Date;
 }

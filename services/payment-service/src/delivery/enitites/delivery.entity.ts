@@ -12,19 +12,36 @@ export class Delivery {
         default: DeliveryStatus.PENDING,
     })
     status: DeliveryStatus;
+
     @Column()
-    total_cost: number;
+    cod_amount: number;
+
     @Column()
     discount_amount: number;
+
     @Column()
     shipping_amount: number;
     @Column()
+    final_amount: number;
+
+    @Column()
     ship_date: Date;
+
     @CreateDateColumn()
     created: Date;
+
     @UpdateDateColumn()
     updated: Date;
-    @OneToOne(() => SubOrder)
+    
+    @OneToOne(() => SubOrder, (subOrder) => subOrder.delivery)
     @JoinColumn({ name: 'sub_order_id' })
-    sub_order_id: SubOrder;
+    sub_order: SubOrder;
+    @Column()
+    tracking_number: string;
+
+    @Column()
+    delivery_instructions: string;
+    
+    @Column()
+    delivery_method: string; // Hàng nhẹ/ hàng nặng
 }

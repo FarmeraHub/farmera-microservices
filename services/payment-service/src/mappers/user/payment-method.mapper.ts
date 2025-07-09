@@ -3,25 +3,21 @@ import { PaymentMethod } from "src/user/entities/payment_method.entity";
 import { EnumMapper } from "../common/enum.mapper";
 import { TypesMapper } from "../common/types.mapper";
 export class PaymentMethodMapper {
-    static fromGrpcPaymentMethod(value: GrpcPaymentMethod): PaymentMethod | undefined {
-        if (!value) return undefined;
+    static fromGrpcPaymentMethod(grpcPaymentMethod: GrpcPaymentMethod): PaymentMethod {
         return {
-            id: Number(value.id),
-            user_id: value.user_id,
-            provider: EnumMapper.fromGrpcPaymentProvider(value.type),
-            external_id: '',
-            last_four: value.last_four_digits,
-            card_type: '',
-            expiry_date: '',
-            cardholder_name: '',
-            billing_address: '',
-            token: '',
-            is_default: value.is_default,
-            metadata: '',
-            is_active: true,
-            created_at: TypesMapper.fromGrpcTimestamp(value.created_at!) || new Date(),
-            updated_at: TypesMapper.fromGrpcTimestamp(value.updated_at!) || new Date(),
-
-        };
+            payment_method_id: grpcPaymentMethod.id,
+            provider: EnumMapper.fromGrpcPaymentProvider(grpcPaymentMethod.provider),
+            external_id: grpcPaymentMethod.external_id,
+            last_four: grpcPaymentMethod.last_four,
+            card_type: grpcPaymentMethod.card_type,
+            expiry_date: grpcPaymentMethod.expiry_date,
+            cardholder_name: grpcPaymentMethod.cardholder_name,
+            billing_address: grpcPaymentMethod.billing_address,
+            token: grpcPaymentMethod.token,
+            is_default: grpcPaymentMethod.is_default,
+            is_active: grpcPaymentMethod.is_active,
+            created_at: TypesMapper.fromGrpcTimestamp(grpcPaymentMethod.created_at),
+            updated_at: TypesMapper.fromGrpcTimestamp(grpcPaymentMethod.updated_at),
+        }
     }
 }

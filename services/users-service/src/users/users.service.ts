@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
@@ -74,10 +75,13 @@ export class UsersService {
     return userWithoutPassword;
   }
 
-  async getUserById(id: string): Promise<User> {
+  async getUserById(id: string, location?: boolean, paymentMethod?: boolean): Promise<User> {
+    const relations = [];
+    if (location) relations.push("locations");
+    if (paymentMethod) relations.push("payment_methods");
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['locations', 'payment_methods'],
+      relations: relations,
     });
 
     if (!user) {
@@ -159,9 +163,12 @@ export class UsersService {
       role_filter?: UserRole;
       status_filter?: UserStatus;
       search_query?: string;
+      sort_by?: string;
+      sort_order?: "ASC" | "DESC"
       created_date_range?: { start_time?: Date; end_time?: Date };
     } = {},
   ) {
+    const validOrder = ["id", "email", "first_name", "last_name", "gender", "role", "status", "updated_at", "created_at", "points"]
     const {
       page = 1,
       limit = 10,
@@ -169,7 +176,10 @@ export class UsersService {
       status_filter,
       search_query,
       created_date_range,
+      sort_by,
+      sort_order = "ASC"
     } = filters;
+    if (sort_by && !validOrder.includes(sort_by)) throw new BadRequestException(`Invalid properties ${sort_by}`)
 
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
 
@@ -197,7 +207,44 @@ export class UsersService {
 
     const offset = (page - 1) * limit;
     queryBuilder.skip(offset).take(limit);
-    queryBuilder.orderBy('user.created_at', 'DESC');
+    if (sort_by) {
+      switch (sort_by) {
+        case "id":
+          queryBuilder.orderBy('user.id', sort_order);
+          break;
+        case "email":
+          queryBuilder.orderBy('user.email', sort_order);
+          break;
+        case "first_name":
+          queryBuilder.orderBy('user.first_name', sort_order);
+          break;
+        case "last_name":
+          queryBuilder.orderBy('user.last_name', sort_order);
+          break;
+        case "gender":
+          queryBuilder.orderBy('user.gender', sort_order);
+          break;
+        case "role":
+          queryBuilder.orderBy('user.role', sort_order);
+          break;
+        case "status":
+          queryBuilder.orderBy('user.status', sort_order);
+          break;
+        case "updated_at":
+          queryBuilder.orderBy('user.updated_at', sort_order);
+          break;
+        case "created_at":
+          queryBuilder.orderBy('user.created_at', sort_order);
+          break;
+        case "points":
+          queryBuilder.orderBy('user.points', sort_order);
+          break;
+        default:
+          throw new BadRequestException(`Invalid sort_by value: ${sort_by}`);
+      }
+    } else {
+      queryBuilder.orderBy('user.created_at', 'DESC');
+    }
 
     const [users, total] = await queryBuilder.getManyAndCount();
 
@@ -249,6 +296,10 @@ export class UsersService {
     farmId?: string,
   ): Promise<User> {
     const user = await this.getUserById(id);
+    if (!user) throw new NotFoundException("User not found");
+
+    if (role === UserRole.FARMER && !farmId)
+      throw new BadRequestException("Cannot update to farmer role because farm ID is not specified")
 
     const updateData: any = {
       role,
