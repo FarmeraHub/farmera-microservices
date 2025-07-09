@@ -316,4 +316,28 @@ impl ConversationRepo {
             Ok(true)
         }
     }
+
+    pub async fn update_latest_message(
+        &self,
+        conversation_id: i32,
+        message_id: i64,
+    ) -> Result<(), DBError> {
+        let stm = include_str!("./queries/conversation/update_latest_message.sql");
+
+        let result = sqlx::query(stm)
+            .bind(message_id)
+            .bind(conversation_id)
+            .execute(&*self.pg_db_pool)
+            .await
+            .map_err(|e| {
+                log::error!("Update latest message error: {e}");
+                DBError::QueryError(e)
+            })?;
+
+        if result.rows_affected() == 0 {
+            log::warn!("Update latest message returns 0 rows affected");
+        }
+
+        Ok(())
+    }
 }
