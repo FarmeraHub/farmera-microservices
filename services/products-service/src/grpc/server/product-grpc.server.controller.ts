@@ -136,6 +136,10 @@ import {
   UpdateQuantityResponse,
   UpdateQuantitiesRequest,
   UpdateQuantitiesResponse,
+  UpdateProductStatusForAdminRequest,
+  UpdateProductStatusForAdminResponse,
+  SearchFarmForAdminRequest,
+  SearchFarmForAdminResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
@@ -163,6 +167,7 @@ import { DiaryService } from 'src/diary/diary.service';
 import { ProcessTemplateMapper } from 'src/mappers/product/process-template.mapper';
 import { DiaryMapper } from 'src/mappers/product/diary.mapper';
 import { UpdateProductQuantityOperation } from 'src/common/enums/update-product-quantity-operation.enum';
+import { ProductAdminService } from 'src/admin/product/product-admin.service';
 
 @Controller()
 @ProductsServiceControllerMethods()
@@ -174,6 +179,7 @@ export class ProductGrpcServerController implements ProductsServiceController {
     private readonly farmsService: FarmsService,
     private readonly categoriesService: CategoriesService,
     private readonly farmAdminService: FarmAdminService,
+    private readonly productAdminService: ProductAdminService,
     private readonly reviewService: ReviewsService,
     private readonly processService: ProcessService,
     private readonly processTemplateService: ProcessTemplateService,
@@ -719,55 +725,67 @@ export class ProductGrpcServerController implements ProductsServiceController {
   async updateFarmStatus(
     request: UpdateFarmStatusRequest,
   ): Promise<UpdateFarmStatusResponse> {
-    this.logger.debug(
-      `[gRPC In - UpdateFarmStatus] Received request to update farm status: ${JSON.stringify(request)}`,
-    );
-
-    if (!request || !request.farm_id || !request.status) {
-      this.logger.error(
-        '[gRPC In - UpdateFarmStatus] Invalid request: farm_id and status are required.',
-      );
-      throw new RpcException(
-        'Invalid request: farm_id and status are required.',
-      );
-    }
-
     try {
-      this.logger.debug(
-        `[gRPC Logic - UpdateFarmStatus] Updating farm status for farm_id: ${request.farm_id} to status: ${request.status}`,
-      );
       const updateDto: UpdateFarmStatusDto = {
         status: FarmStatus[request.status],
-        reason: request.reason || '',
+        reason: request.reason,
       };
       const updatedFarm = await this.farmAdminService.updateFarmStatus(
         request.farm_id,
         updateDto,
         request.user_id,
       );
-      this.logger.debug(
-        `[gRPC Logic - UpdateFarmStatus] Successfully updated farm status for farm_id: ${updatedFarm.farm_id}`,
-      );
+
       const farm = FarmMapper.toGrpcFarm(updatedFarm);
-      if (!farm) {
-        this.logger.warn(
-          '[gRPC Logic - UpdateFarmStatus] Failed to map updated farm entity to gRPC response.',
-        );
-        throw new RpcException(
-          'Failed to map updated farm entity to gRPC response.',
-        );
-      }
       return {
         farm: farm,
       };
-    } catch (error) {
-      this.logger.error(
-        `[gRPC Logic - UpdateFarmStatus] Error updating farm status for farm_id ${request.farm_id}: ${error.message}`,
-        error.stack,
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async updateProductStatusForAdmin(request: UpdateProductStatusForAdminRequest): Promise<UpdateProductStatusForAdminResponse> {
+    try {
+      const status = EnumsMapper.fromGrpcProductStatus(request.status);
+      if (!status) {
+        throw new BadRequestException("Invalid product status");
+      }
+      const result = await this.productAdminService.updateProductStatus(request.product_id, status);
+      return {
+        success: result
+      }
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async searchFarmForAdmin(request: SearchFarmForAdminRequest): Promise<SearchFarmForAdminResponse> {
+    try {
+      const geoLocation = TypesMapper.fromGrpcGeoLocation(
+        request.location_filter,
       );
-      throw new RpcException(
-        `Error processing UpdateFarmStatus request: ${error.message}`,
+      const pagination = PaginationMapper.fromGrpcPaginationRequest(
+        request.pagination,
       );
+      const status = request.status_filter ? EnumsMapper.fromGrpcFarmStatus(request.status_filter) : undefined;
+      const farms = await this.farmAdminService.searchFarm(
+        {
+          query: request.search_query,
+          status_filter: status,
+          latitude: geoLocation?.latitude,
+          longitude: geoLocation?.longitude,
+          radius_km: geoLocation?.radius_km,
+        },
+        pagination,
+      );
+      return {
+        farms: farms.data.map((value) => FarmMapper.toGrpcFarm(value)),
+        pagination: PaginationMapper.toGrpcPaginationResponse(farms.meta),
+      };
+    } catch (err) {
+      this.logger.error(err.message);
+      throw ErrorMapper.toRpcException(err);
     }
   }
 

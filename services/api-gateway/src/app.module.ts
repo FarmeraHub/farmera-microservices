@@ -16,6 +16,7 @@ import { ProductModule } from './product/product.module';
 import { CommunicationModule } from './communication/communication.module';
 import { NotificationModule } from './notification/notification.module';
 import { PaymentModule } from './payment/payment.module';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [
@@ -76,6 +77,10 @@ import { PaymentModule } from './payment/payment.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

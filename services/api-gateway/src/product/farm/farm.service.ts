@@ -23,10 +23,8 @@ import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
 import { Farm, FarmAnalytics } from './entities/farm.entity';
 import { SearchFarmDto } from './dto/search-farm.dto';
 import { UpdateFarmDto } from './dto/update-farm.dto';
-import { plainToInstance } from 'class-transformer';
-import { TypesMapper } from 'src/mappers/common/types.mapper';
 import { UserService } from 'src/user/user/user.service';
-import { UserRole } from 'src/common/enums/user/roles.enum';
+import { UserRole } from "src/common/interfaces/user.interface";
 
 @Injectable()
 export class FarmService implements OnModuleInit {
@@ -36,7 +34,7 @@ export class FarmService implements OnModuleInit {
   constructor(
     @Inject('PRODUCTS_PACKAGE') private client: ClientGrpc,
     private readonly userService: UserService,
-  ) {}
+  ) { }
 
   onModuleInit() {
     this.productGrpcService =
@@ -252,9 +250,9 @@ export class FarmService implements OnModuleInit {
       const averageRating =
         products.length > 0
           ? products.reduce(
-              (sum, product) => sum + (product.average_rating || 0),
-              0,
-            ) / products.length
+            (sum, product) => sum + (product.average_rating || 0),
+            0,
+          ) / products.length
           : 0;
 
       // Top selling products

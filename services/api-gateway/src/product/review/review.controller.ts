@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { User } from 'src/common/decorators/user.decorator';
-import { User as UserInterface } from '../../common/interfaces/user.interface';
+import { User as UserInterface, UserRole } from '../../common/interfaces/user.interface';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiBadRequestResponse, ApiQuery } from '@nestjs/swagger';
@@ -11,6 +11,7 @@ import { ReviewReply } from './entities/review-reply.entity';
 import { Public } from 'src/common/decorators/public.decorator';
 import { GetReviewsDto } from './dto/get-review.dto';
 import { RatingStatsDto } from './dto/rating-stat.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Review')
 @Controller('review')
@@ -29,6 +30,7 @@ export class ReviewController {
         return await this.reviewServie.createReview(createReviewDto, user.id);
     }
 
+    @Roles(UserRole.FARMER)
     @Post("reply")
     @ApiOperation({ summary: 'Create a reply to a review', description: 'Creates a reply to a review.' })
     @ApiBody({ type: CreateReplyDto })
@@ -99,6 +101,7 @@ export class ReviewController {
         return await this.reviewServie.getReviewOverview(productId);
     }
 
+    @Roles(UserRole.FARMER)
     @Post("approve/:review_id")
     @ApiOperation({ summary: 'Approve a review', description: 'Approves or disapproves a review.' })
     @ApiParam({ name: 'review_id', description: 'ID of the review to approve/disapprove' })

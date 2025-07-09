@@ -31,7 +31,7 @@ import { BadRequestException } from '@nestjs/common';
 import { NotificationChannel } from 'src/common/enums/notification/notification-channel.enum';
 import { NotificationType } from 'src/common/enums/notification/notification_type';
 import { Gender } from 'src/common/enums/user/gender.enum';
-import { UserRole } from 'src/common/enums/user/roles.enum';
+import { UserRole } from "src/common/interfaces/user.interface";
 import { UserStatus } from 'src/common/enums/user/status.enum';
 import { PaymentProvider } from 'src/common/enums/user/payment_method.enum';
 import { OrderStatus } from 'src/common/enums/payment/order-status.enum';
@@ -285,6 +285,17 @@ export class EnumMapper {
     }
   }
 
+  static toGrpcUserStatus(value: UserStatus): GrpcUserStatus {
+    switch (value) {
+      case UserStatus.ACTIVE: return GrpcUserStatus.USER_STATUS_ACTIVE;
+      case UserStatus.BANNED: return GrpcUserStatus.USER_STATUS_BANNED;
+      case UserStatus.INACTIVE: return GrpcUserStatus.USER_STATUS_INACTIVE;
+      case UserStatus.PENDING_VERIFICATION: return GrpcUserStatus.USER_STATUS_PENDING_VERIFICATION;
+      case UserStatus.SUSPENDED: return GrpcUserStatus.USER_STATUS_SUSPENDED;
+      default: return GrpcUserStatus.USER_STATUS_UNSPECIFIED;
+    }
+  }
+
   static fromGrpcUserStatus(grpcStatus: GrpcUserStatus): UserStatus {
     switch (grpcStatus.toString()) {
       case 'USER_STATUS_ACTIVE':
@@ -514,6 +525,18 @@ export class EnumMapper {
         return GrpcDeliveryStatus.DELIVERY_STATUS_RETURNED;
       default:
         return GrpcDeliveryStatus.DELIVERY_STATUS_UNSPECIFIED;
+    }
+  }
+
+  static toGrpcFarmStatus(value: FarmStatus): GrpcFarmStatus | undefined {
+    if (!value) return undefined;
+    switch (value) {
+      case FarmStatus.PENDING: return GrpcFarmStatus.FARM_STATUS_PENDING;
+      case FarmStatus.VERIFIED: return GrpcFarmStatus.FARM_STATUS_VERIFIED;
+      case FarmStatus.APPROVED: return GrpcFarmStatus.FARM_STATUS_APPROVED;
+      case FarmStatus.BLOCKED: return GrpcFarmStatus.FARM_STATUS_BLOCKED;
+      case FarmStatus.REJECTED: return GrpcFarmStatus.FARM_STATUS_REJECTED;
+      default: return GrpcFarmStatus.FARM_STATUS_UNSPECIFIED;
     }
   }
 }

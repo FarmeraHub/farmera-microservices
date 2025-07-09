@@ -39,7 +39,6 @@ service ProductsService {
   rpc SearchFarm(SearchFarmRequest) returns (SearchFarmResponse);
   //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
   rpc GetFarmByUser(GetFarmByUserRequest) returns (GetFarmByUserResponse);
-  rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
 
   // Category management
   rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
@@ -100,6 +99,12 @@ service ProductsService {
   rpc GetProductDiaries(GetProductDiariesRequest) returns (GetProductDiariesResponse);
   rpc UpdateStepDiary(UpdateStepDiaryRequest) returns (UpdateStepDiaryResponse);
   rpc DeleteStepDiary(DeleteStepDiaryRequest) returns (DeleteStepDiaryResponse);
+
+  // Admin
+  rpc UpdateProductStatusForAdmin(UpdateProductStatusForAdminRequest) returns (UpdateProductStatusForAdminResponse);
+  rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
+  rpc SearchFarmForAdmin(SearchFarmForAdminRequest) returns (SearchFarmForAdminResponse);
+
 }
 
 // ======================================Product==========================================
@@ -270,6 +275,27 @@ message OpenProductForSaleResponse {
   string qr_code = 1;
 }
 
+// ==================================Admin==================================
+message UpdateProductStatusForAdminRequest {
+  int32 product_id = 1;
+  farmera.common.ProductStatus status = 2;
+}
+
+message UpdateProductStatusForAdminResponse {
+  bool success = 1;
+}
+
+message UpdateFarmStatusRequest{
+  string farm_id = 1;
+  string user_id = 2;
+  string status = 3;
+  optional string reason = 4;
+ }
+
+message UpdateFarmStatusResponse{
+  Farm farm = 1;
+}
+
 // ==================================Farm==================================
 // Farm
 message Farm {
@@ -404,22 +430,23 @@ message SearchFarmResponse {
   optional farmera.common.PaginationResponse pagination = 2;
 }
 
+message SearchFarmForAdminRequest {
+  optional string search_query = 1;
+  optional farmera.common.PaginationRequest pagination = 2;
+  optional farmera.common.FarmStatus status_filter = 3;
+  optional farmera.common.GeoLocation location_filter = 4;
+}
+
+message SearchFarmForAdminResponse {
+  repeated Farm farms = 1;
+  optional farmera.common.PaginationResponse pagination = 2;
+}
+
 message GetFarmByUserRequest{
   string user_id = 1;
 }
 
 message GetFarmByUserResponse {
-  Farm farm = 1;
-}
-
-message UpdateFarmStatusRequest{
-  string farm_id = 1;
-  string user_id = 2;
-  string status = 3;
-  optional string reason = 4;
- }
-
-message UpdateFarmStatusResponse{
   Farm farm = 1;
 }
 

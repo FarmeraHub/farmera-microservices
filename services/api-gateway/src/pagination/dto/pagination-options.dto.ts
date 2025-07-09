@@ -17,6 +17,15 @@ export enum Order {
   DESC = 'DESC',
 }
 
+export class SortOption {
+  @IsString()
+  @IsNotEmpty()
+  field: string;
+
+  @IsEnum(Order)
+  direction: Order = Order.ASC;
+}
+
 
 export class SimpleCursorPagination {
   @IsOptional()
