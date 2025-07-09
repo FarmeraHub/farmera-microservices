@@ -276,6 +276,17 @@ export class EnumMapper {
     }
   }
 
+  static toGrpcUserStatus(value: UserStatus): GrpcUserStatus {
+    switch (value) {
+      case UserStatus.ACTIVE: return GrpcUserStatus.USER_STATUS_ACTIVE;
+      case UserStatus.BANNED: return GrpcUserStatus.USER_STATUS_BANNED;
+      case UserStatus.INACTIVE: return GrpcUserStatus.USER_STATUS_INACTIVE;
+      case UserStatus.PENDING_VERIFICATION: return GrpcUserStatus.USER_STATUS_PENDING_VERIFICATION;
+      case UserStatus.SUSPENDED: return GrpcUserStatus.USER_STATUS_SUSPENDED;
+      default: return GrpcUserStatus.USER_STATUS_UNSPECIFIED;
+    }
+  }
+
   static fromGrpcUserStatus(grpcStatus: GrpcUserStatus): UserStatus {
     switch (grpcStatus.toString()) {
       case 'USER_STATUS_ACTIVE':

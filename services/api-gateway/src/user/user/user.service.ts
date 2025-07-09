@@ -24,7 +24,10 @@ import { PaymentMapper } from 'src/mappers/users/payment.mapper';
 import { PaymentMethod } from './entities/payment_method.entity';
 import { UpdatePaymentMethodDto } from './dto/update-payment.dto';
 import { UserLite } from './dto/user-lite.dto';
-import { UserRole } from 'src/common/interfaces/user.interface';
+import { UserRole, UserStatus } from 'src/common/interfaces/user.interface';
+import { GetUserDetailDto, ListUserDto } from './dto/get-user-detail.dto';
+import { PaginationMapper } from 'src/mappers/common/pagination.mapper';
+import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -82,6 +85,62 @@ export class UserService implements OnModuleInit {
     }
   }
 
+  async getUserDetail(userId: string, getUserDetailDto: GetUserDetailDto): Promise<User> {
+    try {
+      const result = await firstValueFrom(this.usersGrpcService.getUser({
+        user_id: userId,
+        include_locations: getUserDetailDto.include_locations,
+        include_payment_methods: getUserDetailDto.include_payment_methods
+      }));
+      return UserMapper.fromGrpcUser(result.user);
+    }
+    catch (error) {
+      throw ErrorMapper.fromGrpcError(error);
+    }
+  }
+
+  async updateUserStatus(userId: string, status: UserStatus): Promise<User> {
+    try {
+      const result = await firstValueFrom(this.usersGrpcService.updateUserStatus({
+        user_id: userId,
+        status: EnumMapper.toGrpcUserStatus(status)
+      }));
+      return UserMapper.fromGrpcUser(result.user);
+    }
+    catch (error) {
+      throw ErrorMapper.fromGrpcError(error);
+    }
+  }
+
+  async listUsers(listUserDto: ListUserDto): Promise<PaginationResult<User>> {
+    try {
+      const result = await firstValueFrom(this.usersGrpcService.listUsers({
+        pagination: {
+          limit: listUserDto.limit,
+          page: listUserDto.page,
+          sort_by: listUserDto.sort_by,
+          order: EnumMapper.toGrpcSortOrder(listUserDto.order),
+        },
+        role_filter: listUserDto.role_filter ? EnumMapper.toGrpcUserRole(listUserDto.role_filter) : undefined,
+        status_filter: listUserDto.status_filter ? EnumMapper.toGrpcUserStatus(listUserDto.status_filter) : undefined,
+        search_query: listUserDto.search_query,
+        created_date_range: {
+          start_time: TypesMapper.toGrpcTimestamp(listUserDto.start_time),
+          end_time: TypesMapper.toGrpcTimestamp(listUserDto.end_time),
+        }
+      }));
+
+      return {
+        data: result.users.map((value) => UserMapper.fromGrpcUser(value)),
+        pagination: PaginationMapper.fromGrpcPaginationResponse(result.pagination)
+      }
+
+    }
+    catch (error) {
+      throw ErrorMapper.fromGrpcError(error);
+    }
+  }
+
   async updateProfile(userId: string, req: UpdateProfileDto): Promise<User> {
     try {
       const result = await firstValueFrom(
@@ -120,7 +179,7 @@ export class UserService implements OnModuleInit {
       const requestData = {
         user_id: userId,
         role: EnumMapper.toGrpcUserRole(role),
-        ...(farmId && { farm_id: farmId }),
+        farm_id: farmId
       };
 
       const result = await firstValueFrom(

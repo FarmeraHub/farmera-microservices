@@ -6,6 +6,7 @@ import {
   Post,
   Put,
   Param,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,13 +18,16 @@ import {
 import { UserService } from './user.service';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator';
 import { User } from '../../common/decorators/user.decorator';
-import { User as UserInterface } from '../../common/interfaces/user.interface';
+import { User as UserInterface, UserRole } from '../../common/interfaces/user.interface';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
-import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentMethodDto } from './dto/update-payment.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { GetUserDetailDto, ListUserDto } from './dto/get-user-detail.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
+import { UpdateUserStatus } from './dto/update-user-status.dto';
 
 @ApiTags('User Management')
 @Controller('user')
@@ -327,6 +331,30 @@ export class UserController {
     @Param('paymentMethodId') paymentMethodId: number,
   ) {
     return await this.userService.deletePaymentMethod(user.id, paymentMethodId);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Get("detail/:userId")
+  async getUserDetail(@Param("userId") userId: string, @Query() getDetailDto: GetUserDetailDto) {
+    return await this.userService.getUserDetail(userId, getDetailDto);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Put("role")
+  async updateUserRole(@Body() updateUserRoleDto: UpdateUserRoleDto) {
+    return await this.userService.updateUserRole(updateUserRoleDto.user_id, updateUserRoleDto.role, updateUserRoleDto.farm_id);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Put("status")
+  async updateUserStatus(@Body() updateUserStatusDto: UpdateUserStatus) {
+    return await this.userService.updateUserStatus(updateUserStatusDto.user_id, updateUserStatusDto.status);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Get("all")
+  async listUsers(@Query() listUserDto: ListUserDto) {
+    return await this.userService.listUsers(listUserDto);
   }
 
   @Public()

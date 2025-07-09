@@ -238,7 +238,7 @@ export class UsersGrpcController implements UsersServiceController {
 
   async getUser(request: GetUserRequest): Promise<GetUserResponse> {
     try {
-      const user = await this.usersService.getUserById(request.user_id);
+      const user = await this.usersService.getUserById(request.user_id, request.include_locations, request.include_payment_methods);
       return {
         user: UserMapper.userToGrpcUser(user),
       };
@@ -285,9 +285,11 @@ export class UsersGrpcController implements UsersServiceController {
       if (request.pagination) {
         filters.page = request.pagination.page || 1;
         filters.limit = request.pagination.limit || 10;
+        filters.sort_by = request.pagination.sort_by;
+        filters.sort_order = request.pagination.order;
       }
-      if (request.role_filter) filters.role_filter = request.role_filter;
-      if (request.status_filter) filters.status_filter = request.status_filter;
+      if (request.role_filter) filters.role_filter = EnumsMapper.fromGrpcUserRole(request.role_filter);
+      if (request.status_filter) filters.status_filter = EnumsMapper.fromGrpcUserStatus(request.status_filter);
       if (request.search_query) filters.search_query = request.search_query;
       if (request.created_date_range) {
         filters.created_date_range = {

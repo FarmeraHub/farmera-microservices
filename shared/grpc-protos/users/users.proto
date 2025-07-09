@@ -222,11 +222,10 @@ message DeleteUserResponse {
 
 message ListUsersRequest {
   farmera.common.PaginationRequest pagination = 1;
-  repeated farmera.common.SortOption sort = 2;
-  optional farmera.common.UserRole role_filter = 3;
-  optional farmera.common.UserStatus status_filter = 4;
-  optional string search_query = 5;
-  optional farmera.common.TimeRange created_date_range = 6;
+  optional farmera.common.UserRole role_filter = 2;
+  optional farmera.common.UserStatus status_filter = 3;
+  optional string search_query = 4;
+  optional farmera.common.TimeRange created_date_range = 5;
 }
 
 message ListUsersResponse {
@@ -426,8 +425,8 @@ message GetUsersByRoleResponse {
 message UpdateUserStatusRequest {
   string user_id = 1;
   farmera.common.UserStatus status = 2;
-  string reason = 3;
-  string admin_id = 4;
+  optional string reason = 3;
+  optional string admin_id = 4;
 }
 
 message UpdateUserStatusResponse {
