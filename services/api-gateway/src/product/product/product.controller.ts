@@ -377,6 +377,66 @@ export class ProductController {
   }
 
   @Public()
+  @Get(':product_id/traceability')
+  @ApiOperation({
+    summary: 'Get traceability data for product',
+    description:
+      'Retrieves comprehensive traceability data including process assignments and step diaries.',
+  })
+  @ApiParam({
+    name: 'product_id',
+    description: 'ID of the product',
+    type: Number,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Traceability data retrieved successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async getTraceabilityData(
+    @Param('product_id', ParseIntPipe) productId: number,
+  ) {
+    const traceabilityData =
+      await this.productService.getTraceabilityData(productId);
+    return {
+      data: traceabilityData,
+      message: 'Traceability data retrieved successfully',
+    };
+  }
+
+  @Public()
+  @Get(':product_id/verify-traceability')
+  @ApiOperation({
+    summary: 'Verify product traceability',
+    description:
+      'Verifies the integrity of product traceability data against blockchain records.',
+  })
+  @ApiParam({
+    name: 'product_id',
+    description: 'ID of the product',
+    type: Number,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Traceability verification completed',
+    schema: {
+      properties: {
+        isValid: { type: 'boolean' },
+        error: { type: 'string', nullable: true },
+        verificationDate: { type: 'string' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async verifyTraceability(
+    @Param('product_id', ParseIntPipe) productId: number,
+  ) {
+    return await this.productService.verifyTraceability(productId);
+  }
+
+  @Public()
   @Get(':product_id')
   @ApiOperation({
     summary: 'Get product by ID',

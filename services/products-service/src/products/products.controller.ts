@@ -109,6 +109,16 @@ export class ProductsController {
     return this.productsService.getQRCode(Number(id));
   }
 
+  @Get(':id/traceability')
+  async getTraceabilityData(@Param('id') id: string) {
+    return this.productsService.getTraceabilityData(Number(id));
+  }
+
+  @Get(':id/verify-traceability')
+  async verifyTraceability(@Param('id') id: string) {
+    return this.productsService.verifyProductTraceability(Number(id));
+  }
+
   // @Get()
   // async searchAndFilterProducts(
   //   @Query() paginationOptions: PaginationOptions,

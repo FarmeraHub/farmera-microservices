@@ -44,9 +44,9 @@ async function bootstrap() {
   });
 
   await app.startAllMicroservices();
-  await app.listen(3003);
+  await app.listen(3004);
   console.log('🚀 Products Service is running in hybrid mode:');
-  console.log('📡 REST API: http://localhost:3003');
+  console.log('📡 REST API: http://localhost:3004');
   console.log('📡 gRPC API: grpc://localhost:50052');
 }
 bootstrap().catch((error) => {

@@ -30,6 +30,12 @@ import * as QRCode from 'qrcode';
 import { ConfigService } from '@nestjs/config';
 import { ProcessStage } from 'src/common/enums/process-stage.enum';
 import { UpdateProductQuantityOperation } from 'src/common/enums/update-product-quantity-operation.enum';
+import { ProductProcessAssignment } from 'src/process/entities/product-process-assignment.entity';
+import { StepDiaryEntry } from 'src/diary/entities/step-diary-entry.entity';
+import {
+  BlockchainService,
+  TraceabilityData,
+} from 'src/services/blockchain.service';
 
 @Injectable()
 export class ProductsService implements OnModuleInit {
@@ -54,10 +60,15 @@ export class ProductsService implements OnModuleInit {
     private readonly farmRepository: Repository<Farm>,
     @InjectRepository(Process)
     private readonly processRepository: Repository<Process>,
+    @InjectRepository(ProductProcessAssignment)
+    private readonly assignmentRepository: Repository<ProductProcessAssignment>,
+    @InjectRepository(StepDiaryEntry)
+    private readonly stepDiaryRepository: Repository<StepDiaryEntry>,
     private readonly fileStorageService: AzureBlobService,
     private readonly configService: ConfigService,
     private readonly dataSource: DataSource,
-  ) { }
+    private readonly blockchainService: BlockchainService,
+  ) {}
 
   async create(
     createProductDto: CreateProductDto,
@@ -955,7 +966,7 @@ export class ProductsService implements OnModuleInit {
 
     const product = await this.productsRepository.findOne({
       where: { product_id: productId },
-      relations: ['farm', 'processes', 'processes.diaryEntries'],
+      relations: ['farm'],
     });
 
     if (!product) {
@@ -967,33 +978,69 @@ export class ProductsService implements OnModuleInit {
     }
 
     try {
-      // Generate blockchain data payload
-      const blockchainData = {
-        product_id: product.product_id,
-        product_name: product.product_name,
-        farm_id: product.farm?.farm_id,
-        farm_name: product.farm?.farm_name,
-        processes: product.processes?.map((process) => ({
-          process_id: process.process_id,
-          stage_name: process.stage_name,
-          description: process.description,
-          image_urls: process.image_urls,
-          start_date: process.start_date,
-          end_date: process.end_date,
-          diaryEntries: process.diaryEntries?.map((diary) => ({
-            diary_id: diary.diary_id,
-            step_name: diary.step_name,
-            step_description: diary.step_description,
-            recorded_date: diary.recorded_date,
-            image_urls: diary.image_urls,
-          })),
-        })),
-        timestamp: new Date().toISOString(),
+      // Get all process assignments for this product
+      const assignments = await this.assignmentRepository.find({
+        where: { product: { product_id: productId } },
+        relations: ['processTemplate', 'processTemplate.steps'],
+      });
+
+      if (!assignments || assignments.length === 0) {
+        throw new BadRequestException(
+          'Sản phẩm chưa có quy trình sản xuất nào được gán',
+        );
+      }
+
+      // Get all step diary entries for these assignments
+      const stepDiaries = await this.stepDiaryRepository.find({
+        where: {
+          assignment: {
+            assignment_id: In(assignments.map((a) => a.assignment_id)),
+          },
+        },
+        relations: ['assignment', 'step'],
+        order: { step_order: 'ASC', recorded_date: 'ASC' },
+      });
+
+      // Validate that all required steps are completed
+      const incompleteSteps = stepDiaries.filter(
+        (diary) => diary.completion_status !== 'COMPLETED',
+      );
+
+      if (incompleteSteps.length > 0) {
+        const incompleteStepNames = incompleteSteps
+          .map((d) => d.step_name)
+          .join(', ');
+        throw new BadRequestException(
+          `Không thể kích hoạt blockchain: còn ${incompleteSteps.length} bước chưa hoàn thành (${incompleteStepNames})`,
+        );
+      }
+
+      // Validate that all assignments are completed
+      const incompleteAssignments = assignments.filter(
+        (assignment) => assignment.status !== 'COMPLETED',
+      );
+
+      if (incompleteAssignments.length > 0) {
+        const incompleteProcessNames = incompleteAssignments
+          .map((a) => a.processTemplate.process_name)
+          .join(', ');
+        throw new BadRequestException(
+          `Không thể kích hoạt blockchain: còn ${incompleteAssignments.length} quy trình chưa hoàn thành (${incompleteProcessNames})`,
+        );
+      }
+
+      // Create traceability data for blockchain
+      const traceabilityData: TraceabilityData = {
+        product,
+        assignments,
+        stepDiaries,
       };
 
-      // For now, simulate blockchain activation with a hash
-      // In production, this would integrate with actual blockchain service
-      const blockchainHash = this.generateBlockchainHash(blockchainData);
+      // Add to blockchain using the new service
+      const blockchainHash =
+        await this.blockchainService.addProductWithTraceability(
+          traceabilityData,
+        );
 
       // Update product with blockchain activation
       await this.productsRepository.update(productId, {
@@ -1001,12 +1048,22 @@ export class ProductsService implements OnModuleInit {
         blockchain_hash: blockchainHash,
       });
 
+      this.logger.log(
+        `Blockchain activated for product ${productId} with hash: ${blockchainHash}`,
+      );
+
       return {
         blockchain_hash: blockchainHash,
         success: true,
       };
     } catch (error) {
       this.logger.error(`Blockchain activation failed: ${error.message}`);
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException('Không thể kích hoạt blockchain');
     }
   }
@@ -1032,9 +1089,12 @@ export class ProductsService implements OnModuleInit {
     return { qr_code: product.qr_code || null };
   }
 
-  async updateProductQuantity(productId: number, request_quantity: number, operation: UpdateProductQuantityOperation): Promise<{ success: boolean, message: string }> {
+  async updateProductQuantity(
+    productId: number,
+    request_quantity: number,
+    operation: UpdateProductQuantityOperation,
+  ): Promise<{ success: boolean; message: string }> {
     try {
-
       const product = await this.productsRepository.findOne({
         where: { product_id: productId },
       });
@@ -1042,21 +1102,24 @@ export class ProductsService implements OnModuleInit {
       if (!product) {
         return {
           success: false,
-          message: 'Sản phẩm không tồn tại'
+          message: 'Sản phẩm không tồn tại',
         };
       }
 
       if (product.status !== ProductStatus.OPEN_FOR_SALE) {
         return {
           success: false,
-          message: 'Sản phẩm không thể cập nhật số lượng'
+          message: 'Sản phẩm không thể cập nhật số lượng',
         };
       }
 
-      if (operation === UpdateProductQuantityOperation.DECREASE && product.stock_quantity < request_quantity) {
+      if (
+        operation === UpdateProductQuantityOperation.DECREASE &&
+        product.stock_quantity < request_quantity
+      ) {
         return {
           success: false,
-          message: `Số lượng không đủ. Hiện có: ${product.stock_quantity}, yêu cầu: ${request_quantity}`
+          message: `Số lượng không đủ. Hiện có: ${product.stock_quantity}, yêu cầu: ${request_quantity}`,
         };
       }
 
@@ -1067,7 +1130,7 @@ export class ProductsService implements OnModuleInit {
       } else {
         return {
           success: false,
-          message: 'Phương thức cập nhật không hợp lệ'
+          message: 'Phương thức cập nhật không hợp lệ',
         };
       }
 
@@ -1075,34 +1138,40 @@ export class ProductsService implements OnModuleInit {
 
       return {
         success: true,
-        message: `Cập nhật số lượng thành công. Số lượng hiện tại: ${product.stock_quantity}`
+        message: `Cập nhật số lượng thành công. Số lượng hiện tại: ${product.stock_quantity}`,
       };
-
     } catch (error) {
-      this.logger.error(`Cập nhật số lượng sản phẩm thất bại: ${error.message}`);
+      this.logger.error(
+        `Cập nhật số lượng sản phẩm thất bại: ${error.message}`,
+      );
       return {
         success: false,
-        message: 'Lỗi hệ thống khi cập nhật số lượng sản phẩm'
+        message: 'Lỗi hệ thống khi cập nhật số lượng sản phẩm',
       };
     }
   }
-  async updateProductQuantities(items: Array<{ product_id: number; request_quantity: number; operation: UpdateProductQuantityOperation }>)
-    : Promise<{
-      success: boolean,
-      message: string,
-      results: Array<{
-        product_id: number;
-        success: boolean;
-        message: string;
-        previous_quantity?: number;
-        new_quantity?: number;
-      }>;
-    }> {
+  async updateProductQuantities(
+    items: Array<{
+      product_id: number;
+      request_quantity: number;
+      operation: UpdateProductQuantityOperation;
+    }>,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    results: Array<{
+      product_id: number;
+      success: boolean;
+      message: string;
+      previous_quantity?: number;
+      new_quantity?: number;
+    }>;
+  }> {
     if (!items || items.length === 0) {
       return {
         success: false,
         message: 'Danh sách sản phẩm không được rỗng',
-        results: []
+        results: [],
       };
     }
 
@@ -1110,7 +1179,7 @@ export class ProductsService implements OnModuleInit {
       return {
         success: false,
         message: 'Tối đa 100 sản phẩm mỗi lần cập nhật',
-        results: []
+        results: [],
       };
     }
 
@@ -1119,7 +1188,6 @@ export class ProductsService implements OnModuleInit {
     await queryRunner.startTransaction();
 
     try {
-
       const results: Array<{
         product_id: number;
         success: boolean;
@@ -1132,11 +1200,16 @@ export class ProductsService implements OnModuleInit {
 
       for (const item of items) {
         try {
-          if (item.product_id === undefined || !item.request_quantity || !item.operation) {
+          if (
+            item.product_id === undefined ||
+            !item.request_quantity ||
+            !item.operation
+          ) {
             results.push({
               product_id: item.product_id || 0,
               success: false,
-              message: 'Thiếu thông tin bắt buộc: productId, request_quantity, operation'
+              message:
+                'Thiếu thông tin bắt buộc: productId, request_quantity, operation',
             });
             failCount++;
             continue;
@@ -1146,30 +1219,32 @@ export class ProductsService implements OnModuleInit {
             results.push({
               product_id: item.product_id,
               success: false,
-              message: 'Số lượng yêu cầu phải lớn hơn 0'
+              message: 'Số lượng yêu cầu phải lớn hơn 0',
             });
             failCount++;
             continue;
           }
           const product = await queryRunner.manager.findOne(Product, {
-            where: { product_id: item.product_id }
+            where: { product_id: item.product_id },
           });
 
           if (!product) {
             results.push({
               product_id: item.product_id,
               success: false,
-              message: 'Sản phẩm không tồn tại'
+              message: 'Sản phẩm không tồn tại',
             });
             failCount++;
             continue;
           }
-          if (item.operation === UpdateProductQuantityOperation.DECREASE &&
-            product.stock_quantity < item.request_quantity) {
+          if (
+            item.operation === UpdateProductQuantityOperation.DECREASE &&
+            product.stock_quantity < item.request_quantity
+          ) {
             results.push({
               product_id: item.product_id,
               success: false,
-              message: `Số lượng không đủ. Hiện có: ${product.stock_quantity}, yêu cầu: ${item.request_quantity}`
+              message: `Số lượng không đủ. Hiện có: ${product.stock_quantity}, yêu cầu: ${item.request_quantity}`,
             });
             failCount++;
             continue;
@@ -1179,13 +1254,15 @@ export class ProductsService implements OnModuleInit {
 
           if (item.operation === UpdateProductQuantityOperation.INCREASE) {
             product.stock_quantity += item.request_quantity;
-          } else if (item.operation === UpdateProductQuantityOperation.DECREASE) {
+          } else if (
+            item.operation === UpdateProductQuantityOperation.DECREASE
+          ) {
             product.stock_quantity -= item.request_quantity;
           } else {
             results.push({
               product_id: item.product_id,
               success: false,
-              message: 'Phương thức cập nhật không hợp lệ'
+              message: 'Phương thức cập nhật không hợp lệ',
             });
             failCount++;
             continue;
@@ -1197,18 +1274,22 @@ export class ProductsService implements OnModuleInit {
             success: true,
             message: `Cập nhật thành công từ ${previousQuantity} thành ${product.stock_quantity}`,
             previous_quantity: previousQuantity,
-            new_quantity: product.stock_quantity
+            new_quantity: product.stock_quantity,
           });
           successCount++;
 
-          this.logger.debug(`Product ${item.product_id} updated: ${previousQuantity} -> ${product.stock_quantity}`);
-
+          this.logger.debug(
+            `Product ${item.product_id} updated: ${previousQuantity} -> ${product.stock_quantity}`,
+          );
         } catch (error) {
-          this.logger.error(`Error updating product ${item.product_id}:`, error);
+          this.logger.error(
+            `Error updating product ${item.product_id}:`,
+            error,
+          );
           results.push({
             product_id: item.product_id,
             success: false,
-            message: `Lỗi hệ thống: ${error.message}`
+            message: `Lỗi hệ thống: ${error.message}`,
           });
           failCount++;
         }
@@ -1220,18 +1301,19 @@ export class ProductsService implements OnModuleInit {
         return {
           success: true,
           message: `Cập nhật thành công ${successCount} sản phẩm`,
-          results
+          results,
         };
       } else {
         await queryRunner.rollbackTransaction();
-        this.logger.warn(`Transaction rolled back: ${successCount} success, ${failCount} failed`);
+        this.logger.warn(
+          `Transaction rolled back: ${successCount} success, ${failCount} failed`,
+        );
         return {
           success: false,
           message: `Có ${failCount} sản phẩm cập nhật thất bại. Đã hoàn tác tất cả thay đổi.`,
-          results
+          results,
         };
       }
-
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error('Bulk update products quantity failed:', error);
@@ -1239,16 +1321,92 @@ export class ProductsService implements OnModuleInit {
       return {
         success: false,
         message: `Lỗi hệ thống khi cập nhật hàng loạt: ${error.message}`,
-        results: items.map(item => ({
+        results: items.map((item) => ({
           product_id: item.product_id || 0,
           success: false,
-          message: 'Lỗi hệ thống'
-        }))
+          message: 'Lỗi hệ thống',
+        })),
       };
     } finally {
       await queryRunner.release();
     }
+  }
 
+  async getTraceabilityData(productId: number): Promise<TraceabilityData> {
+    // Check if product exists
+    const product = await this.productsRepository.findOne({
+      where: { product_id: productId, status: Not(ProductStatus.DELETED) },
+      relations: ['farm'],
+    });
 
+    if (!product) {
+      throw new NotFoundException('Sản phẩm không tồn tại');
+    }
+
+    // Get all process assignments for this product
+    const assignments = await this.assignmentRepository.find({
+      where: { product: { product_id: productId } },
+      relations: ['processTemplate', 'processTemplate.steps'],
+      order: { assigned_date: 'ASC' },
+    });
+
+    // Get all step diary entries for these assignments
+    const assignmentIds = assignments.map((a) => a.assignment_id);
+    const stepDiaries =
+      assignmentIds.length > 0
+        ? await this.stepDiaryRepository.find({
+            where: {
+              assignment: { assignment_id: In(assignmentIds) },
+            },
+            relations: ['assignment', 'step'],
+            order: { step_order: 'ASC', recorded_date: 'ASC' },
+          })
+        : [];
+
+    return {
+      product,
+      assignments,
+      stepDiaries,
+    };
+  }
+
+  async verifyProductTraceability(productId: number): Promise<{
+    isValid: boolean;
+    error?: string;
+    verificationDate: Date;
+  }> {
+    try {
+      // Get traceability data
+      const traceabilityData = await this.getTraceabilityData(productId);
+
+      if (!traceabilityData.product.blockchain_activated) {
+        return {
+          isValid: false,
+          error: 'Sản phẩm chưa được kích hoạt blockchain',
+          verificationDate: new Date(),
+        };
+      }
+
+      // Verify with blockchain
+      const verificationResult =
+        await this.blockchainService.verifyProductTraceability(
+          traceabilityData,
+        );
+
+      return {
+        isValid: verificationResult.isValid,
+        error: verificationResult.error,
+        verificationDate: new Date(),
+      };
+    } catch (error) {
+      this.logger.error(
+        `Traceability verification failed for product ${productId}: ${error.message}`,
+      );
+      return {
+        isValid: false,
+        error: 'Không thể xác minh truy xuất nguồn gốc',
+        verificationDate: new Date(),
+      };
+    }
   }
 }
