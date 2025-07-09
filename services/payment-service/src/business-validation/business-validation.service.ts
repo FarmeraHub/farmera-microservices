@@ -169,6 +169,7 @@ export class BusinessValidationService {
             district_code: farmResponse.address!.address_ghn!.district_id!,
             ward_code: farmResponse.address!.address_ghn!.ward_code,
             products: [],
+            final_fee: 0, // Sẽ cập nhật sau khi tính toán
         };
 
         // --- Bước 5: Xử lý kết quả gRPC và kiểm tra từng sản phẩm ---
@@ -232,7 +233,8 @@ export class BusinessValidationService {
                 price_per_unit: actualProduct.price_per_unit,
                 total_price: requestedItem.quantity * actualProduct.price_per_unit,
                 weight: actualProduct.weight,
-                image_url: actualProduct.image_urls && actualProduct.image_urls.length > 0 ? actualProduct.image_urls[0] : undefined
+                image_url: actualProduct.image_urls && actualProduct.image_urls.length > 0 ? actualProduct.image_urls[0] : undefined,
+                
             });
         }
 
@@ -242,6 +244,7 @@ export class BusinessValidationService {
             for (const product of resultValidation.products) {
                 totalFee += product.total_price;
             }
+            this.logger.log(`Total fee calculated: ${totalFee}`);
             resultValidation.total = totalFee;
             return resultValidation;
         }

@@ -19,6 +19,7 @@ export class ShippingFeeDetails {
 
   // giá trị của tất cả sản phẩm trong đơn hàng
   total: number;
+  final_fee: number;
   currency: string;
   city?: string;
   district?: string;

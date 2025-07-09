@@ -4,7 +4,7 @@ import { ClientGrpc } from "@nestjs/microservices";
 import { OrderRequestDto } from "./dto/order.dto";
 import { Issue } from "./entities/issue.entity";
 import { Order } from "./entities/order.entity";
-import { SubOrder } from "./entities/sub-order.entity";
+import { SubOrder, SubOrderWithDetail } from "./entities/sub-order.entity";
 import { ErrorMapper } from "src/mappers/common/error.mapper";
 import { firstValueFrom } from "rxjs";
 import { IssueMapper } from "src/mappers/payment/issue.mapper";
@@ -12,6 +12,7 @@ import { OrderMapper } from "src/mappers/payment/order.mapper";
 import { Payment } from "../payment/entities/payment.entity";
 import { PaymentMapper } from "src/mappers/payment/payment.mapper";
 import { SubOrderMapper } from "src/mappers/payment/sub-order.mapper";
+import { OrderDetailMapper } from "src/mappers/payment/order-detail.mapper";
 
 @Injectable()
 export class OrderService implements OnModuleInit {
@@ -26,7 +27,7 @@ export class OrderService implements OnModuleInit {
         this.orderGrpcService = this.clientGrpcInstance.getService<PaymentServiceClient>("PaymentService");
     }
 
-    async createOrder(userId: string, order: OrderRequestDto): Promise<{ order: Order, payment?: Payment, suborders?: SubOrder[] } | Issue[]> {
+    async createOrder(userId: string, order: OrderRequestDto): Promise<{ order: Order, payment?: Payment, suborderwithDetail?: SubOrderWithDetail[] } | Issue[]> {
         try {
             const result = await firstValueFrom(this.orderGrpcService.createOrder({
                 suborders: order.suborders.map(suborder => ({
@@ -42,6 +43,7 @@ export class OrderService implements OnModuleInit {
                     payment_type: order.order_info.payment_type? order.order_info.payment_type : undefined,
                 }
             }));
+
             if (result.errors && result.errors.issues && Array.isArray(result.errors.issues)) {
                 const issues: Issue[] = result.errors.issues.map(issue => IssueMapper.fromGrpcIssue(issue));
                 return issues;
@@ -66,15 +68,21 @@ export class OrderService implements OnModuleInit {
                     paymentEntity = PaymentMapper.fromGrpcPayment(paymentData);
                 }
 
-                let subordersEntity: SubOrder[] | undefined = undefined;
+                
+                let suborderwithDetail: SubOrderWithDetail[] | undefined = undefined;
+                
                 if (subordersData && Array.isArray(subordersData)) {
-                    subordersEntity = subordersData.map(suborder => SubOrderMapper.fromGrpcSubOrder(suborder));
+                    suborderwithDetail = subordersData.map(suborder => {
+                        const subOrderEntity = SubOrderMapper.fromGrpcSubOrder(suborder.sub_order);
+                        const products = suborder.order_items.map(product => OrderDetailMapper.fromGrpcOrderDetail(product));
+                        return { sub_order: subOrderEntity, products };
+                    });
                 }
 
                 return {
                     order: orderEntity,
                     payment: paymentEntity,
-                    suborders: subordersEntity
+                    suborderwithDetail: suborderwithDetail,
                 };
             }
             this.logger.debug(`result: ${JSON.stringify(result, null, 2)}`, 'OrderService');

@@ -46,6 +46,14 @@ export class DeliveryController {
             if (error instanceof HttpException) {
                 throw error;
             }
+            throw new HttpException(
+                {
+                    statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: 'An unexpected error occurred while calculating shipping fee.',
+                    error: error.message || 'Internal Server Error',
+                },
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
 
         }
     }

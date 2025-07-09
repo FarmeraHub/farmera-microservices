@@ -11,6 +11,8 @@ export class ShippingDetailMapper{
             final_fee: value.final_fee,
             shipping_fee: value.shipping_fee,
             currency: value.currency,
+            total: value.total,
+            avatar_url: value.avatar_url,
         };
         if (value.products)
         {

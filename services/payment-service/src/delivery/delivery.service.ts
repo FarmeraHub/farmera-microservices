@@ -512,9 +512,9 @@ export class DeliveryService {
                 const shippingFeeDetails: ShippingFeeDetails = {
                     ...validSubOrder,
                     shipping_fee: ghnFeeData.total,
-                    total: ghnFeeData.total + validSubOrder.shipping_fee,
+                    final_fee: ghnFeeData.total + validSubOrder.total,
                 };
-                this.logger.log(`Calculated shipping fee details: ${JSON.stringify(shippingFeeDetails)}`);
+                this.logger.log(`Calculated shipping fee details: ${JSON.stringify(shippingFeeDetails,null, 2)}`);
                 return shippingFeeDetails;
 
 

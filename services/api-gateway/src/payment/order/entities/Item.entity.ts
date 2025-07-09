@@ -7,4 +7,5 @@ export class Item{
     unit: string;
     weight: number;
     image_url: string;
+    requested_quantity: number;
 }
