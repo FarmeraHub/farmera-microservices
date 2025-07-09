@@ -15,6 +15,7 @@ export class SubOrderMapper {
             discount_amount: value.discount_amount,
             shipping_amount: value.shipping_amount,
             final_amount: value.final_amount,
+            avatar_url: value.avatar_url,
             created: TypesMapper.toGrpcTimestamp(value.created),
             currency: value.currency,
             status: EnumMapper.toGrpcSubOrderStatus(value.status),

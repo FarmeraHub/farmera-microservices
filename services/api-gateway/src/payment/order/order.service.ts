@@ -69,6 +69,7 @@ export class OrderService implements OnModuleInit {
                 }
 
                 
+                this.logger.debug(`orderEntity: ${JSON.stringify(result.full_order.suborders, null, 2)}`, 'OrderService');
                 let suborderwithDetail: SubOrderWithDetail[] | undefined = undefined;
                 
                 if (subordersData && Array.isArray(subordersData)) {
