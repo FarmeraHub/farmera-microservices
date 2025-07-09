@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Post } from '@nestjs/common';
 import { DeliveryService } from './delivery.service';
 import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiInternalServerErrorResponse, ApiOperation, ApiResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { CalculateDeliveryRequestDto } from './dto/calculate-delivery.dto';
@@ -23,11 +23,30 @@ export class DeliveryController {
     async calculateShippingFee(
         @User() user: UserInterface,
         @Body() calculateDeliveryRequestDto: CalculateDeliveryRequestDto,
-    ):Promise<ShippingDetail| Issue []> {
-        // This method will handle the logic for calculating shipping fees
-        // The actual implementation will depend on the business logic and requirements
-        console.log(`calculateShippingFee called with userId: ${user.id}, suborders: ${JSON.stringify(calculateDeliveryRequestDto.suborder)}, address_id: ${calculateDeliveryRequestDto.order_info.address_id}`, 'DeliveryController');
-        return await this.deliveryService.calculateShippingFee(user.id, calculateDeliveryRequestDto);
-    }
+    ): Promise<ShippingDetail | Issue[]> {
+        try {
+            const result = await this.deliveryService.calculateShippingFee(user.id, calculateDeliveryRequestDto);
 
+            // Nếu là lỗi dạng Issue[]
+            if (Array.isArray(result)) {
+                throw new HttpException(
+                    {
+                        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+                        message: 'One or more errors occurred while calculating shipping fee.',
+                        errors: result,
+                    },
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                );
+            }
+
+            // Nếu thành công → trả về 201
+            return result;
+        } catch (error) {
+            // Có thể là lỗi từ GHN hoặc logic khác
+            if (error instanceof HttpException) {
+                throw error;
+            }
+
+        }
+    }
 }

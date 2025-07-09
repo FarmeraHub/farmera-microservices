@@ -8,6 +8,6 @@ export class CreateSubOrderDto {
     shipping_amount: number;
     final_amount: number;
     currency: string;
-    avartar_url: string;
+    avatar_url: string;
     notes: string;
 }

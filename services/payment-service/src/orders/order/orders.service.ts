@@ -172,7 +172,7 @@ export class OrdersService {
                         shipping_amount: subOrderData.shipping_fee,
                         final_amount: subOrderData.total + subOrderData.shipping_fee, // Tổng tiền = tổng sản phẩm + tiền ship
                         currency: 'VND',
-                        avartar_url: subOrderData.avatar_url,
+                        avatar_url: subOrderData.avatar_url,
                         notes: '', // Có thể thêm ghi chú nếu cần
                     },
                     savedOrder,
@@ -344,7 +344,7 @@ export class OrdersService {
                         shipping_amount: subOrderData.shipping_fee,
                         final_amount: subOrderData.total + subOrderData.shipping_fee, // Tổng tiền = tổng sản phẩm + tiền ship
                         currency: 'VND',
-                        avartar_url: subOrderData.avatar_url,
+                        avatar_url: subOrderData.avatar_url,
                         notes: '', // Có thể thêm ghi chú nếu cần
                     },
                     savedOrder,
@@ -475,10 +475,10 @@ export class OrdersService {
 
             const updateResult = await this.productsGrpcClientService.updateProductsQuantity(productUpdates);
             this.logger.debug(`kết quả giảm sản phẩm: ${JSON.stringify(updateResult, null, 2)}`)
-            updateResult.results.map(test => 
+            updateResult.results.map(test =>
                 this.logger.log(`kết quả chi tiết giảm sản phẩm: ${JSON.stringify(test, null, 2)}`)
             )
-             
+
 
             if (!updateResult.success) {
                 const failedProducts = updateResult.results
@@ -489,7 +489,7 @@ export class OrdersService {
             }
 
             this.logger.log(`Successfully ${operation} quantities for ${productUpdates.length} products`);
-           
+
         } catch (error) {
             this.logger.error(`Error ${operation} product quantities: ${error.message}`);
             throw error;

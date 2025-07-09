@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Farm } from 'src/farms/entities/farm.entity';
 import { ApproveDetail } from './entities/approve-detail.entity';
 import { DataSource, ILike, Repository } from 'typeorm';
@@ -18,6 +18,7 @@ export class FarmAdminService {
     private farmRepository: Repository<Farm>,
     @InjectRepository(ApproveDetail)
     private approveDetailRepository: Repository<ApproveDetail>,
+    @InjectDataSource()
     private readonly dataSource: DataSource,
   ) { }
 

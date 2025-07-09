@@ -6,7 +6,7 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { ProcessTemplate } from './entities/process-template.entity';
 import { ProcessStep } from './entities/process-step.entity';
@@ -38,6 +38,7 @@ export class ProcessTemplateService {
     private readonly farmRepository: Repository<Farm>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
 

@@ -9,7 +9,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, ILike, In, Repository } from 'typeorm';
 import { Farm } from './entities/farm.entity';
 import { Address } from './entities/address.entity';
@@ -47,6 +47,7 @@ export class FarmsService {
     @InjectRepository(AddressGHN)
     private addressGHNRepository: Repository<AddressGHN>,
     private readonly biometricsService: BiometricsService,
+    @InjectDataSource()
     private dataSource: DataSource,
     private readonly fileStorageService: AzureBlobService,
     private readonly GhnService: GhnService,
