@@ -18,7 +18,7 @@ use tokio::{
         mpsc::{self},
         watch, RwLock,
     },
-    time::interval,
+    time::{interval, sleep},
 };
 use uuid::Uuid;
 
@@ -38,7 +38,7 @@ use super::{
     chat_server_handler::ChatServerHandler, Command, ConnId, ConversationId, SendMsg, UserId,
 };
 
-const INTERVAL: Duration = Duration::from_secs(1);
+const INTERVAL: Duration = Duration::from_secs(20);
 
 pub struct ChatServer {
     sessions: Arc<RwLock<HashMap<ConnId, mpsc::UnboundedSender<SendMsg>>>>,
@@ -850,6 +850,12 @@ impl ChatServer {
         redis_conn: &mut deadpool_redis::Connection,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let map: HashMap<String, i64> = redis_conn.hgetall("pending_updates").await?;
+
+        if map.is_empty() {
+            sleep(Duration::from_secs(60)).await;
+            return Ok(());
+        }
+
         redis_conn.del::<_, ()>("pending_updates").await?;
 
         for (conv_id_str, message_id) in map {
