@@ -188,6 +188,9 @@ impl Dispatcher for PushDispatcher {
                     "notification": {
                         "title": payload.title.clone(),
                         "body": content
+                    },
+                    "data": {
+                        "type": payload.notification_type,
                     }
                 }
             });

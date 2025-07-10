@@ -4,6 +4,8 @@ use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+use crate::models::NotificationType;
+
 use super::reject_empty_string;
 
 #[derive(Debug, Deserialize, Serialize, ToSchema, sqlx::Type, Clone, PartialEq, Eq, Display)]
@@ -38,6 +40,8 @@ pub struct PushMessage {
 
     #[schema(example = "Content")]
     pub content: Option<String>,
+
+    pub notification_type: NotificationType,
 
     #[schema(ignore)]
     #[serde(default)]
