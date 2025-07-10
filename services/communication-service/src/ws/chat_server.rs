@@ -28,6 +28,7 @@ use crate::{
     models::{
         attachment::{MediaContent, SentMedia},
         message::{MessageContent, SentMessage},
+        notification_mapping_impl::NotificationType,
         notification_models::push::{PushMessage, PushMessageType},
         MessageType,
     },
@@ -721,6 +722,7 @@ impl ChatServer {
                                 template_props: None,
                                 title: title.clone(),
                                 content: Some(content_clone.clone()),
+                                notification_type: NotificationType::Chat,
                             })
                             .await;
                     }

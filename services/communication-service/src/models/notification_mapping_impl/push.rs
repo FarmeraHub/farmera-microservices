@@ -1,4 +1,6 @@
-use farmera_grpc_proto::{notification::SendPushNotificationRequest, PushMessageType, StringMap};
+use farmera_grpc_proto::{
+    notification::SendPushNotificationRequest, NotificationType, PushMessageType, StringMap,
+};
 
 use crate::models::notification_models::push::PushMessage;
 
@@ -20,6 +22,7 @@ impl From<PushMessage> for SendPushNotificationRequest {
             template_props: props,
             title: value.title,
             content: value.content,
+            notification_type: NotificationType::from(value.notification_type) as i32,
         }
     }
 }
