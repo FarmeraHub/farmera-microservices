@@ -5,7 +5,6 @@ import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { CreateDeviceTokenDto } from './dto/create-device.dto';
 import { UserPreferencesService } from './user_preferences.service';
 import { UpdateUserNotiPreferenceDto } from './dto/update-preference.dto';
-import { Public } from 'src/common/decorators/public.decorator';
 import { SystemAuth } from 'src/common/decorators/system-auth.decorator';
 
 
@@ -14,9 +13,10 @@ export class UserPreferencesController {
 
     constructor(private readonly userPreferenceService: UserPreferencesService) { }
 
+    @SystemAuth()
     @Post()
-    async createUserPreferences(@User() user: UserInterface, @Body() createPreferenceDto: CreateUserNotiPreferenceDto) {
-        return await this.userPreferenceService.createUserPreferences(user.id, user.email, createPreferenceDto);
+    async createUserPreferences(@Body() createPreferenceDto: CreateUserNotiPreferenceDto) {
+        return await this.userPreferenceService.createUserPreferences(createPreferenceDto);
     }
 
     @Get()

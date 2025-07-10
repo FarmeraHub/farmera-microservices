@@ -26,11 +26,11 @@ export class UserPreferencesService {
         this.notificationGrpcService = this.client.getService<NotificationServiceClient>("NotificationService")
     }
 
-    async createUserPreferences(userId: string, userEmail: string, dto: CreateUserNotiPreferenceDto): Promise<UserNotiPreference> {
+    async createUserPreferences(dto: CreateUserNotiPreferenceDto): Promise<UserNotiPreference> {
         try {
             const result = await firstValueFrom(this.notificationGrpcService.createUserPreferences({
-                user_id: userId,
-                user_email: userEmail,
+                user_id: dto.user_id,
+                user_email: dto.user_email,
                 transactional_channels: dto.transactional_channels.map((value) => EnumMapper.toGrpcNotificationChannel(value)),
                 system_alert_channels: dto.system_alert_channels.map((value) => EnumMapper.toGrpcNotificationChannel(value)),
                 chat_channels: dto.chat_channels.map((value) => EnumMapper.toGrpcNotificationChannel(value)),
