@@ -92,16 +92,13 @@ export class PaymentGrpcController implements PaymentServiceController {
                 this.logger.log(`OrderMapper.toGrpcOrder: ${JSON.stringify(result, null, 2)}`);
                 const order = OrderMapper.toGrpcOrder(result);
                 const payment = result.payment ? PaymentMapper.toGrpcPayment(result.payment) : undefined;
-                const suborders = {
-                    suborders: result.sub_orders
-                        ? result.sub_orders.map(subOrder => ({
-                            sub_order: SubOrderMapper.toGrpcSubOrder(subOrder),
-                            order_items: subOrder.order_details
-                                ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem)
-                                : [],
-                        }))
+                const suborders = result.sub_orders.map(subOrder => ({
+                    sub_order: SubOrderMapper.toGrpcSubOrder(subOrder),
+                    order_items: subOrder.order_details
+                        ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem)
                         : [],
-                };
+                }));
+
                 const fullOrderResponse = { order, payment, suborders };
                 this.logger.log(`FullOrderResponse: ${JSON.stringify(fullOrderResponse, null, 2)}`);
                 return {

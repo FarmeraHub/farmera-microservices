@@ -29,7 +29,7 @@ export class SubOrderService {
                 shipping_amount: subOrder.shipping_amount,
                 final_amount: subOrder.final_amount,
                 currency: subOrder.currency,
-                avartar_url: subOrder.avartar_url,
+                avatar_url: subOrder.avatar_url,
                 notes: subOrder.notes,
                 order: order,
             });

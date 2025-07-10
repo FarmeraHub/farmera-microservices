@@ -133,7 +133,7 @@ export class OrdersService {
             }, 0);
 
 
-            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrderGHN(validSubOrders, validOrderInfo);
+            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrderGHN(validSubOrders, validOrderInfo,true);
 
             //Tính tiền ship của tất cả các suborder (dựa tren kết quả từ GHN)
             const shippingAmount = resultGHN.reduce((sum, item) => sum + item.fee.main_service, 0)
@@ -169,10 +169,10 @@ export class OrdersService {
                         status: SubOrderStatus.PENDING,
                         total_amount: subOrderData.total,
                         discount_amount: 0, // Giả sử không có discount
-                        shipping_amount: subOrderData.shipping_fee,
-                        final_amount: subOrderData.total + subOrderData.shipping_fee, // Tổng tiền = tổng sản phẩm + tiền ship
+                        shipping_amount: ghnOrderResult.fee.main_service,
+                        final_amount: subOrderData.total + ghnOrderResult.fee.main_service, // Tổng tiền = tổng sản phẩm + tiền ship
                         currency: 'VND',
-                        avartar_url: subOrderData.avatar_url,
+                        avatar_url: subOrderData.avatar_url,
                         notes: '', // Có thể thêm ghi chú nếu cần
                     },
                     savedOrder,
@@ -272,7 +272,7 @@ export class OrdersService {
                     return productSum + (product.price_per_unit * product.requested_quantity);
                 }, 0);
             }, 0);
-            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrderGHN(validSubOrders, validOrderInfo);
+            const resultGHN: GhnCreatedOrderDataDto[] = await this.createOrderGHN(validSubOrders, validOrderInfo,false);
             //Tính tiền ship của tất cả các suborder (dựa tren kết quả từ GHN)
             const shippingAmount = resultGHN.reduce((sum, item) => sum + item.fee.main_service, 0)
             //giả sử bằng không (Vì tiền ship cao quá không test được :'(( 
@@ -341,10 +341,10 @@ export class OrdersService {
                         status: SubOrderStatus.PENDING,
                         total_amount: subOrderData.total,
                         discount_amount: 0, // Giả sử không có discount
-                        shipping_amount: subOrderData.shipping_fee,
-                        final_amount: subOrderData.total + subOrderData.shipping_fee, // Tổng tiền = tổng sản phẩm + tiền ship
+                        shipping_amount: ghnOrderResult.fee.main_service,
+                        final_amount: subOrderData.total + ghnOrderResult.fee.main_service, // Tổng tiền = tổng sản phẩm + tiền ship
                         currency: 'VND',
-                        avartar_url: subOrderData.avatar_url,
+                        avatar_url: subOrderData.avatar_url,
                         notes: '', // Có thể thêm ghi chú nếu cần
                     },
                     savedOrder,
@@ -359,10 +359,12 @@ export class OrdersService {
                     );
 
                 }
+
+                this.logger.debug(`Delivery 1111111: ${JSON.stringify(ghnOrderResult, null, 2)}`);
                 const delivery = await this.deliveryService.create(
                     ghnOrderResult,
                     createSubOrder,
-                    createSubOrder.total_amount,
+                    0, // Tổng tiền ship của suborder này
                     transactionalManager
                 );
 
@@ -398,9 +400,23 @@ export class OrdersService {
     }
 
     //Nhận vào danh sách các suborder và thông tin order, trả về danh sách các đơn hàng GHN đã tạo
-    async createOrderGHN(validSubOrders: ShippingFeeDetails[], validOrderInfo: { user: User; address: Location; }): Promise<GhnCreatedOrderDataDto[]> {
+    async createOrderGHN(validSubOrders: ShippingFeeDetails[], validOrderInfo: { user: User; address: Location; }, cod: boolean): Promise<GhnCreatedOrderDataDto[]> {
         try {
+            let codCost = 0;
+            let paymentTypeId: GhnPaymentTypeId = GhnPaymentTypeId.NGUOI_NHAN_THANH_TOAN;
+            
             const createGHN: CreateGhnOrderDto[] = validSubOrders.map(subOrder => {
+                if (cod) {
+                    codCost = subOrder.products.reduce((codSum, product) => {
+                        return codSum + (product.price_per_unit * product.requested_quantity);
+                    }, 0);
+                    paymentTypeId = GhnPaymentTypeId.NGUOI_NHAN_THANH_TOAN; // cod thì người nhận thanh toán
+
+                }
+                else { 
+                    codCost = 0;
+                    paymentTypeId = GhnPaymentTypeId.NGUOI_GUI_THANH_TOAN; // PAYOS thì người gửi thanh toán  để sau này hệ thống xử lý.
+                }
                 return {
                     from_name: subOrder.farm_name,
                     from_phone: subOrder.phone,
@@ -415,12 +431,10 @@ export class OrdersService {
                     to_province_name: validOrderInfo!.address.city,
                     return_phone: subOrder.phone,
                     return_address: subOrder.street_number + ' ' + subOrder.street + ', ' + subOrder.ward + ', ' + subOrder.district + ', ' + subOrder.city,
-
-                    cod_amount: subOrder.products.reduce((codSum, product) => {
-                        return codSum + (product.price_per_unit * product.requested_quantity);
-                    }, 0),
+                    
+                    cod_amount: codCost,
                     weight: 0,// trong hàm tạo order sẽ tính lại weight
-                    payment_type_id: GhnPaymentTypeId.NGUOI_NHAN_THANH_TOAN,
+                    payment_type_id: paymentTypeId,
                     required_note: GhnRequiredNote.CHO_XEM_HANG_KHONG_THU,
                     items: subOrder.products.map(product => ({
                         name: product.product_name,
@@ -475,10 +489,10 @@ export class OrdersService {
 
             const updateResult = await this.productsGrpcClientService.updateProductsQuantity(productUpdates);
             this.logger.debug(`kết quả giảm sản phẩm: ${JSON.stringify(updateResult, null, 2)}`)
-            updateResult.results.map(test => 
+            updateResult.results.map(test =>
                 this.logger.log(`kết quả chi tiết giảm sản phẩm: ${JSON.stringify(test, null, 2)}`)
             )
-             
+
 
             if (!updateResult.success) {
                 const failedProducts = updateResult.results
@@ -489,7 +503,7 @@ export class OrdersService {
             }
 
             this.logger.log(`Successfully ${operation} quantities for ${productUpdates.length} products`);
-           
+
         } catch (error) {
             this.logger.error(`Error ${operation} product quantities: ${error.message}`);
             throw error;

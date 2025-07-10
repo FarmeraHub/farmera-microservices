@@ -10,7 +10,7 @@ import {
   OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { DataSource, In, Not, Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -66,6 +66,7 @@ export class ProductsService implements OnModuleInit {
     private readonly stepDiaryRepository: Repository<StepDiaryEntry>,
     private readonly fileStorageService: AzureBlobService,
     private readonly configService: ConfigService,
+    @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly blockchainService: BlockchainService,
   ) {}

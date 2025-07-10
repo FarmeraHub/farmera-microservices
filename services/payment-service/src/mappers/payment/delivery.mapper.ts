@@ -16,6 +16,7 @@ export class DeliveryMapper {
             product_id: values.product_id,
             product_name: values.product_name,
             quantity: values.quantity,
+            requested_quantity: values.requested_quantity,
             unit: values.unit ,
             price_per_unit: values.price_per_unit,
             total_price: values.total_price,
@@ -30,7 +31,8 @@ export class DeliveryMapper {
             farm_name: values.farm_name,
             shipping_fee: values.shipping_fee,
             avatar_url: values.avatar_url,
-            final_fee: values.total,
+            final_fee: values.final_fee,
+            total: values.total,
             currency: values.currency,
             products: values.products.map((item) => this.toGrpcItem(item)),
         };

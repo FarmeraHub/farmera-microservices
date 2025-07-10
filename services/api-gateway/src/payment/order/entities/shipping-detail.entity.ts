@@ -6,6 +6,8 @@ export class ShippingDetail{
     final_fee: number;
     shipping_fee: number;
     currency: string;
+    total: number;
+    avatar_url: string;
     products?: Item[];
 
 }

@@ -238,9 +238,9 @@ message ListSubOderWithDetail {
 }
 
 message FullOrderResponse{
-  optional Order order = 1;
-  optional Payment payment = 2;
-  optional ListSubOderWithDetail suborders = 3;
+   Order order = 1;
+   Payment payment = 2;
+   repeated SubOrderWithDetail suborders = 3;
 }
 message CreateOrderResponse {
   oneof result {
@@ -679,6 +679,7 @@ message ItemResponse {
   double weight = 6;       
   string image_url = 7;  
   string unit = 8;
+  int32 requested_quantity = 9;
 }
 
 message ShippingFeeDetails {
@@ -689,6 +690,7 @@ message ShippingFeeDetails {
   string currency = 5;
   repeated ItemResponse products = 6;
   double shipping_fee = 7;
+  double total = 8;
 
 }
 

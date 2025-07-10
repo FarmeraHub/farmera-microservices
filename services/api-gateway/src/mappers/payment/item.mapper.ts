@@ -11,7 +11,8 @@ export class ItemMapper{
             total_price: value.total_price,
             unit: value.unit,
             weight: value.weight,
-            image_url: value.image_url
+            image_url: value.image_url,
+            requested_quantity: value.requested_quantity,
         };
     }
 }

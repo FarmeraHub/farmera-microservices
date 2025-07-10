@@ -41,7 +41,7 @@ export class SubOrder {
     currency: string;
 
     @Column()
-    avartar_url: string;
+    avatar_url: string;
     @Column()
     notes: string;
 

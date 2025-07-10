@@ -1,6 +1,7 @@
 import { SubOrderStatus } from "src/common/enums/payment/sub-order-status.enum";
 import { Order } from "./order.entity";
 import { Delivery } from "src/payment/delivery/entities/delivery.entity";
+import { OrderDetail } from "./order-detail.entity";
 
 export class SubOrder{
     sub_order_id: number;
@@ -17,4 +18,9 @@ export class SubOrder{
     currency: string;
     delivery?: Delivery;
 
+}
+
+export class SubOrderWithDetail{
+    sub_order: SubOrder;
+    products: OrderDetail[]
 }
