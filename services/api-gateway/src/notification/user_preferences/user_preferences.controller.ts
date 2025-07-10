@@ -14,10 +14,9 @@ export class UserPreferencesController {
 
     constructor(private readonly userPreferenceService: UserPreferencesService) { }
 
-    @SystemAuth()
     @Post()
-    async createUserPreferences(@Body() createPreferenceDto: CreateUserNotiPreferenceDto) {
-        return await this.userPreferenceService.createUserPreferences(createPreferenceDto);
+    async createUserPreferences(@User() user: UserInterface, @Body() createPreferenceDto: CreateUserNotiPreferenceDto) {
+        return await this.userPreferenceService.createUserPreferences(user.id, user.email, createPreferenceDto);
     }
 
     @Get()
@@ -30,15 +29,13 @@ export class UserPreferencesController {
         return await this.userPreferenceService.updateUserPreferences(user.id, updateDto);
     }
 
-    @SystemAuth()
     @Post("device")
-    async registerDeviceToken(@Body() createDeviceDto: CreateDeviceTokenDto) {
-        return await this.userPreferenceService.registerDevice(createDeviceDto);
+    async registerDeviceToken(@User() user: UserInterface, @Body() createDeviceDto: CreateDeviceTokenDto) {
+        return await this.userPreferenceService.registerDevice(user.id, createDeviceDto);
     }
 
-    @SystemAuth()
-    @Delete("device/:user_id/:token")
-    async deleteDeviceToken(@Param("user_id") userId: string, @Param("token") token: string) {
-        return await this.userPreferenceService.deleteUserDeviceToken(userId, token);
+    @Delete("device/:token")
+    async deleteDeviceToken(@User() user: UserInterface, @Param("token") token: string) {
+        return await this.userPreferenceService.deleteUserDeviceToken(user.id, token);
     }
 }

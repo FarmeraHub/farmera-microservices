@@ -26,11 +26,11 @@ export class UserPreferencesService {
         this.notificationGrpcService = this.client.getService<NotificationServiceClient>("NotificationService")
     }
 
-    async createUserPreferences(dto: CreateUserNotiPreferenceDto): Promise<UserNotiPreference> {
+    async createUserPreferences(userId: string, userEmail: string, dto: CreateUserNotiPreferenceDto): Promise<UserNotiPreference> {
         try {
             const result = await firstValueFrom(this.notificationGrpcService.createUserPreferences({
-                user_id: dto.user_id,
-                user_email: dto.user_email,
+                user_id: userId,
+                user_email: userEmail,
                 transactional_channels: dto.transactional_channels.map((value) => EnumMapper.toGrpcNotificationChannel(value)),
                 system_alert_channels: dto.system_alert_channels.map((value) => EnumMapper.toGrpcNotificationChannel(value)),
                 chat_channels: dto.chat_channels.map((value) => EnumMapper.toGrpcNotificationChannel(value)),
@@ -79,10 +79,10 @@ export class UserPreferencesService {
         }
     }
 
-    async registerDevice(dto: CreateDeviceTokenDto): Promise<DeviceToken> {
+    async registerDevice(userId: string, dto: CreateDeviceTokenDto): Promise<DeviceToken> {
         try {
             const result = await firstValueFrom(this.notificationGrpcService.createUserDeviceToken({
-                user_id: dto.user_id,
+                user_id: userId,
                 device_token: dto.device_token,
             }));
             return {

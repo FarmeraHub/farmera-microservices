@@ -2,12 +2,6 @@ import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'clas
 import { NotificationChannel } from 'src/common/enums/notification/notification-channel.enum';
 
 export class CreateUserNotiPreferenceDto {
-    @IsString()
-    user_id: string;
-
-    @IsEmail()
-    user_email: string;
-
     @IsArray()
     @IsEnum(NotificationChannel, { each: true })
     @IsOptional()
