@@ -310,7 +310,7 @@ export class FarmAdminService {
       }
       const order = (paginationOptions.order || 'ASC') as 'ASC' | 'DESC';
       switch (paginationOptions.sort_by) {
-        case 'name':
+        case 'farm_name':
           qb.orderBy('farm.farm_name', order);
           break;
         case 'created':
@@ -318,6 +318,10 @@ export class FarmAdminService {
           break;
         case 'distance':
           qb.orderBy('distance', order);
+          break;
+        case 'status':
+          qb.orderBy("farm.status", order);
+          break;
         default:
           qb.orderBy('farm.farm_name', 'ASC');
       }
