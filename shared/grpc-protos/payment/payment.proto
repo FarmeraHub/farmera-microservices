@@ -269,7 +269,7 @@ message GetOrderRequest {
 }
 
 message GetOrderResponse {
-  Order order = 1;
+  OrderWithItems order = 1;
 }
 
 message UpdateOrderRequest {

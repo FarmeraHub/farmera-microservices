@@ -270,18 +270,60 @@ export class PaymentController {
       });
 
       if (response.order) {
-        const order = response.order;
+        // Now response.order is OrderWithItems, same as getUserOrders
+        const orderWithItems = response.order;
+        const order = orderWithItems.order;
+        const subOrders = orderWithItems.sub_orders || [];
+
+        // Flatten all items from all sub_orders (same logic as getUserOrders)
+        const allItems = subOrders.flatMap(
+          (subOrder) =>
+            subOrder.order_items?.map((item) => ({
+              id: item.item_id?.toString() || '',
+              product: {
+                id: item.product_id?.toString() || '',
+                name: item.product_name || '',
+                price: item.price_per_unit || 0,
+                imageUrls: item.image_url ? [item.image_url] : [],
+                unit: item.unit || '',
+              },
+              quantity: item.request_quantity || 0,
+              totalPrice: item.total_price || 0,
+              shopId: subOrder.sub_order?.farm_id || '',
+            })) || [],
+        );
+
         return {
           success: true,
           order: {
-            orderId: order.order_id,
-            customerId: order.customer_id,
-            totalAmount: order.total_amount,
-            shippingAmount: order.shipping_amount,
-            finalAmount: order.final_amount,
-            status: order.status,
-            currency: order.currency,
-            createdAt: order.created,
+            id: order?.order_id?.toString() || '',
+            customerId: order?.customer_id || '',
+            totalAmount: order?.total_amount || 0,
+            shippingAmount: order?.shipping_amount || 0,
+            finalAmount: order?.final_amount || 0,
+            status: order?.status || 'ORDER_STATUS_PENDING',
+            currency: order?.currency || 'VND',
+            createdAt: order?.created || null,
+            items: allItems,
+            subOrders: subOrders.map((subOrder) => ({
+              subOrderId: subOrder.sub_order?.sub_order_id?.toString() || '',
+              farmId: subOrder.sub_order?.farm_id || '',
+              totalAmount: subOrder.sub_order?.total_amount || 0,
+              shippingAmount: subOrder.sub_order?.shipping_amount || 0,
+              finalAmount: subOrder.sub_order?.final_amount || 0,
+              status: subOrder.sub_order?.status || 'SUB_ORDER_STATUS_PENDING',
+              items:
+                subOrder.order_items?.map((item) => ({
+                  itemId: item.item_id?.toString() || '',
+                  productId: item.product_id?.toString() || '',
+                  productName: item.product_name || '',
+                  pricePerUnit: item.price_per_unit || 0,
+                  quantity: item.request_quantity || 0,
+                  totalPrice: item.total_price || 0,
+                  unit: item.unit || '',
+                  imageUrl: item.image_url || '',
+                })) || [],
+            })),
           },
         };
       }

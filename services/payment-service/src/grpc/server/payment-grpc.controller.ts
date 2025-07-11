@@ -221,9 +221,10 @@ export class PaymentGrpcController implements PaymentServiceController {
         throw ErrorMapper.toRpcException(new Error('Order not found'));
       }
 
-      const grpcOrder = OrderMapper.toGrpcOrder(order);
+      // Use toGrpcOrderWithItems to include sub_orders and order_details
+      const grpcOrderWithItems = OrderMapper.toGrpcOrderWithItems(order);
       return {
-        order: grpcOrder,
+        order: grpcOrderWithItems,
       };
     } catch (error) {
       this.logger.error('Error getting order', error);
