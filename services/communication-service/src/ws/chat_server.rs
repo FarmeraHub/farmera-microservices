@@ -3,6 +3,7 @@ use std::{
     io,
     pin::pin,
     sync::Arc,
+    time::Duration,
 };
 
 use chrono::{DateTime, Utc};
@@ -12,9 +13,12 @@ use futures_util::{
     StreamExt,
 };
 use redis::AsyncCommands;
-use tokio::sync::{
-    mpsc::{self},
-    watch, RwLock,
+use tokio::{
+    sync::{
+        mpsc::{self},
+        watch, RwLock,
+    },
+    time::{interval, sleep},
 };
 use uuid::Uuid;
 
@@ -33,6 +37,8 @@ use crate::{
 use super::{
     chat_server_handler::ChatServerHandler, Command, ConnId, ConversationId, SendMsg, UserId,
 };
+
+const INTERVAL: Duration = Duration::from_secs(20);
 
 pub struct ChatServer {
     sessions: Arc<RwLock<HashMap<ConnId, mpsc::UnboundedSender<SendMsg>>>>,
@@ -75,6 +81,13 @@ impl ChatServer {
 
     /// worker handles the received messages in the channel's buffer sent by `ChatServerHandler`
     pub async fn run(mut self) -> io::Result<()> {
+        let clone_conversation_repo = self.conversation_repo.clone();
+        let clone_redis_pool = self.redis_pool.clone();
+        tokio::spawn(async move {
+            Self::start_latest_message_cache_interval(clone_conversation_repo, clone_redis_pool)
+                .await;
+        });
+
         while let Some(cmd) = self.cmd_rx.recv().await {
             match cmd {
                 Command::Connect {
@@ -677,7 +690,7 @@ impl ChatServer {
         tokio::spawn(async move {
             // get inactive users
             let inactive_users =
-                Self::get_not_active_users(redis_pool, conversation_repo, conversation_id)
+                Self::get_not_active_users(redis_pool.clone(), conversation_repo, conversation_id)
                     .await
                     .unwrap_or_default();
 
@@ -722,7 +735,7 @@ impl ChatServer {
             }
 
             // save message and status to database
-            let _ = message_repo
+            let message_id = message_repo
                 .insert_message(
                     conversation_id,
                     sender_id,
@@ -732,6 +745,28 @@ impl ChatServer {
                     is_read,
                 )
                 .await;
+
+            if message_id.is_ok() {
+                // cache latest message
+                let redis_conn = redis_pool.get().await;
+                match redis_conn {
+                    Ok(mut conn) => {
+                        let _ = conn
+                            .hset::<&str, &str, i64, ()>(
+                                "pending_updates",
+                                &conversation_id.to_string(),
+                                message_id.unwrap(),
+                            )
+                            .await
+                            .map_err(|e| {
+                                log::error!("Cache latest message error: {e}");
+                            });
+                    }
+                    Err(e) => {
+                        log::error!("Get redis connection error: {e}");
+                    }
+                }
+            }
         });
     }
 
@@ -779,5 +814,63 @@ impl ChatServer {
                 "Invalid message type content".to_string(),
             )),
         }
+    }
+
+    async fn start_latest_message_cache_interval(
+        conversation_repo: Arc<ConversationRepo>,
+        redis_pool: Arc<Pool>,
+    ) {
+        let mut interval = interval(INTERVAL);
+
+        loop {
+            interval.tick().await;
+
+            let redis_conn_result = redis_pool.get().await;
+
+            match redis_conn_result {
+                Ok(mut redis_conn) => {
+                    if let Err(err) =
+                        Self::process_updates(&conversation_repo, &mut redis_conn).await
+                    {
+                        log::error!("Error processing latest message updates: {:?}", err);
+                    }
+                }
+                Err(e) => {
+                    log::error!(
+                        "Redis connection error while caching latest message: {:?}",
+                        e
+                    );
+                }
+            }
+        }
+    }
+
+    async fn process_updates(
+        conversation_repo: &Arc<ConversationRepo>,
+        redis_conn: &mut deadpool_redis::Connection,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let map: HashMap<String, i64> = redis_conn.hgetall("pending_updates").await?;
+
+        if map.is_empty() {
+            sleep(Duration::from_secs(60)).await;
+            return Ok(());
+        }
+
+        redis_conn.del::<_, ()>("pending_updates").await?;
+
+        for (conv_id_str, message_id) in map {
+            match conv_id_str.parse::<i32>() {
+                Ok(conversation_id) => {
+                    conversation_repo
+                        .update_latest_message(conversation_id, message_id)
+                        .await?
+                }
+                Err(e) => {
+                    log::error!("Failed to parse conversation id '{conv_id_str}': {e}");
+                }
+            }
+        }
+
+        Ok(())
     }
 }
