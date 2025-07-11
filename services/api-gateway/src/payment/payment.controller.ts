@@ -25,11 +25,32 @@ import { User } from 'src/common/decorators/user.decorator';
 import { PaymentClientService } from './payment.client.service';
 import { ProcessPaymentDto } from './dto/cart.dto';
 import { OrderRequestDto } from './order/dto/order.dto';
+import { OrderStatus } from '@farmera/grpc-proto/dist/common/enums';
 
 @ApiTags('Payment')
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentClientService: PaymentClientService) {}
+
+  // Helper method to convert frontend status strings to backend OrderStatus enum
+  private mapFrontendStatusToOrderStatus(
+    frontendStatus: string,
+  ): OrderStatus | undefined {
+    const statusMap: Record<string, OrderStatus> = {
+      PROCESSING: OrderStatus.ORDER_STATUS_PROCESSING,
+      TOSHIP: OrderStatus.ORDER_STATUS_PROCESSING, // Map toShip to processing
+      SHIPPING: OrderStatus.ORDER_STATUS_SHIPPED,
+      DELIVERED: OrderStatus.ORDER_STATUS_DELIVERED,
+      CANCELED: OrderStatus.ORDER_STATUS_CANCELED,
+      CANCELLED: OrderStatus.ORDER_STATUS_CANCELED,
+      RETURNED: OrderStatus.ORDER_STATUS_RETURNED,
+      PENDING: OrderStatus.ORDER_STATUS_PENDING,
+      PAID: OrderStatus.ORDER_STATUS_PAID,
+      FAILED: OrderStatus.ORDER_STATUS_FAILED,
+    };
+
+    return statusMap[frontendStatus?.toUpperCase()];
+  }
 
   // Cart operations are handled on the frontend for better performance
   // Orders are created directly from cart data
@@ -147,17 +168,78 @@ export class PaymentController {
     @Query('limit') limit: number = 10,
   ) {
     try {
+      // Convert frontend status string to backend OrderStatus enum
+      const orderStatus = status
+        ? this.mapFrontendStatusToOrderStatus(status)
+        : undefined;
+
       const response = await this.paymentClientService.getUserOrders({
         user_id: user.id,
         pagination: {
           page,
           limit,
         },
-        status_filter: status as any, // Convert string to OrderStatus enum if needed
+        status_filter: orderStatus,
       });
 
+      // Map OrderWithItems to frontend format
+      const mappedOrders =
+        response.orders?.map((orderWithItems) => {
+          const order = orderWithItems.order;
+          const subOrders = orderWithItems.sub_orders || [];
+
+          // Flatten all items from all sub_orders
+          const allItems = subOrders.flatMap(
+            (subOrder) =>
+              subOrder.order_items?.map((item) => ({
+                id: item.item_id?.toString() || '',
+                product: {
+                  id: item.product_id?.toString() || '',
+                  name: item.product_name || '',
+                  price: item.price_per_unit || 0,
+                  imageUrls: item.image_url ? [item.image_url] : [],
+                  unit: item.unit || '',
+                },
+                quantity: item.request_quantity || 0,
+                totalPrice: item.total_price || 0,
+                shopId: subOrder.sub_order?.farm_id || '',
+              })) || [],
+          );
+
+          return {
+            id: order?.order_id?.toString() || '',
+            customerId: order?.customer_id || '',
+            totalAmount: order?.total_amount || 0,
+            shippingAmount: order?.shipping_amount || 0,
+            finalAmount: order?.final_amount || 0,
+            status: order?.status || 'ORDER_STATUS_PENDING',
+            currency: order?.currency || 'VND',
+            createdAt: order?.created || null,
+            items: allItems,
+            subOrders: subOrders.map((subOrder) => ({
+              subOrderId: subOrder.sub_order?.sub_order_id?.toString() || '',
+              farmId: subOrder.sub_order?.farm_id || '',
+              totalAmount: subOrder.sub_order?.total_amount || 0,
+              shippingAmount: subOrder.sub_order?.shipping_amount || 0,
+              finalAmount: subOrder.sub_order?.final_amount || 0,
+              status: subOrder.sub_order?.status || 'SUB_ORDER_STATUS_PENDING',
+              items:
+                subOrder.order_items?.map((item) => ({
+                  itemId: item.item_id?.toString() || '',
+                  productId: item.product_id?.toString() || '',
+                  productName: item.product_name || '',
+                  pricePerUnit: item.price_per_unit || 0,
+                  quantity: item.request_quantity || 0,
+                  totalPrice: item.total_price || 0,
+                  unit: item.unit || '',
+                  imageUrl: item.image_url || '',
+                })) || [],
+            })),
+          };
+        }) || [];
+
       return {
-        orders: response.orders,
+        orders: mappedOrders,
         total: response.pagination?.total_items || 0,
         page,
         limit,
@@ -181,6 +263,7 @@ export class PaymentController {
     try {
       const response = await this.paymentClientService.getOrder({
         order_id: parseInt(orderId),
+        user_id: user.id,
         include_items: true,
         include_payment: true,
         include_delivery: true,

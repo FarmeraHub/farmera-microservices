@@ -212,11 +212,9 @@ export class PaymentGrpcController implements PaymentServiceController {
     try {
       this.logger.log('Received GetOrderRequest', request);
 
-      // Note: Proto doesn't include user_id, so we can't verify ownership here
-      // You may want to add user authentication at the API gateway level
       const order = await this.ordersService.getOrderById(
         request.order_id.toString(),
-        '', // Empty user_id - consider adding user validation
+        request.user_id, // Now we have user_id in the proto
       );
 
       if (!order) {
@@ -233,6 +231,25 @@ export class PaymentGrpcController implements PaymentServiceController {
     }
   }
 
+  // Helper method to convert gRPC OrderStatus enum to database OrderStatus enum
+  private mapGrpcOrderStatusToDbStatus(grpcStatus: any): string | undefined {
+    if (!grpcStatus) return undefined;
+
+    const statusString = grpcStatus.toString();
+    const statusMap: Record<string, string> = {
+      ORDER_STATUS_PENDING: 'PENDING',
+      ORDER_STATUS_PROCESSING: 'PROCESSING',
+      ORDER_STATUS_SHIPPED: 'SHIPPED',
+      ORDER_STATUS_DELIVERED: 'DELIVERED',
+      ORDER_STATUS_CANCELED: 'CANCELED',
+      ORDER_STATUS_RETURNED: 'RETURNED',
+      ORDER_STATUS_FAILED: 'FAILED',
+      ORDER_STATUS_PAID: 'PAID',
+    };
+
+    return statusMap[statusString];
+  }
+
   async getUserOrders(
     request: GetUserOrdersRequest,
   ): Promise<GetUserOrdersResponse> {
@@ -241,7 +258,10 @@ export class PaymentGrpcController implements PaymentServiceController {
 
       const page = request.pagination?.page || 1;
       const limit = request.pagination?.limit || 10;
-      const status = request.status_filter?.toString(); // Convert enum to string
+      // Convert gRPC enum to database enum format
+      const status = request.status_filter
+        ? this.mapGrpcOrderStatusToDbStatus(request.status_filter)
+        : undefined;
 
       const result = await this.ordersService.getOrdersByUserId(
         request.user_id,
@@ -250,12 +270,12 @@ export class PaymentGrpcController implements PaymentServiceController {
         limit,
       );
 
-      const grpcOrders = result.orders.map((order) =>
-        OrderMapper.toGrpcOrder(order),
+      const grpcOrdersWithItems = result.orders.map((order) =>
+        OrderMapper.toGrpcOrderWithItems(order),
       );
 
       return {
-        orders: grpcOrders,
+        orders: grpcOrdersWithItems,
         pagination: {
           current_page: result.page,
           page_size: result.limit,
