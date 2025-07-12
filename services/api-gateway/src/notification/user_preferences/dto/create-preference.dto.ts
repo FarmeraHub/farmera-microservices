@@ -1,8 +1,8 @@
-import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 import { NotificationChannel } from 'src/common/enums/notification/notification-channel.enum';
 
 export class CreateUserNotiPreferenceDto {
-    @IsString()
+    @IsUUID()
     user_id: string;
 
     @IsEmail()

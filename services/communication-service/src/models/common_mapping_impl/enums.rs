@@ -1,6 +1,6 @@
-use farmera_grpc_proto::{MessageType, PushMessageType};
+use farmera_grpc_proto::{MessageType, NotificationType, PushMessageType};
 
-use crate::models::common_mapping_impl::PushType;
+use crate::models::{common_mapping_impl::PushType, notification_mapping_impl::NotiType};
 
 use super::MsgType;
 
@@ -32,6 +32,16 @@ impl From<PushType> for PushMessageType {
             PushType::Condition => PushMessageType::Condition,
             PushType::Token => PushMessageType::Token,
             PushType::Topic => PushMessageType::Topic,
+        }
+    }
+}
+
+impl From<NotiType> for NotificationType {
+    fn from(value: NotiType) -> Self {
+        match value {
+            NotiType::Chat => NotificationType::Chat,
+            NotiType::SystemAlert => NotificationType::SystemAlert,
+            NotiType::Transactional => NotificationType::Transactional,
         }
     }
 }

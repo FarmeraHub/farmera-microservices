@@ -88,6 +88,6 @@ where
     }
 }
 
-fn has_permission(info: &Claims) -> bool {
+fn has_permission(_info: &Claims) -> bool {
     todo!()
 }
