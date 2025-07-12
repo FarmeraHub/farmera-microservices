@@ -608,8 +608,31 @@ export class OrdersService {
 
     const [orders, total] = await queryBuilder.getManyAndCount();
 
+    // Fetch shipping addresses for each order
+    const ordersWithShipping = await Promise.all(
+      orders.map(async (order) => {
+        try {
+          const validation =
+            await this.businessValidationService.validateOrderInfo({
+              user_id: order.customer_id,
+              address_id: order.address_id,
+              payment_type: 'COD', // Default for validation
+            });
+
+          if (!Array.isArray(validation)) {
+            (order as any).shipping_address = validation.address;
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Failed to fetch shipping address for order ${order.order_id}: ${error.message}`,
+          );
+        }
+        return order;
+      }),
+    );
+
     return {
-      orders,
+      orders: ordersWithShipping,
       total,
       page,
       limit,
@@ -629,6 +652,25 @@ export class OrdersService {
       .where('order.order_id = :orderId', { orderId })
       .andWhere('order.customer_id = :userId', { userId })
       .getOne();
+
+    if (order) {
+      try {
+        const validation =
+          await this.businessValidationService.validateOrderInfo({
+            user_id: order.customer_id,
+            address_id: order.address_id,
+            payment_type: 'COD', // Default for validation
+          });
+
+        if (!Array.isArray(validation)) {
+          (order as any).shipping_address = validation.address;
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Failed to fetch shipping address for order ${order.order_id}: ${error.message}`,
+        );
+      }
+    }
 
     return order;
   }

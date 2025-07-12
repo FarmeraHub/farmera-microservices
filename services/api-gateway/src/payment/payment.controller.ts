@@ -216,6 +216,20 @@ export class PaymentController {
             currency: order?.currency || 'VND',
             createdAt: order?.created || null,
             items: allItems,
+            shippingAddress: order?.shipping_address
+              ? {
+                  locationId: order.shipping_address.location_id,
+                  name: order.shipping_address.name,
+                  phone: order.shipping_address.phone,
+                  addressLine: order.shipping_address.address_line,
+                  city: order.shipping_address.city,
+                  district: order.shipping_address.district,
+                  ward: order.shipping_address.ward,
+                  street: order.shipping_address.street,
+                  type: order.shipping_address.type,
+                  isPrimary: order.shipping_address.is_primary,
+                }
+              : undefined,
             subOrders: subOrders.map((subOrder) => ({
               subOrderId: subOrder.sub_order?.sub_order_id?.toString() || '',
               farmId: subOrder.sub_order?.farm_id || '',
@@ -305,6 +319,20 @@ export class PaymentController {
             currency: order?.currency || 'VND',
             createdAt: order?.created || null,
             items: allItems,
+            shippingAddress: order?.shipping_address
+              ? {
+                  locationId: order.shipping_address.location_id,
+                  name: order.shipping_address.name,
+                  phone: order.shipping_address.phone,
+                  addressLine: order.shipping_address.address_line,
+                  city: order.shipping_address.city,
+                  district: order.shipping_address.district,
+                  ward: order.shipping_address.ward,
+                  street: order.shipping_address.street,
+                  type: order.shipping_address.type,
+                  isPrimary: order.shipping_address.is_primary,
+                }
+              : undefined,
             subOrders: subOrders.map((subOrder) => ({
               subOrderId: subOrder.sub_order?.sub_order_id?.toString() || '',
               farmId: subOrder.sub_order?.farm_id || '',

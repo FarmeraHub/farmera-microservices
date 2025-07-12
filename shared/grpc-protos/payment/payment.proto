@@ -59,6 +59,20 @@ service PaymentService {
 
 }
 
+// Shipping address message definition
+message ShippingAddress {
+  int32 location_id = 1;
+  string name = 2;
+  string phone = 3;
+  string address_line = 4;
+  string city = 5;
+  string district = 6;
+  string ward = 7;
+  string street = 8;
+  string type = 9;
+  bool is_primary = 10;
+}
+
 // Order message definition
 message Order {
   int32 order_id = 1;
@@ -71,6 +85,7 @@ message Order {
   farmera.common.Timestamp created = 8;
   farmera.common.Timestamp updated = 9;
   string currency = 10;
+  optional ShippingAddress shipping_address = 11;
 }
 
 message SubOrder{
