@@ -7,7 +7,7 @@ import { SkipTransform } from 'src/common/decorators/skip.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { User as UserInterface } from 'src/common/interfaces/user.interface';
 
-@Controller('payos')
+@Controller('payment/payos')
 @SkipTransform()
 export class PayosController {
   private readonly logger = new Logger(PayosController.name);
