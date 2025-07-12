@@ -15,11 +15,16 @@ service PaymentService {
   rpc HandlePaymentCallback(HandlePaymentCallbackRequest) returns (HandlePaymentCallbackResponse);
   // Order management
   rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
-  //rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse);
+  
+  // PayOS Integration
+  rpc CreatePayOSPayment(CreatePayOSPaymentRequest) returns (CreatePayOSPaymentResponse);
+  rpc VerifyPayOSReturn(VerifyPayOSReturnRequest) returns (VerifyPayOSReturnResponse);
+  
   //rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
   //rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
   //rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
-  //rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse);
   //rpc GetOrdersByStatus(GetOrdersByStatusRequest) returns (GetOrdersByStatusResponse);
   
   // Payment processing
@@ -54,6 +59,20 @@ service PaymentService {
 
 }
 
+// Shipping address message definition
+message ShippingAddress {
+  int32 location_id = 1;
+  string name = 2;
+  string phone = 3;
+  string address_line = 4;
+  string city = 5;
+  string district = 6;
+  string ward = 7;
+  string street = 8;
+  string type = 9;
+  bool is_primary = 10;
+}
+
 // Order message definition
 message Order {
   int32 order_id = 1;
@@ -66,6 +85,7 @@ message Order {
   farmera.common.Timestamp created = 8;
   farmera.common.Timestamp updated = 9;
   string currency = 10;
+  optional ShippingAddress shipping_address = 11;
 }
 
 message SubOrder{
@@ -87,6 +107,12 @@ message SubOrder{
 message SubOrderWithDetail{
   SubOrder sub_order = 1;
   repeated OrderItem order_items = 2;
+}
+
+// Order with populated sub_orders and items for list views
+message OrderWithItems {
+  Order order = 1;
+  repeated SubOrderWithDetail sub_orders = 2;
 }
 // Order item
 message OrderItem {
@@ -251,13 +277,14 @@ message CreateOrderResponse {
 
 message GetOrderRequest {
   int32 order_id = 1;
-  bool include_items = 2;
-  bool include_payment = 3;
-  bool include_delivery = 4;
+  string user_id = 2;
+  bool include_items = 3;
+  bool include_payment = 4;
+  bool include_delivery = 5;
 }
 
 message GetOrderResponse {
-  Order order = 1;
+  OrderWithItems order = 1;
 }
 
 message UpdateOrderRequest {
@@ -302,7 +329,7 @@ message GetUserOrdersRequest {
 }
 
 message GetUserOrdersResponse {
-  repeated Order orders = 1;
+  repeated OrderWithItems orders = 1;
   farmera.common.PaginationResponse pagination = 2;
 }
 
@@ -747,7 +774,35 @@ message DataPaymentCallback {
 }
 message HandlePaymentCallbackResponse {
   bool success = 1;
+  string message = 2;
 }
+
+// PayOS Integration Messages
+message CreatePayOSPaymentRequest {
+  int32 order_id = 1;
+  double amount = 2;
+  string description = 3;
+  string return_url = 4;
+  string cancel_url = 5;
+}
+
+message CreatePayOSPaymentResponse {
+  bool success = 1;
+  string message = 2;
+  string checkout_url = 3;
+  string payment_link_id = 4;
+  optional string qr_code = 5;
+}
+
+message VerifyPayOSReturnRequest {
+  map<string, string> params = 1;
+}
+
+message VerifyPayOSReturnResponse {
+  bool success = 1;
+  string message = 2;
+  optional string data = 3;
+} 
 
 
 
