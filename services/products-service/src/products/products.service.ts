@@ -928,8 +928,8 @@ export class ProductsService implements OnModuleInit {
     }
 
     try {
-      // Generate deep link URL for the product
-      const deepLinkUrl = `${this.appUrl}/detail/${productId}`;
+      // Generate deep link URL for the product using redirect endpoint
+      const deepLinkUrl = `${this.appUrl}/api/redirect/product/${productId}`;
 
       // Generate QR code as data URL
       const qrCodeDataUrl = await QRCode.toDataURL(deepLinkUrl, {
