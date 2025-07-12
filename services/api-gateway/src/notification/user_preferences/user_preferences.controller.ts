@@ -5,7 +5,6 @@ import { User as UserInterface } from '../../common/interfaces/user.interface';
 import { CreateDeviceTokenDto } from './dto/create-device.dto';
 import { UserPreferencesService } from './user_preferences.service';
 import { UpdateUserNotiPreferenceDto } from './dto/update-preference.dto';
-import { Public } from 'src/common/decorators/public.decorator';
 import { SystemAuth } from 'src/common/decorators/system-auth.decorator';
 
 
@@ -30,15 +29,13 @@ export class UserPreferencesController {
         return await this.userPreferenceService.updateUserPreferences(user.id, updateDto);
     }
 
-    @SystemAuth()
     @Post("device")
-    async registerDeviceToken(@Body() createDeviceDto: CreateDeviceTokenDto) {
-        return await this.userPreferenceService.registerDevice(createDeviceDto);
+    async registerDeviceToken(@User() user: UserInterface, @Body() createDeviceDto: CreateDeviceTokenDto) {
+        return await this.userPreferenceService.registerDevice(user.id, createDeviceDto);
     }
 
-    @SystemAuth()
-    @Delete("device/:user_id/:token")
-    async deleteDeviceToken(@Param("user_id") userId: string, @Param("token") token: string) {
-        return await this.userPreferenceService.deleteUserDeviceToken(userId, token);
+    @Delete("device/:token")
+    async deleteDeviceToken(@User() user: UserInterface, @Param("token") token: string) {
+        return await this.userPreferenceService.deleteUserDeviceToken(user.id, token);
     }
 }

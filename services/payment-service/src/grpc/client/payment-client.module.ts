@@ -5,17 +5,19 @@ import { ProductsGrpcClientService } from "./product.service";
 import { PaymentGrpcClientController } from "./payment-grpc.client.controller";
 import { TestController } from "./test.controller";
 import { UserGrpcClientService } from "./user.service";
+import { ConfigService } from "@nestjs/config";
 
 @Module({
     imports: [
-        ClientsModule.register([
+        ClientsModule.registerAsync([
             {
                 name: 'PRODUCTS_PACKAGE',
+                useFactory: async (configService: ConfigService) => ({
                 transport: Transport.GRPC,
                 options: {
                     package: 'farmera.products',
                     protoPath: join(__dirname, '../../../../../shared/grpc-protos/products/products.proto'),
-                    url: 'localhost:50052',
+                    url: configService.get<string>('PRODUCT_GRPC_URL', 'localhost:50052'),
                     loader: {
                         keepCase: true,
                         longs: String,
@@ -24,15 +26,18 @@ import { UserGrpcClientService } from "./user.service";
                         oneofs: true,
                         includeDirs: [join(__dirname, '../../../../../shared/grpc-protos')],
                     },
-                },
+                    },
+                }),
+                inject: [ConfigService],
             },
             {
                 name: 'USERS_PACKAGE',
+                useFactory: async (configService: ConfigService) => ({
                 transport: Transport.GRPC,
                 options: {
                     package: 'farmera.users',
                     protoPath: join(__dirname, '../../../../../shared/grpc-protos/users/users.proto'),
-                    url: 'localhost:50051',
+                    url: configService.get<string>('USERS_GRPC_URL', 'localhost:50051'),
                     loader: {
                         keepCase: true,
                         longs: String,
@@ -41,7 +46,9 @@ import { UserGrpcClientService } from "./user.service";
                         oneofs: true,
                         includeDirs: [join(__dirname, '../../../../../shared/grpc-protos')],
                     },
-                },
+                    },
+                }),
+                inject: [ConfigService],
 
             }
         ]),

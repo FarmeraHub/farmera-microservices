@@ -79,10 +79,10 @@ export class UserPreferencesService {
         }
     }
 
-    async registerDevice(dto: CreateDeviceTokenDto): Promise<DeviceToken> {
+    async registerDevice(userId: string, dto: CreateDeviceTokenDto): Promise<DeviceToken> {
         try {
             const result = await firstValueFrom(this.notificationGrpcService.createUserDeviceToken({
-                user_id: dto.user_id,
+                user_id: userId,
                 device_token: dto.device_token,
             }));
             return {

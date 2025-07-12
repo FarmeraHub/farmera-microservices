@@ -33,7 +33,7 @@ services:
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json
     volumes:
-      - ./fmcdemo-32a22-e1c2cd5a5769.json:/app/creds.json
+      - ./farmerafcm-firebase-adminsdk-fbsvc-da02b4e78f.json:/app/creds.json
     ports:
       - "3004:3004"
       - "50054:50054"
