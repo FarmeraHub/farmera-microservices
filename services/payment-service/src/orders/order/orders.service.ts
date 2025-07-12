@@ -456,6 +456,7 @@ export class OrdersService {
           transactionalManager,
         );
       }
+
       await queryRunner.commitTransaction();
       const order = await this.orderRepository
         .createQueryBuilder('order')
