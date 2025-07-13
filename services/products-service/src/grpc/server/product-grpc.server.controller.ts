@@ -140,6 +140,8 @@ import {
   UpdateProductStatusForAdminResponse,
   SearchFarmForAdminRequest,
   SearchFarmForAdminResponse,
+  GetFarmStatsRequest,
+  GetFarmStatsResponse,
 
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
@@ -671,6 +673,21 @@ export class ProductGrpcServerController implements ProductsServiceController {
       const farmEntity = await this.farmsService.findFarmById(request.farm_id);
       return {
         farm: FarmMapper.toGrpcFarm(farmEntity),
+      };
+    } catch (err) {
+      this.logger.error(err.message);
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getFarmStats(request: GetFarmStatsRequest): Promise<GetFarmStatsResponse> {
+    try {
+      const result = await this.farmsService.getFarmStats(request.farm_id);
+      return {
+        average_rating: result.averageRating,
+        sold_count: result.soldCount,
+        products_count: result.productCount,
+        followers_count: result.followersCount,
       };
     } catch (err) {
       this.logger.error(err.message);

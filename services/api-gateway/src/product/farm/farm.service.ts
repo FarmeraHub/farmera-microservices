@@ -25,6 +25,7 @@ import { SearchFarmDto } from './dto/search-farm.dto';
 import { UpdateFarmDto } from './dto/update-farm.dto';
 import { UserService } from 'src/user/user/user.service';
 import { UserRole } from "src/common/interfaces/user.interface";
+import { FarmStats } from './dto/farm-stats.dto';
 
 @Injectable()
 export class FarmService implements OnModuleInit {
@@ -332,6 +333,26 @@ export class FarmService implements OnModuleInit {
       return FarmMapper.fromGrpcFarm(result.farm);
     } catch (err) {
       this.logger.error(`[updateFarm] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
+
+  async getFarmStats(farmId: string): Promise<FarmStats> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.getFarmStats({
+          farm_id: farmId,
+        })
+      );
+
+      return {
+        averageRating: result.average_rating,
+        soldCount: result.sold_count,
+        productCount: result.products_count,
+        followersCount: result.followers_count,
+      }
+    } catch (err) {
+      this.logger.error(`[getFarmStats] ${err.message}`);
       throw ErrorMapper.fromGrpcError(err);
     }
   }
