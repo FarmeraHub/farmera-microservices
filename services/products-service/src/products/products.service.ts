@@ -335,18 +335,21 @@ export class ProductsService implements OnModuleInit {
         })
       }
 
+      const allowedStatuses = [
+        ProductStatus.PRE_ORDER,
+        ProductStatus.NOT_YET_OPEN,
+        ProductStatus.OPEN_FOR_SALE,
+        ProductStatus.SOLD_OUT,
+      ];
+
       if (filters?.status != undefined) {
+        if (!allowedStatuses.includes(filters.status)) throw new BadRequestException("Invalid status");
         queryBuilder.andWhere('product.status = :status', {
           status: filters.status,
         });
       } else {
         queryBuilder.andWhere('product.status IN (:...allowedStatuses)', {
-          allowedStatuses: [
-            ProductStatus.PRE_ORDER,
-            ProductStatus.NOT_YET_OPEN,
-            ProductStatus.OPEN_FOR_SALE,
-            ProductStatus.SOLD_OUT,
-          ],
+          allowedStatuses
         });
       }
 
