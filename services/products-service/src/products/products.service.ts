@@ -329,6 +329,12 @@ export class ProductsService implements OnModuleInit {
         });
       }
 
+      if (filters?.minTotalSold !== undefined) {
+        queryBuilder.andWhere("product.total_sold >= :minTotalSold", {
+          minTotalSold: filters.minTotalSold,
+        })
+      }
+
       if (filters?.status != undefined) {
         queryBuilder.andWhere('product.status = :status', {
           status: filters.status,
