@@ -319,6 +319,7 @@ message Farm {
   farmera.common.Timestamp updated = 13;
   optional Address address = 14;
   optional Identification identification = 15;
+  optional farmera.common.FarmStats stats = 16;
 }
 
 message Identification {

@@ -9,6 +9,18 @@ export class ProductOptions {
     @Type(() => Boolean)
     include_farm?: boolean;
 
+    @ApiPropertyOptional({ description: 'Whether to include farm address information', example: true })
+    @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    include_farm_address?: boolean;
+
+    @ApiPropertyOptional({ description: 'Whether to include farm stats information', example: true })
+    @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    include_farm_stats?: boolean;
+
     @ApiPropertyOptional({ description: 'Whether to include processes', example: true })
     @IsOptional()
     @IsBoolean()

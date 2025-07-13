@@ -1,6 +1,7 @@
 import { FarmStatus } from 'src/common/enums/product/farm-status.enum';
 import { Address } from './address.entity';
 import { Identification } from './identification.entity';
+import { FarmStats } from '../dto/farm-stats.dto';
 
 export class FarmAnalytics {
   total_products: number;
@@ -32,4 +33,5 @@ export class Farm {
   identification?: Identification;
   user_id: string;
   analytics?: FarmAnalytics;
+  stats?: FarmStats
 }

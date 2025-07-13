@@ -46,10 +46,6 @@ export class FarmsService {
     private productRepository: Repository<Product>,
     @InjectRepository(Address)
     private addressRepository: Repository<Address>,
-    @InjectRepository(Identification)
-    private identification: Repository<Identification>,
-    @InjectRepository(AddressGHN)
-    private addressGHNRepository: Repository<AddressGHN>,
     private readonly biometricsService: BiometricsService,
     @InjectDataSource()
     private dataSource: DataSource,
@@ -693,6 +689,9 @@ export class FarmsService {
       soldCount: Number(result.sold_count),
       followersCount: 0,
     };
+  }
 
+  async getFarmAddress(farmId: string): Promise<Address | null> {
+    return await this.addressRepository.findOne({ where: { farm: { farm_id: farmId } } });
   }
 }
