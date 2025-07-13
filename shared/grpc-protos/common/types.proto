@@ -164,6 +164,15 @@ message ProductOptions {
   optional bool include_farm = 1;
   optional bool include_processes = 2;
   optional bool include_categories = 3;
+  optional bool include_farm_address = 4;
+  optional bool include_farm_stats = 5;
+}
+
+message FarmStats {
+  double average_rating = 1;
+  int32 sold_count = 2;
+  int32 products_count = 3;
+  int32 followers_count = 4;
 }
 
 // List

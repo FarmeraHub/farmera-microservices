@@ -39,7 +39,7 @@ import {
 @ApiTags('Farm')
 @Controller('farm')
 export class FarmController {
-  constructor(private readonly farmsService: FarmService) {}
+  constructor(private readonly farmsService: FarmService) { }
 
   @Post('register')
   @ApiOperation({
@@ -151,6 +151,12 @@ export class FarmController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async getFarmByUserId(@Param('userId') userId: string) {
     return await this.farmsService.getFarmByUserId(userId);
+  }
+
+  @Public()
+  @Get("stats/:farmId")
+  async getFarmStats(@Param("farmId") farmId: string) {
+    return await this.farmsService.getFarmStats(farmId);
   }
 
   @Public()

@@ -40,6 +40,7 @@ export class FarmMapper {
             updated: TypesMapper.toGrpcTimestamp(farm.updated),
             address: this.toGrpcFarmAddress(farm.address),
             identification: this.toGrpcFarmIdentification(farm.identification),
+            stats: TypesMapper.toGrpcFarmStats(farm.stats),
         }
     }
 

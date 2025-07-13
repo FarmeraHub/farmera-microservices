@@ -43,6 +43,7 @@ service ProductsService {
   rpc SearchFarm(SearchFarmRequest) returns (SearchFarmResponse);
   //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
   rpc GetFarmByUser(GetFarmByUserRequest) returns (GetFarmByUserResponse);
+  rpc GetFarmStats(GetFarmStatsRequest) returns (GetFarmStatsResponse);
 
   // Category management
   rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
@@ -318,6 +319,7 @@ message Farm {
   farmera.common.Timestamp updated = 13;
   optional Address address = 14;
   optional Identification identification = 15;
+  optional farmera.common.FarmStats stats = 16;
 }
 
 message Identification {
@@ -452,6 +454,17 @@ message GetFarmByUserRequest{
 
 message GetFarmByUserResponse {
   Farm farm = 1;
+}
+
+message GetFarmStatsRequest {
+  string farm_id = 1;
+}
+
+message GetFarmStatsResponse {
+  double average_rating = 1;
+  int32 sold_count = 2;
+  int32 products_count = 3;
+  int32 followers_count = 4;
 }
 
 // ======================================Category============================================

@@ -33,6 +33,8 @@ import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
 import { PaginationMeta } from 'src/pagination/dto/pagination-meta.dto';
 import { SearchFarmDto } from './dto/search-farm.dto';
+import { Product } from 'src/products/entities/product.entity';
+import { FarmStats } from './dto/farm-stats.dto';
 
 @Injectable()
 export class FarmsService {
@@ -40,12 +42,10 @@ export class FarmsService {
   constructor(
     @InjectRepository(Farm)
     private farmsRepository: Repository<Farm>,
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
     @InjectRepository(Address)
     private addressRepository: Repository<Address>,
-    @InjectRepository(Identification)
-    private identification: Repository<Identification>,
-    @InjectRepository(AddressGHN)
-    private addressGHNRepository: Repository<AddressGHN>,
     private readonly biometricsService: BiometricsService,
     @InjectDataSource()
     private dataSource: DataSource,
@@ -672,5 +672,26 @@ export class FarmsService {
     });
 
     return new PaginationResult(farms, meta);
+  }
+
+  async getFarmStats(farmId: string): Promise<FarmStats> {
+    const result = await this.productRepository
+      .createQueryBuilder('product')
+      .select('COUNT(*)', 'product_count')
+      .addSelect('AVG(product.average_rating)', 'avg_rating')
+      .addSelect('SUM(product.total_sold)', 'sold_count')
+      .where('product.farm_id = :farmId', { farmId })
+      .getRawOne();
+
+    return {
+      productCount: Number(result.product_count),
+      averageRating: parseFloat(result.avg_rating),
+      soldCount: Number(result.sold_count),
+      followersCount: 0,
+    };
+  }
+
+  async getFarmAddress(farmId: string): Promise<Address | null> {
+    return await this.addressRepository.findOne({ where: { farm: { farm_id: farmId } } });
   }
 }

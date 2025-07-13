@@ -36,6 +36,8 @@ import {
   BlockchainService,
   TraceabilityData,
 } from 'src/services/blockchain.service';
+import { Address } from 'src/farms/entities/address.entity';
+import { FarmsService } from 'src/farms/farms.service';
 
 @Injectable()
 export class ProductsService implements OnModuleInit {
@@ -65,11 +67,12 @@ export class ProductsService implements OnModuleInit {
     @InjectRepository(StepDiaryEntry)
     private readonly stepDiaryRepository: Repository<StepDiaryEntry>,
     private readonly fileStorageService: AzureBlobService,
+    private readonly farmService: FarmsService,
     private readonly configService: ConfigService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly blockchainService: BlockchainService,
-  ) {}
+  ) { }
 
   async create(
     createProductDto: CreateProductDto,
@@ -451,6 +454,18 @@ export class ProductsService implements OnModuleInit {
         where: { product_id: productId, status: Not(ProductStatus.DELETED) },
         relations: relationsToLoads,
       });
+
+      if (product?.farm) {
+        if (productOptions?.include_farm_address) {
+          const address = await this.farmService.getFarmAddress(product.farm.farm_id);
+          if (address) product.farm.address = address;
+        }
+        if (productOptions?.include_farm_stats) {
+          const stats = await this.farmService.getFarmStats(product.farm.farm_id);
+          if (stats) product.farm.stats = stats;
+        }
+      }
+
 
       if (!product) {
         this.logger.error(
@@ -1356,12 +1371,12 @@ export class ProductsService implements OnModuleInit {
     const stepDiaries =
       assignmentIds.length > 0
         ? await this.stepDiaryRepository.find({
-            where: {
-              assignment: { assignment_id: In(assignmentIds) },
-            },
-            relations: ['assignment', 'step'],
-            order: { step_order: 'ASC', recorded_date: 'ASC' },
-          })
+          where: {
+            assignment: { assignment_id: In(assignmentIds) },
+          },
+          relations: ['assignment', 'step'],
+          order: { step_order: 'ASC', recorded_date: 'ASC' },
+        })
         : [];
 
     return {

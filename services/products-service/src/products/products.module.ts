@@ -10,6 +10,10 @@ import { ProductProcessAssignment } from 'src/process/entities/product-process-a
 import { StepDiaryEntry } from 'src/diary/entities/step-diary-entry.entity';
 import { AzureBlobService } from 'src/services/azure-blob.service';
 import { BlockchainService } from 'src/services/blockchain.service';
+import { FarmsService } from 'src/farms/farms.service';
+import { FarmsModule } from 'src/farms/farms.module';
+import { BiometricsModule } from 'src/biometrics/biometrics.module';
+import { GhnModule } from 'src/ghn/ghn.module';
 
 @Module({
   imports: [
@@ -21,9 +25,12 @@ import { BlockchainService } from 'src/services/blockchain.service';
       ProductProcessAssignment,
       StepDiaryEntry,
     ]),
+    FarmsModule,
+    BiometricsModule,
+    GhnModule
   ],
   controllers: [ProductsController],
-  providers: [ProductsService, AzureBlobService, BlockchainService],
+  providers: [ProductsService, AzureBlobService, BlockchainService, FarmsService],
   exports: [ProductsService, TypeOrmModule],
 })
 export class ProductsModule { }

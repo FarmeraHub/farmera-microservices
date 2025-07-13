@@ -1,5 +1,6 @@
-import { Timestamp as GrpcTimestamp, ProductOptions as GrpcProductOptions, NotificationEmail, NotificationAttachment, StringMap } from "@farmera/grpc-proto/dist/common/types"
+import { Timestamp as GrpcTimestamp, ProductOptions as GrpcProductOptions, NotificationEmail, NotificationAttachment, StringMap, FarmStats as GrpcFarmStats } from "@farmera/grpc-proto/dist/common/types"
 import { Attachment, Email } from "src/notification/notification/entities/email.entity";
+import { FarmStats } from "src/product/farm/dto/farm-stats.dto";
 import { ProductOptions } from "src/product/product/dto/product-options.dto";
 
 export class TypesMapper {
@@ -36,6 +37,8 @@ export class TypesMapper {
             include_farm: value.include_farm,
             include_categories: value.include_categories,
             include_processes: value.include_processes,
+            include_farm_address: value.include_farm_address,
+            include_farm_stats: value.include_farm_stats
         }
     }
 
@@ -59,6 +62,16 @@ export class TypesMapper {
             filename: value.filename,
             mime_type: value.mime_type,
             disposition: value.disposition,
+        }
+    }
+
+    static fromGrpcFarmStats(value: GrpcFarmStats): FarmStats | undefined {
+        if (!value) return undefined;
+        return {
+            averageRating: value.average_rating,
+            soldCount: value.sold_count,
+            productCount: value.products_count,
+            followersCount: value.followers_count,
         }
     }
 }
