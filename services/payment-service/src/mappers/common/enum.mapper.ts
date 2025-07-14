@@ -17,6 +17,7 @@ import {
     PaymentStatus as GrpcPaymentStatus,
     DeliveryStatus as GrpcDeliveryStatus,
     UpdateProductQuantityOperation as GrpcUpdateProductQuantityOperation,
+    NotificationType as GrpcNotificationType,
 } from "@farmera/grpc-proto/dist/common/enums";
 import { FarmStatus } from "src/common/enums/product/farm-status.enum";
 import { ProductStatus } from "src/common/enums/product/product-status.enum";
@@ -32,6 +33,7 @@ import { SubOrderStatus } from "src/common/enums/payment/sub-order-status.enum";
 import { PaymentMethod, PaymentStatus } from "src/common/enums/payment/payment.enum";
 import { DeliveryStatus } from "src/common/enums/payment/delivery.enum";
 import { UpdateProductQuantityOperation } from "src/common/enums/product/update-product-quantity-operation.enum";
+import { NotificationType } from "src/clients/notification/enums/notification_type";
 
 export class EnumMapper {
     static fromGrpcIdentificationMethod(value: GrpcIdentificationMethod): IdentificationMethod {
@@ -179,7 +181,7 @@ export class EnumMapper {
         }
     }
 
-    static fromGrpcOrderStatus(value: GrpcOrderStatus): OrderStatus{
+    static fromGrpcOrderStatus(value: GrpcOrderStatus): OrderStatus {
         switch (value.toString()) {
             case "ORDER_STATUS_PENDING": return OrderStatus.PENDING;
             case "ORDER_STATUS_PROCESSING": return OrderStatus.PROCESSING;
@@ -192,7 +194,7 @@ export class EnumMapper {
             default: throw new Error("Invalid order status");
         }
     }
-    static toGrpcOrderStatus(value :OrderStatus): GrpcOrderStatus {
+    static toGrpcOrderStatus(value: OrderStatus): GrpcOrderStatus {
         switch (value) {
             case OrderStatus.PENDING: return GrpcOrderStatus.ORDER_STATUS_PENDING;
             case OrderStatus.PROCESSING: return GrpcOrderStatus.ORDER_STATUS_PROCESSING;
@@ -296,7 +298,7 @@ export class EnumMapper {
         }
     }
 
-    static toGrpcUpdateProductQuantityOperation(value:UpdateProductQuantityOperation) : GrpcUpdateProductQuantityOperation {
+    static toGrpcUpdateProductQuantityOperation(value: UpdateProductQuantityOperation): GrpcUpdateProductQuantityOperation {
         switch (value) {
             case UpdateProductQuantityOperation.INCREASE: return GrpcUpdateProductQuantityOperation.INCREASE;
             case UpdateProductQuantityOperation.DECREASE: return GrpcUpdateProductQuantityOperation.DECREASE;
@@ -308,6 +310,35 @@ export class EnumMapper {
             case "INCREASE": return UpdateProductQuantityOperation.INCREASE;
             case "DECREASE": return UpdateProductQuantityOperation.DECREASE;
             default: throw new Error("Invalid update product quantity operation");
+        }
+    }
+
+    static toGrpcNotificationType(value: NotificationType): GrpcNotificationType {
+        switch (value) {
+            case NotificationType.TRANSACTIONAL:
+                return GrpcNotificationType.TRANSACTIONAL;
+            case NotificationType.SYSTEM_ALERT:
+                return GrpcNotificationType.SYSTEM_ALERT;
+            case NotificationType.CHAT:
+                return GrpcNotificationType.CHAT;
+            default:
+                return GrpcNotificationType.NOTIFICATION_TYPE_UNSPECIFIED;
+        }
+    }
+
+    static fromGrpcNotificationType(
+        value: GrpcNotificationType | undefined,
+    ): NotificationType {
+        if (!value) return NotificationType.NOTIFICATION_TYPE_UNSPECIFIED;
+        switch (value.toString()) {
+            case 'TRANSACTIONAL':
+                return NotificationType.TRANSACTIONAL;
+            case 'SYSTEM_ALERT':
+                return NotificationType.SYSTEM_ALERT;
+            case 'CHAT':
+                return NotificationType.CHAT;
+            default:
+                return NotificationType.NOTIFICATION_TYPE_UNSPECIFIED;
         }
     }
 }

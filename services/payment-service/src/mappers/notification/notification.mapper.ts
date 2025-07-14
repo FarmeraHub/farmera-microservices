@@ -49,6 +49,7 @@ export class NotificationMapper {
             template_props: TypesMapper.toGrpcStringMap(value.template_props),
             title: value.title,
             content: value.content,
+            notification_type: EnumsMapper.toGrpcNotificationType(value.notification_type),
         }
     }
 
