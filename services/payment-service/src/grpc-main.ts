@@ -15,7 +15,7 @@ async function bootstrap() {
             options: {
                 package: 'farmera.payment',
                 protoPath: '../../../shared/grpc-protos/payment/payment.proto',
-                url: 'grpcUrl',
+                url: grpcUrl,
                 loader: {
                     keepCase: true,
                     longs: String,
