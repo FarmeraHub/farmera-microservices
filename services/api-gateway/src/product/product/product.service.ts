@@ -21,7 +21,7 @@ export class ProductService {
   private readonly logger = new Logger(ProductService.name);
   private productGrpcService: ProductsServiceClient;
 
-  constructor(@Inject('PRODUCTS_PACKAGE') private client: ClientGrpc) {}
+  constructor(@Inject('PRODUCTS_PACKAGE') private client: ClientGrpc) { }
 
   onModuleInit() {
     this.productGrpcService =
@@ -249,6 +249,8 @@ export class ProductService {
           options: {
             include_farm: searchDto.include_farm,
             include_categories: searchDto.include_categories,
+            include_farm_address: searchDto.include_farm_address,
+            include_farm_stats: searchDto.include_farm_stats,
           },
         }),
       );
@@ -396,32 +398,32 @@ export class ProductService {
               : null,
             process_template: assignment.process_template
               ? {
-                  process_id: assignment.process_template.process_id,
-                  process_name: assignment.process_template.process_name,
-                  description: assignment.process_template.description,
-                  farm_id: assignment.process_template.farm_id,
-                  is_active: assignment.process_template.is_active,
-                  created: convertTimestamp(
-                    assignment.process_template.created,
-                  ),
-                  updated: convertTimestamp(
-                    assignment.process_template.updated,
-                  ),
-                  estimated_duration_days:
-                    assignment.process_template.estimated_duration_days,
-                  steps:
-                    assignment.process_template.steps?.map((step) => ({
-                      step_id: step.step_id,
-                      process_id: step.process_id,
-                      step_order: step.step_order,
-                      step_name: step.step_name,
-                      step_description: step.step_description,
-                      is_required: step.is_required,
-                      created: convertTimestamp(step.created),
-                      estimated_duration_days: step.estimated_duration_days,
-                      instructions: step.instructions,
-                    })) || [],
-                }
+                process_id: assignment.process_template.process_id,
+                process_name: assignment.process_template.process_name,
+                description: assignment.process_template.description,
+                farm_id: assignment.process_template.farm_id,
+                is_active: assignment.process_template.is_active,
+                created: convertTimestamp(
+                  assignment.process_template.created,
+                ),
+                updated: convertTimestamp(
+                  assignment.process_template.updated,
+                ),
+                estimated_duration_days:
+                  assignment.process_template.estimated_duration_days,
+                steps:
+                  assignment.process_template.steps?.map((step) => ({
+                    step_id: step.step_id,
+                    process_id: step.process_id,
+                    step_order: step.step_order,
+                    step_name: step.step_name,
+                    step_description: step.step_description,
+                    is_required: step.is_required,
+                    created: convertTimestamp(step.created),
+                    estimated_duration_days: step.estimated_duration_days,
+                    instructions: step.instructions,
+                  })) || [],
+              }
               : null,
           })) || [],
         step_diaries:

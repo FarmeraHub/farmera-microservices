@@ -279,8 +279,10 @@ export class ProductsService implements OnModuleInit {
     try {
       const queryBuilder =
         this.productsRepository.createQueryBuilder('product');
-      if (productOptions?.include_farm)
+      if (productOptions?.include_farm) {
         queryBuilder.leftJoinAndSelect('product.farm', 'farm');
+      }
+
       if (productOptions?.include_categories) {
         queryBuilder.leftJoinAndSelect('product.subcategories', 'subcategory');
       } else {
@@ -425,6 +427,32 @@ export class ProductsService implements OnModuleInit {
         .skip(paginationOptions.skip)
         .take(paginationOptions.limit)
         .getMany();
+
+      if (productOptions?.include_farm) {
+        const addressMap = new Map<string, any>();
+        const statsMap = new Map<string, any>();
+
+        for (const product of products) {
+          const farmId = product.farm?.farm_id;
+          if (!farmId) continue;
+
+          if (productOptions.include_farm_address) {
+            if (!addressMap.has(farmId)) {
+              const address = await this.farmService.getFarmAddress(farmId);
+              if (address) addressMap.set(farmId, address);
+            }
+            product.farm!.address = addressMap.get(farmId);
+          }
+
+          if (productOptions.include_farm_stats) {
+            if (!statsMap.has(farmId)) {
+              const stats = await this.farmService.getFarmStats(farmId);
+              if (stats) statsMap.set(farmId, stats);
+            }
+            product.farm!.stats = statsMap.get(farmId);
+          }
+        }
+      }
 
       if (!products || products.length === 0) {
         this.logger.error('Không tìm thấy danh mục nào.');
