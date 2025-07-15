@@ -21,31 +21,6 @@ Microservices:
 └── Communication Service (Port 3005 | gRPC 50055) - Rust
 ```
 
-### **Phase 2 Completed: Authentication Migration** ✅
-
-**Authentication is now centralized in the API Gateway:**
-
-- ✅ **Authentication endpoints** moved to API Gateway (`/api/auth/*`)
-- ✅ **JWT validation** handled at gateway level
-- ✅ **gRPC communication** between gateway and users-service
-- ✅ **Backward compatibility** maintained for existing services
-- ✅ **Users-service auth endpoints** commented out to avoid conflicts
-
-**Authentication Flow:**
-
-1. **Client** → API Gateway (`/api/auth/login`)
-2. **API Gateway** → Users Service (via gRPC)
-3. **Users Service** → Database operations + JWT generation
-4. **API Gateway** → Client (JWT tokens + user data)
-
-**Available Auth Endpoints:**
-
-- `POST /api/auth/login` - User authentication
-- `GET /api/auth/refresh-token` - Token refresh
-- `POST /api/auth/forgot-password` - Password reset request
-- `POST /api/auth/update-new-password` - Password update
-- `POST /api/auth/logout` - User logout
-
 ## 📁 **Project Structure**
 
 ```
@@ -67,7 +42,7 @@ farmera-microservices/
 
 ## 🚀 **Services Overview**
 
-### **API Gateway** (Node.js/NestJS) - **NEW!** 🎉
+### **API Gateway** (Node.js/NestJS)
 
 - 🌐 Central entry point for all microservices
 - 🔐 Centralized JWT authentication & authorization
@@ -103,31 +78,24 @@ farmera-microservices/
 
 ### **Notification Service** (Rust/Actix-web)
 
-- 📱 FCM push notifications
-- 📧 SendGrid email service
-- 📊 Kafka event streaming
-- 🗄️ PostgreSQL storage
-- ⚡ Redis caching
+- FCM push notifications
+- SendGrid email service
 
 ### **Communication Service** (Rust/Actix-web)
 
-- 💬 Real-time messaging
-- 🔌 WebSocket connections
-- 📎 File attachments
-- 🗄️ PostgreSQL storage
-- ⚡ Redis pub/sub
+- Real-time messaging
+- WebSocket connections
 
 ## 🛠️ **Technology Stack**
 
 ### **Backend Frameworks**
 
-- **Node.js Services**: NestJS, TypeORM, JWT
-- **Rust Services**: Actix-web, Diesel ORM, Tokio
+- **Node.js Services**: NestJS, TypeORM
+- **Rust Services**: Actix-web, Sqlx, Tokio
 
 ### **Databases & Storage**
 
 - **PostgreSQL**: Primary database for all services
-- **Redis**: Caching & pub/sub messaging
 - **Azure Blob Storage**: File storage
 
 ### **Communication**
@@ -135,14 +103,12 @@ farmera-microservices/
 - **gRPC**: Inter-service communication
 - **REST APIs**: External client communication
 - **WebSockets**: Real-time messaging
-- **Kafka**: Event streaming (notifications)
 
 ### **Development Tools**
 
 - **Docker**: Containerization
 - **Docker Compose**: Local development
 - **Buf**: Protocol buffer management
-- **Jest**: Testing framework
 
 ## 🚀 **Quick Start**
 
@@ -154,35 +120,27 @@ farmera-microservices/
 - Rust 1.70+
 - Docker & Docker Compose
 - PostgreSQL 14+
-- Redis 6+
 ```
 
 ### **1. Clone & Setup**
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/FarmeraHub/farmera-microservices.git
 cd farmera-microservices
 
 # Install global dependencies
 npm install -g @nestjs/cli
-cargo install buf
 ```
 
 ### **2. Setup gRPC (First Time)**
 
 ```bash
-# Run the setup script
-./tools/setup.ps1  # Windows
-# or
-./tools/setup.sh   # Linux/macOS
+./tools/setup.sh
 ```
 
 ### **3. Start Services**
 
 ```bash
-# Start infrastructure
-docker-compose up -d postgres redis
-
 # Start API Gateway (recommended entry point)
 cd services/api-gateway && npm run start:dev
 
@@ -190,42 +148,8 @@ cd services/api-gateway && npm run start:dev
 cd services/users-service && npm run start:dev
 cd services/products-service && npm run start:dev
 cd services/payment-service && npm run start:dev
-cd services/notification-service && cargo run
-cd services/communication-service && cargo run
-```
-
-## 🔧 **Development Workflow**
-
-### **Adding New Features**
-
-1. **Update Proto Files**: Modify `.proto` files in `shared/grpc-protos/`
-2. **Regenerate Code**: Run `./tools/setup.ps1` or `buf generate`
-3. **Implement Service Logic**: Add handlers in respective services
-4. **Test Integration**: Use gRPC clients to test inter-service communication
-
-### **Database Migrations**
-
-```bash
-# Node.js services
-cd services/users-service
-npm run migration:generate -- src/migrations/NewMigration
-npm run migration:run
-
-# Rust services
-cd services/notification-service
-diesel migration generate new_migration
-diesel migration run
-```
-
-### **Testing**
-
-```bash
-# Unit tests for each service
-cd services/users-service && npm test
-cd services/notification-service && cargo test
-
-# Integration tests
-npm run test:e2e
+cd services/communication-service && docker compose up --build
+cd services/notification-service && docker compose up --build
 ```
 
 ## 📡 **Service Communication**
@@ -269,29 +193,9 @@ npm run test:e2e
 - **Rate Limiting**: Configured per service
 - **CORS**: Properly configured for web clients
 
-## 📊 **Monitoring & Observability**
-
-- **Health Checks**: `/health` endpoint on all services
-- **Metrics**: Prometheus metrics (coming soon)
-- **Logging**: Structured logging with correlation IDs
-- **Distributed Tracing**: OpenTelemetry integration (coming soon)
-
-## 🛠 **Contributing**
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes**
-4. **Add tests** for new functionality
-5. **Commit changes**: `git commit -m 'Add amazing feature'`
-6. **Push to branch**: `git push origin feature/amazing-feature`
-7. **Open a Pull Request**
-
 ## 📝 **Documentation**
 
-- [gRPC Setup Guide](docs/GRPC_SETUP_COMPLETE.md)
-- [API Documentation](docs/api/) (coming soon)
-- [Deployment Guide](docs/deployment/) (coming soon)
-- [Architecture Decision Records](docs/adr/) (coming soon)
+- [gRPC Setup Guide](docs/GRPC_DEVELOPMENT_GUIDE.md)
 
 ## 🐛 **Troubleshooting**
 
@@ -310,7 +214,3 @@ npm run test:e2e
 ## 📄 **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-**Made with ❤️ for modern agriculture** 🌱
