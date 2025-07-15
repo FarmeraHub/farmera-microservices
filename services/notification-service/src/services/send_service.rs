@@ -181,6 +181,7 @@ impl SendService {
             template_props: send_notification.template_props,
             title: send_notification.title,
             content: send_notification.content,
+            notification_type: send_notification.notification_type,
             retry_count: send_notification.retry_count,
             retry_ids: send_notification.retry_ids,
         };

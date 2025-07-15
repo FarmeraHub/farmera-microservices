@@ -95,6 +95,24 @@ export class SearchProductsDto extends PaginationOptions {
     include_farm?: boolean;
 
     @ApiPropertyOptional({
+        description: 'Whether to include farm address information in the result',
+        example: true,
+    })
+    @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    include_farm_address?: boolean;
+
+    @ApiPropertyOptional({
+        description: 'Whether to include farm stats information in the result',
+        example: true,
+    })
+    @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    include_farm_stats?: boolean;
+
+    @ApiPropertyOptional({
         description: 'Whether to include categories in the result',
         example: false,
     })

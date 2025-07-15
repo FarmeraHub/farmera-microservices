@@ -12,14 +12,18 @@ import { GhnCreatedOrderDataDto, GhnCreateOrderResponseDto } from "./dto/ghn-ord
 import { CreateGhnOrderDto } from "./dto/ghnn-create-delivery.dto";
 import { CancelDeliveryDto, GhnCancelDeliveryDto, GhnCancelResponseDto } from "./dto/cancel-delivery.dto";
 import { SubOrder } from "src/orders/entities/sub-order.entity";
-import { DeliveryStatus } from "src/common/enums/delivery.enum";
-
-export enum GhnServiceTypeId {
-    HANG_NHE = 2, // Hàng nhẹ
-    HANG_NANG = 5, // Hàng nặng
-}
-
-
+import { DeliveryStatus } from "src/common/enums/payment/delivery.enum";
+import { GhnServiceTypeId } from "src/common/enums/payment/ghn.enum";
+import { BusinessValidationService } from 'src/business-validation/business-validation.service';
+import { GhnService } from 'src/ghn/ghn.service';
+import { ItemDto } from "src/business-validation/dto/list-product.dto";
+import { CheckAvailabilityResult, OrderDetail } from "src/business-validation/dto/validate-response.dto";
+import { UserGrpcClientService } from "src/grpc/client/user.service";
+import { Location } from "src/user/entities/location.entity";
+import { CalculateShippingFeeRequestDto } from "src/orders/dto/order.dto";
+import { ItemDeliveryDto } from "./dto/item-delivery.dto";
+import { Issue, Item, ShippingFeeDetails } from "./enitites/cart.entity";
+import { User } from "src/user/entities/user.entity";
 export interface CreatePendingDeliveryInternalDto {
     shipping_fee_from_sub_order_dto: number; // Phí ship FE gửi cho sub-order này
     farm_id: string; // Để biết địa chỉ gửi
@@ -44,6 +48,9 @@ export class DeliveryService {
         private readonly deliveryRepository: Repository<Delivery>,
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
+        private readonly businessValidationService: BusinessValidationService,
+        private readonly ghnService: GhnService,
+        private readonly userGrpcClientService: UserGrpcClientService,
     ) {
         const GHN_TOKEN = this.configService.get<string>('GHN_TOKEN');
         const GHN_SHOP_ID = this.configService.get<number>('GHN_SHOP_ID');
@@ -60,7 +67,7 @@ export class DeliveryService {
         this.ghnUrlCreateOrder = GHN_CREATE_ORDER;
         this.ghnUrlCancelOrder = GHN_CANCEL_ORDER;
     }
-
+    
     async calculateFeeByGHN(calculateDto: CalculateShippingFeeDto): Promise<GhnFeeData> {
 
 
@@ -86,7 +93,7 @@ export class DeliveryService {
                 }
             }
         }
-
+        calculateDto.weight = finalWeight; // Cập nhật trọng lượng cuối cùng vào DTO
         if ((calculateDto.length ?? 0) > 150 || (calculateDto.width ?? 0) > 150 || (calculateDto.height ?? 0) > 150 || calculateDto.weight > 20000 || finalWeight > 20000) {
             service_type_id = GhnServiceTypeId.HANG_NANG;
         }
@@ -200,7 +207,7 @@ export class DeliveryService {
                 }
             }
         }
-
+        createOrderDto.weight = finalWeight; // Cập nhật trọng lượng cuối cùng vào DTO
         if ((createOrderDto.length ?? 0) > 150 || (createOrderDto.width ?? 0) > 150 || (createOrderDto.height ?? 0) > 150 || createOrderDto.weight > 20000 || finalWeight > 20000) {
             service_type_id = GhnServiceTypeId.HANG_NANG;
         }
@@ -214,9 +221,10 @@ export class DeliveryService {
 
 
         this.logger.log(`[GHN Create Order] Calling API for client_order_code: ${createOrderDto.client_order_code || 'N/A'}`);
-        this.logger.debug(`[GHN Create Order] Payload: ${JSON.stringify(createOrderDto)}`);
+        this.logger.debug(`[GHN Create Order] Payload: ${JSON.stringify(createOrderDto,null,2)}`);
         this.logger.debug(`[GHN Create Order] Headers: Token: ${this.ghnToken.substring(0, 5)}..., ShopId: ${this.ghnShopId}`);
 
+        
 
         try {
             const response = await firstValueFrom(
@@ -446,4 +454,93 @@ export class DeliveryService {
             throw new InternalServerErrorException(`Lỗi khi tạo thông tin giao hàng: ${error.message}`);
         }
     }
+
+    async CalculateShippingFee(order: CalculateShippingFeeRequestDto): Promise<ShippingFeeDetails | Issue[]> {
+        this.logger.log(`Starting shipping fee calculation for order: ${JSON.stringify(order)}`);
+        let allIssues: Issue[] = [];
+        const [subOrderValidationResult, orderInfoValidationResult] = await Promise.all([
+            this.businessValidationService.validateSubOrder(order.suborder),
+            this.businessValidationService.validateOrderInfoToCalculateShippingFee(order.order_info)
+        ]);
+        let validSubOrder: ShippingFeeDetails | null = null;
+        let validOrderInfo: { user: User, address: Location, province_code: number, district_code: number, ward_code: string } | null = null;
+
+
+        if (Array.isArray(subOrderValidationResult)) {
+            allIssues.push(...subOrderValidationResult);
+        } else {
+            validSubOrder = subOrderValidationResult;
+        }
+        if (Array.isArray(orderInfoValidationResult)) {
+            allIssues.push(...orderInfoValidationResult);
+        } else {
+            validOrderInfo = orderInfoValidationResult;
+        }
+
+        if (allIssues.length > 0) {
+
+            return allIssues;
+        }
+
+        if (validSubOrder && validOrderInfo) {
+            try {
+                const listItemDelivery: ItemDeliveryDto[] = validSubOrder.products.map((item: Item) => {
+                    return {
+                        name: item.product_name,
+                        quantity: item.requested_quantity,
+                        weight: item.weight,
+                        length: 0, // Việc tạo sản phẩm chưa có các trường này, nên tạm thời để 0
+                        width: 0,
+                        height: 0,
+                        price: item.price_per_unit,
+                    };
+                })
+
+                const calculateShippingFeeDto: CalculateShippingFeeDto = {
+                    from_district_id: validSubOrder.district_code!,
+                    from_ward_code: validSubOrder.ward_code!,
+                    to_district_id: validOrderInfo.district_code,
+                    to_ward_code: validOrderInfo.ward_code,
+                    length: 0, // Tạm thời để 0
+                    width: 0, // Tạm thời để 0
+                    height: 0, // Tạm thời để 0
+                    weight: validSubOrder.products.reduce((sum: number, item: Item) => sum + (item.weight * item.quantity), 0),
+                    items: listItemDelivery,
+                };
+                const ghnFeeData = await this.calculateFeeByGHN(calculateShippingFeeDto);
+                this.logger.log(`GHN Fee Data: ${JSON.stringify(ghnFeeData)}`);
+                const shippingFeeDetails: ShippingFeeDetails = {
+                    ...validSubOrder,
+                    shipping_fee: ghnFeeData.total,
+                    final_fee: ghnFeeData.total + validSubOrder.total,
+                };
+                this.logger.log(`Calculated shipping fee details: ${JSON.stringify(shippingFeeDetails,null, 2)}`);
+                return shippingFeeDetails;
+
+
+            } catch (error) {
+                this.logger.error(`Error calculating shipping fee: ${error.message}`, error.stack);
+                throw new InternalServerErrorException(`Lỗi khi tính phí vận chuyển: ${error.message}`);
+            }
+        }
+        this.logger.warn(`No valid suborder or order info found for shipping fee calculation.`);
+        throw new BadRequestException('Không có thông tin hợp lệ để tính phí vận chuyển.');
+    }
+    create(createOrderDto: GhnCreatedOrderDataDto, subOrder: SubOrder, codFee: number, transactionalManager: EntityManager): Promise<Delivery>;
+    async create(createOrderDto: GhnCreatedOrderDataDto, subOrder: SubOrder,codFee: number, transactionalManager: EntityManager): Promise<Delivery> {
+        const deliveryToCreate = transactionalManager.create(Delivery, {
+            sub_order: subOrder,
+            shipping_amount: createOrderDto.fee.main_service + createOrderDto.fee.insurance,
+            status: DeliveryStatus.PENDING,
+            tracking_number: createOrderDto.order_code,
+            delivery_method: 'GHN',
+            delivery_instructions: '',
+            cod_amount: codFee, // dữ liệu này sẽ được tính từ tổng tiền hàng của sub-order, bên thứ 3 luôn trả về 0
+            final_amount: createOrderDto.total_fee + codFee,
+            discount_amount: createOrderDto.fee.coupon || 0,
+            ship_date: new Date(createOrderDto.expected_delivery_time),
+        });
+        return transactionalManager.save(Delivery, deliveryToCreate);
+    }
+
 }

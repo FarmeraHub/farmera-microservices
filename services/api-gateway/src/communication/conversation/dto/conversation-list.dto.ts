@@ -4,5 +4,7 @@ export class ConversationListDto {
     id: number;
     conversation_id: number;
     title: string;
-    latest_message: ConversationMessage | undefined
+    created_at: Date;
+    latest_message: ConversationMessage | undefined;
+    participants: string[];
 }

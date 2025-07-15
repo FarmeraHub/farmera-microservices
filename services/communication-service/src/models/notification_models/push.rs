@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use derive_more::Display;
 
+use crate::models::notification_mapping_impl::NotiType;
+
 #[derive(Debug, Clone, Display)]
 pub enum PushMessageType {
     #[display("token")]
@@ -20,4 +22,5 @@ pub struct PushMessage {
     pub template_props: Option<HashMap<String, String>>,
     pub title: String,
     pub content: Option<String>,
+    pub notification_type: NotiType,
 }

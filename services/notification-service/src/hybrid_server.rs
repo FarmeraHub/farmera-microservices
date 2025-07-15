@@ -31,7 +31,7 @@ async fn main() -> std::io::Result<()> {
 
     let state = AppState::build().await;
 
-    // tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
     // start processors
     tokio::spawn(state.processors.push_processor_1.run());
@@ -73,7 +73,7 @@ async fn main() -> std::io::Result<()> {
     // start server
     HttpServer::new(move || {
         App::new()
-            .route("/", web::get().to(index))
+            .route("/health", web::get().to(index))
             // app states
             .app_data(app_data.clone())
             // route configurations

@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity({ name: 'verifications' })
 export class Verification {
@@ -23,9 +23,9 @@ export class Verification {
   @Column({ nullable: true })
   phone_code_count: number;
 
-  @Column({ nullable: false })
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @Column({ nullable: false })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 }

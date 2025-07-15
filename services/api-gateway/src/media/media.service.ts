@@ -21,7 +21,7 @@ export interface MediaRecord {
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
 
-  constructor(private azureBlobService: AzureBlobService) {}
+  constructor(private azureBlobService: AzureBlobService) { }
 
   async uploadFile(
     file: Express.Multer.File,
@@ -103,8 +103,8 @@ export class MediaService {
       throw new Error('No file provided');
     }
 
-    // Check file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Check file size (25MB limit)
+    const maxSize = 25 * 1024 * 1024; // 25MB
     if (file.size > maxSize) {
       throw new Error('File size exceeds 10MB limit');
     }

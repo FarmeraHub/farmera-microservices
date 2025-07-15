@@ -1,13 +1,17 @@
-import { Body, Controller, Delete, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { User } from 'src/common/decorators/user.decorator';
-import { User as UserInterface } from '../../common/interfaces/user.interface';
+import { User as UserInterface, UserRole } from '../../common/interfaces/user.interface';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiBadRequestResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiBadRequestResponse, ApiQuery } from '@nestjs/swagger';
 import { Review } from './entities/review.entity';
 import { ReviewReply } from './entities/review-reply.entity';
+import { Public } from 'src/common/decorators/public.decorator';
+import { GetReviewsDto } from './dto/get-review.dto';
+import { RatingStatsDto } from './dto/rating-stat.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Review')
 @Controller('review')
@@ -26,6 +30,7 @@ export class ReviewController {
         return await this.reviewServie.createReview(createReviewDto, user.id);
     }
 
+    @Roles(UserRole.FARMER)
     @Post("reply")
     @ApiOperation({ summary: 'Create a reply to a review', description: 'Creates a reply to a review.' })
     @ApiBody({ type: CreateReplyDto })
@@ -85,6 +90,18 @@ export class ReviewController {
         return await this.reviewServie.deleteReply(replyId, user.id);
     }
 
+    @Public()
+    @Get("overview/:product_id")
+    @ApiOperation({ summary: 'Get review overview', description: 'Gets review overview for a product.' })
+    @ApiParam({ name: 'product_id', description: 'ID of the product to get review overview for' })
+    @ApiResponse({ status: 200, description: 'Review overview retrieved successfully', type: RatingStatsDto })
+    @ApiBadRequestResponse({ description: 'Invalid input or retrieval failed' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async getReviewOverview(@Param("product_id") productId: number) {
+        return await this.reviewServie.getReviewOverview(productId);
+    }
+
+    @Roles(UserRole.FARMER)
     @Post("approve/:review_id")
     @ApiOperation({ summary: 'Approve a review', description: 'Approves or disapproves a review.' })
     @ApiParam({ name: 'review_id', description: 'ID of the review to approve/disapprove' })
@@ -94,5 +111,17 @@ export class ReviewController {
     @ApiInternalServerErrorResponse({ description: 'Internal server error' })
     async approveReview(@Param("review_id") review_id: number, @Body() body: { approve: boolean }) {
         return await this.reviewServie.approveReview(review_id, body.approve);
+    }
+
+    @Public()
+    @Get(":product_id")
+    @ApiOperation({ summary: 'Get reviews', description: 'Gets reviews for a product.' })
+    @ApiParam({ name: 'product_id', description: 'ID of the product to get reviews for' })
+    @ApiQuery({ type: GetReviewsDto })
+    @ApiResponse({ status: 200, description: 'Reviews retrieved successfully', type: [Review] })
+    @ApiBadRequestResponse({ description: 'Invalid input or retrieval failed' })
+    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+    async getReviews(@Param("product_id") productId: number, @Query() pagination: GetReviewsDto) {
+        return await this.reviewServie.getReviews(productId, pagination);
     }
 }

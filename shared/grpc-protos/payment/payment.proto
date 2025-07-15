@@ -10,104 +10,139 @@ option go_package = "github.com/farmera/grpc-protos/payment";
 
 // Payment service definition
 service PaymentService {
+
+  rpc CalculateShippingFee(CalculateShippingFeeRequest) returns (CalculateShippingFeeResponse);
+  rpc HandlePaymentCallback(HandlePaymentCallbackRequest) returns (HandlePaymentCallbackResponse);
   // Order management
   rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
   rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
-  rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
-  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
-  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
   rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse);
-  rpc GetOrdersByStatus(GetOrdersByStatusRequest) returns (GetOrdersByStatusResponse);
+  
+  // PayOS Integration
+  rpc CreatePayOSPayment(CreatePayOSPaymentRequest) returns (CreatePayOSPaymentResponse);
+  rpc VerifyPayOSReturn(VerifyPayOSReturnRequest) returns (VerifyPayOSReturnResponse);
+  
+  //rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
+  //rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+  //rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  //rpc GetOrdersByStatus(GetOrdersByStatusRequest) returns (GetOrdersByStatusResponse);
   
   // Payment processing
-  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
-  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
-  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
-  rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
-  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
-  rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
+  //rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
+  //rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  //rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
+  //rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
+  //rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
+  //rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
   
   // Discount management
-  rpc CreateDiscount(CreateDiscountRequest) returns (CreateDiscountResponse);
-  rpc GetDiscount(GetDiscountRequest) returns (GetDiscountResponse);
-  rpc UpdateDiscount(UpdateDiscountRequest) returns (UpdateDiscountResponse);
-  rpc DeleteDiscount(DeleteDiscountRequest) returns (DeleteDiscountResponse);
-  rpc ListDiscounts(ListDiscountsRequest) returns (ListDiscountsResponse);
-  rpc ApplyDiscount(ApplyDiscountRequest) returns (ApplyDiscountResponse);
-  rpc ValidateDiscountCode(ValidateDiscountCodeRequest) returns (ValidateDiscountCodeResponse);
+  //rpc CreateDiscount(CreateDiscountRequest) returns (CreateDiscountResponse);
+  //rpc GetDiscount(GetDiscountRequest) returns (GetDiscountResponse);
+  //rpc UpdateDiscount(UpdateDiscountRequest) returns (UpdateDiscountResponse);
+  //rpc DeleteDiscount(DeleteDiscountRequest) returns (DeleteDiscountResponse);
+  //rpc ListDiscounts(ListDiscountsRequest) returns (ListDiscountsResponse);
+  //rpc ApplyDiscount(ApplyDiscountRequest) returns (ApplyDiscountResponse);
+  //rpc ValidateDiscountCode(ValidateDiscountCodeRequest) returns (ValidateDiscountCodeResponse);
   
   // Delivery management
-  rpc CreateDelivery(CreateDeliveryRequest) returns (CreateDeliveryResponse);
-  rpc GetDelivery(GetDeliveryRequest) returns (GetDeliveryResponse);
-  rpc UpdateDeliveryStatus(UpdateDeliveryStatusRequest) returns (UpdateDeliveryStatusResponse);
-  rpc ListDeliveries(ListDeliveriesRequest) returns (ListDeliveriesResponse);
-  rpc TrackDelivery(TrackDeliveryRequest) returns (TrackDeliveryResponse);
-  rpc AssignDeliveryAgent(AssignDeliveryAgentRequest) returns (AssignDeliveryAgentResponse);
+  //rpc CreateDelivery(CreateDeliveryRequest) returns (CreateDeliveryResponse);
+  //rpc GetDelivery(GetDeliveryRequest) returns (GetDeliveryResponse);
+  //rpc UpdateDeliveryStatus(UpdateDeliveryStatusRequest) returns (UpdateDeliveryStatusResponse);
+  //rpc ListDeliveries(ListDeliveriesRequest) returns (ListDeliveriesResponse);
+  //rpc TrackDelivery(TrackDeliveryRequest) returns (TrackDeliveryResponse);
+  //rpc AssignDeliveryAgent(AssignDeliveryAgentRequest) returns (AssignDeliveryAgentResponse);
   
   // Analytics and reporting
-  rpc GetOrderStats(GetOrderStatsRequest) returns (GetOrderStatsResponse);
-  rpc GetPaymentStats(GetPaymentStatsRequest) returns (GetPaymentStatsResponse);
-  rpc GetRevenueReport(GetRevenueReportRequest) returns (GetRevenueReportResponse);
+  //rpc GetOrderStats(GetOrderStatsRequest) returns (GetOrderStatsResponse);
+  //rpc GetPaymentStats(GetPaymentStatsRequest) returns (GetPaymentStatsResponse);
+  //rpc GetRevenueReport(GetRevenueReportRequest) returns (GetRevenueReportResponse);
+
+}
+
+// Shipping address message definition
+message ShippingAddress {
+  int32 location_id = 1;
+  string name = 2;
+  string phone = 3;
+  string address_line = 4;
+  string city = 5;
+  string district = 6;
+  string ward = 7;
+  string street = 8;
+  string type = 9;
+  bool is_primary = 10;
 }
 
 // Order message definition
 message Order {
   int32 order_id = 1;
   string customer_id = 2;
-  repeated OrderItem items = 3;
-  farmera.common.Money total_amount = 4;
-  farmera.common.Money discount_amount = 5;
-  farmera.common.Money shipping_amount = 6;
-  farmera.common.Money tax_amount = 7;
-  farmera.common.Money final_amount = 8;
-  farmera.common.OrderStatus status = 9;
-  farmera.common.DeliveryAddress delivery_address = 10;
-  farmera.common.DeliveryAddress billing_address = 11;
-  Payment payment = 12;
-  Delivery delivery = 13;
-  repeated DiscountUsage discount_usage = 14;
-  farmera.common.Timestamp created_at = 15;
-  farmera.common.Timestamp updated_at = 16;
-  farmera.common.Timestamp estimated_delivery = 17;
-  string notes = 18;
-  OrderMetadata metadata = 19;
+  string address_id = 3;
+  double total_amount = 4;
+  double shipping_amount = 5;
+  double final_amount = 6;
+  farmera.common.OrderStatus status = 7;
+  farmera.common.Timestamp created = 8;
+  farmera.common.Timestamp updated = 9;
+  string currency = 10;
+  optional ShippingAddress shipping_address = 11;
 }
 
+message SubOrder{
+  int32 sub_order_id = 1;
+  optional Order order = 2;
+  string farm_id = 3;
+  farmera.common.SubOrderStatus status = 4;
+  double total_amount = 5;
+  double discount_amount = 6;
+  double shipping_amount = 7;
+  double final_amount = 8;
+  farmera.common.Timestamp created = 9;
+  string currency = 10;
+  optional string avatar_url = 11;
+  optional string notes = 12;
+  optional Delivery delivery = 13;
+}
+
+message SubOrderWithDetail{
+  SubOrder sub_order = 1;
+  repeated OrderItem order_items = 2;
+}
+
+// Order with populated sub_orders and items for list views
+message OrderWithItems {
+  Order order = 1;
+  repeated SubOrderWithDetail sub_orders = 2;
+}
 // Order item
 message OrderItem {
   int32 item_id = 1;
-  int32 product_id = 2;
-  string product_name = 3;
-  string product_sku = 4;
-  int32 quantity = 5;
-  farmera.common.Money unit_price = 6;
-  farmera.common.Money total_price = 7;
-  farmera.common.Unit unit = 8;
-  string product_image_url = 9;
-  int32 farm_id = 10;
-  string farm_name = 11;
-  bool is_organic = 12;
-  farmera.common.Timestamp harvest_date = 13;
-  farmera.common.Timestamp expiry_date = 14;
+  optional SubOrder sub_order = 2;
+  int32 product_id = 3;
+  string product_name = 4;
+  double price_per_unit = 5;
+  int32 request_quantity = 6;
+  string unit = 7;
+  double total_price = 8;
+  double weight = 9;
+  optional string image_url = 10;
+
 }
 
 // Payment message definition
 message Payment {
   int32 payment_id = 1;
-  int32 order_id = 2;
-  string customer_id = 3;
-  farmera.common.Money amount = 4;
-  farmera.common.PaymentMethod method = 5;
-  farmera.common.PaymentStatus status = 6;
-  string provider = 7; // "stripe", "paypal", etc.
-  string provider_transaction_id = 8;
-  string provider_payment_method_id = 9;
-  farmera.common.Timestamp processed_at = 10;
-  farmera.common.Timestamp created_at = 11;
-  repeated PaymentRefund refunds = 12;
-  PaymentMetadata metadata = 13;
-  string failure_reason = 14;
-  int32 retry_count = 15;
+  optional Order order = 2;
+  double amount = 3;
+  farmera.common.PaymentMethod method = 4;
+  farmera.common.PaymentStatus status = 5;
+  optional string transaction_id = 6;
+  optional farmera.common.Timestamp paid_at = 7;
+  farmera.common.Timestamp created_at = 8;
+  string currency = 9;
+  optional string qr_code = 10;
+  optional string checkout_url = 11;
+  farmera.common.Timestamp updated_at = 12;
 }
 
 // Payment refund
@@ -160,22 +195,19 @@ message DiscountUsage {
 // Delivery message definition
 message Delivery {
   int32 delivery_id = 1;
-  int32 order_id = 2;
-  string delivery_agent_id = 3;
-  farmera.common.DeliveryStatus status = 4;
-  farmera.common.DeliveryAddress pickup_address = 5;
-  farmera.common.DeliveryAddress delivery_address = 6;
-  farmera.common.Timestamp scheduled_pickup = 7;
-  farmera.common.Timestamp actual_pickup = 8;
-  farmera.common.Timestamp estimated_delivery = 9;
-  farmera.common.Timestamp actual_delivery = 10;
-  string tracking_number = 11;
-  string delivery_instructions = 12;
-  repeated DeliveryEvent events = 13;
-  farmera.common.Money delivery_fee = 14;
-  string delivery_method = 15; // "standard", "express", "same-day"
-  farmera.common.Timestamp created_at = 16;
-  farmera.common.Timestamp updated_at = 17;
+  optional SubOrder sub_order = 2;
+  string tracking_number = 3;
+  string delivery_instructions = 4;
+  double shipping_amount = 5;
+  double discount_amount = 6;
+  double cod_amount = 7;
+  double final_amount = 8;
+  farmera.common.Timestamp ship_date = 9;
+  string delivery_method = 10; //Hàng nhẹ/ hàng nặng
+  farmera.common.Timestamp created_at = 11;
+  farmera.common.Timestamp updated_at = 12;
+  farmera.common.DeliveryStatus status = 13;
+  
 }
 
 // Delivery event tracking
@@ -215,37 +247,44 @@ message PaymentMetadata {
 
 // Order management requests/responses
 message CreateOrderRequest {
-  string customer_id = 1;
-  repeated OrderItemRequest items = 2;
-  farmera.common.DeliveryAddress delivery_address = 3;
-  farmera.common.DeliveryAddress billing_address = 4;
-  repeated string discount_codes = 5;
-  string delivery_method = 6;
-  string notes = 7;
-  OrderMetadata metadata = 8;
+  repeated SubOrderRequest suborders = 1;
+  OrderInfoRequest order_info = 2;
 }
 
 message OrderItemRequest {
   int32 product_id = 1;
   int32 quantity = 2;
-  string special_instructions = 3;
+  optional string special_instructions = 3;
+}
+message ListSubOder{
+  repeated SubOrder suborders = 1;
+}
+message ListSubOderWithDetail {
+  repeated SubOrderWithDetail suborders = 1;
 }
 
+message FullOrderResponse{
+   Order order = 1;
+   Payment payment = 2;
+   repeated SubOrderWithDetail suborders = 3;
+}
 message CreateOrderResponse {
-  Order order = 1;
-  repeated string applied_discounts = 2;
-  repeated string failed_discounts = 3;
+  oneof result {
+    FullOrderResponse full_order = 1;
+    ValidationErrors errors = 2;        // Trả về khi có BẤT KỲ lỗi validation nào
+  }
 }
 
 message GetOrderRequest {
   int32 order_id = 1;
-  bool include_items = 2;
-  bool include_payment = 3;
-  bool include_delivery = 4;
+  string user_id = 2;
+  bool include_items = 3;
+  bool include_payment = 4;
+  bool include_delivery = 5;
 }
 
 message GetOrderResponse {
-  Order order = 1;
+  OrderWithItems order = 1;
 }
 
 message UpdateOrderRequest {
@@ -290,7 +329,7 @@ message GetUserOrdersRequest {
 }
 
 message GetUserOrdersResponse {
-  repeated Order orders = 1;
+  repeated OrderWithItems orders = 1;
   farmera.common.PaginationResponse pagination = 2;
 }
 
@@ -627,3 +666,144 @@ message RevenueDataPoint {
   int32 order_count = 3;
   farmera.common.Money average_order_value = 4;
 } 
+
+
+
+
+message ItemRequest{
+  int32 product_id = 1;
+  int32 quantity = 2;
+}
+message SubOrderRequest{
+  string farm_id = 1;
+  repeated ItemRequest products = 2;
+}
+message OrderInfoRequest {
+  string user_id = 1;
+  string address_id = 2; 
+  optional string payment_type = 3;
+}
+
+message OrderRequest{
+  repeated SubOrderRequest suborders = 1;
+  OrderInfoRequest order_info = 2;
+}
+
+
+
+
+message CalculateShippingFeeRequest{
+  SubOrderRequest suborder = 1;
+  OrderInfoRequest order_info = 2;
+}
+// =================== RESPONSE CalculateShippingFee MESSAGES ===================
+message ItemResponse {
+  int32 product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  double price_per_unit = 4;
+  double total_price = 5;
+  double weight = 6;       
+  string image_url = 7;  
+  string unit = 8;
+  int32 requested_quantity = 9;
+}
+
+message ShippingFeeDetails {
+  string farm_id = 1;
+  string farm_name = 2;
+  string avatar_url = 3;
+  double final_fee = 4;
+  string currency = 5;
+  repeated ItemResponse products = 6;
+  double shipping_fee = 7;
+  double total = 8;
+
+}
+
+message Issue {
+  string reason = 1;      // Dùng string, ví dụ: "PRODUCT_NOT_FOUND", "OUT_OF_STOCK"
+  string details = 2;       // Mô tả chi tiết, thân thiện với người dùng
+  
+  oneof context {
+    int32 product_id = 3;
+    string farm_id = 4;
+    string user_id = 5;
+    string address_id = 6;
+  }
+}
+
+// **MỚI**: Một message để gom nhóm tất cả các lỗi lại
+message ValidationErrors {
+  repeated Issue issues = 1;
+}
+
+// **CẬP NHẬT**: Response chính sử dụng oneof
+message CalculateShippingFeeResponse {
+  oneof result {
+    ShippingFeeDetails detail = 1;     // Trả về khi MỌI THỨ đều hợp lệ
+    ValidationErrors errors = 2;        // Trả về khi có BẤT KỲ lỗi validation nào
+  }
+}
+message HandlePaymentCallbackRequest{
+   string code = 1;
+   string desc = 2;
+   bool success = 3;
+   DataPaymentCallback data = 4;
+   string signature = 5;
+
+}
+
+message DataPaymentCallback {
+   int32 order_code = 1;
+   int32 amount = 2;
+   string description = 3;
+   string account_number = 4;
+   string reference = 5;
+   string transaction_date_time = 6;
+   string currency = 7;
+   string payment_link_id =8;
+   string code = 9;
+   string desc = 10;
+   optional string counter_account_bank_id = 11;
+   optional string counter_account_bank_name = 12;
+   optional string counter_account_name = 13;
+   optional string counter_account_number = 14;
+   optional string virtual_account_name = 15;
+   optional string virtual_account_number = 16;
+}
+message HandlePaymentCallbackResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// PayOS Integration Messages
+message CreatePayOSPaymentRequest {
+  int32 order_id = 1;
+  double amount = 2;
+  string description = 3;
+  string return_url = 4;
+  string cancel_url = 5;
+}
+
+message CreatePayOSPaymentResponse {
+  bool success = 1;
+  string message = 2;
+  string checkout_url = 3;
+  string payment_link_id = 4;
+  optional string qr_code = 5;
+}
+
+message VerifyPayOSReturnRequest {
+  map<string, string> params = 1;
+}
+
+message VerifyPayOSReturnResponse {
+  bool success = 1;
+  string message = 2;
+  optional string data = 3;
+} 
+
+
+
+

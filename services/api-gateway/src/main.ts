@@ -18,16 +18,8 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
 
-  // CORS configuration
-  const corsOrigins = configService
-    .get<string>('CORS_ORIGIN', 'http://localhost:3000')
-    .split(',');
-  app.enableCors({
-    origin: corsOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  });
+  // CORS configuration - allow all origins
+  app.enableCors();
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -51,7 +43,15 @@ async function bootstrap() {
     .setTitle('Farmera API Gateway')
     .setDescription('Central API Gateway for Farmera Microservices Platform')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        in: 'header',
+      },
+      'access-token',
+    )
     .addTag('Authentication', 'User authentication endpoints')
     .addTag('Users', 'User management endpoints')
     .addTag('Products', 'Product catalog endpoints')
@@ -64,7 +64,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const addr = configService.get<string>("HOST", "http://localhost");
+  const addr = configService.get<string>('HOST', 'http://localhost');
   const port = configService.get<number>('PORT', 3000);
 
   await app.listen(port);

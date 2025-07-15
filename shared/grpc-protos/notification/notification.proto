@@ -134,6 +134,7 @@ message SendPushNotificationRequest {
   optional farmera.common.StringMap template_props = 4;
   string title = 5;
   optional string content = 6;
+  farmera.common.NotificationType notification_type = 7;
 }
 
 message SendPushNotificationResponse {

@@ -6,7 +6,7 @@ import { Public } from './common/decorators/public.decorator';
 @ApiTags('Health')
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
   @Public()
   @Get()

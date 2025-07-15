@@ -1,11 +1,11 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { User } from './user.entity';
 import { PaymentProvider } from 'src/enums/payment_method.enum';
 
 @Entity({ name: 'payment_methods' })
 export class PaymentMethod {
   @PrimaryGeneratedColumn()
-  id: number;
+  payment_method_id: number;
 
   @Column({
     type: 'enum',
@@ -39,20 +39,15 @@ export class PaymentMethod {
   is_default: boolean;
 
   @ManyToOne(() => User, (user) => user.payment_methods)
+  @JoinColumn({ name: 'user_id' })
   user: User;
-
-  @Column()
-  user_id: number;
-
-  @Column({ nullable: true })
-  metadata: string;
 
   @Column({ default: true })
   is_active: boolean;
 
-  @Column({ nullable: true })
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @Column({ nullable: true })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 }

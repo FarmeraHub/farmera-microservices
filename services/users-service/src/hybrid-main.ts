@@ -68,11 +68,11 @@ async function bootstrap() {
 
   // Start both servers
   await app.startAllMicroservices();
-  await app.listen(3001);
+  await app.listen(3002);
 
   console.log('🚀 Users Service is running in hybrid mode:');
-  console.log('📡 REST API: http://localhost:3001');
-  console.log('📡 Swagger UI: http://localhost:3001/api');
+  console.log('📡 REST API: http://localhost:3002');
+  console.log('📡 Swagger UI: http://localhost:3002/api');
   console.log('⚡ gRPC Service: localhost:50051');
 }
 

@@ -70,6 +70,10 @@ pub struct GetConversationDTO {
     pub sent_at: Option<DateTime<Utc>>,
     pub is_read: Option<bool>,
     pub r#type: Option<MessageType>,
+    #[schema(value_type = Vec<String>, format = "uuid", example = json!["c8dd591b-4105-4608-869b-1dfb96f313b3"])]
+    pub participants: Vec<Uuid>,
+    #[schema(example = "2025-04-15T08:14:17.923998Z")]
+    pub created_at: DateTime<Utc>,
 }
 
 // GetConversationDTO wrapper

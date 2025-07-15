@@ -11,13 +11,11 @@ import {
   Logger,
 } from '@nestjs/common';
 
-import { Role } from "src/common/enums/role.enum";
-import { ProductsService } from "./products.service";
-import { CreateProductDto } from "./dto/create-product.dto";
-import { UpdateProductDto } from "./dto/update-product.dto";
-import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString } from "class-validator";
-
-
+import { Role } from 'src/common/enums/role.enum';
+import { ProductsService } from './products.service';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString } from 'class-validator';
 
 export class GetProductsByIdsRequestDto {
   @IsArray()
@@ -30,7 +28,7 @@ export class GetProductsByIdsRequestDto {
 @Controller('product')
 export class ProductsController {
   private readonly logger = new Logger(ProductsController.name);
-  constructor(private readonly productsService: ProductsService) { }
+  constructor(private readonly productsService: ProductsService) {}
 
   @Post('create')
   async createProduct(
@@ -68,12 +66,57 @@ export class ProductsController {
     if (!(role == Role.ADMIN || role == Role.FARMER)) {
       throw new UnauthorizedException('Không có quyền cập nhật sản phẩm');
     }
-    return this.productsService.updateProduct(Number(id), updateProductDto, userId);
+    return this.productsService.updateProduct(
+      Number(id),
+      updateProductDto,
+      userId,
+    );
   }
 
   @Get(':id')
   async getProductById(@Param('id') id: number) {
     return this.productsService.findProductById(id);
+  }
+
+  @Post(':id/generate-qr')
+  async generateQRCode(
+    @Headers('x-user-id') userId: string,
+    @Headers('x-user-role') role: string,
+    @Param('id') id: string,
+  ) {
+    if (!(role == Role.ADMIN || role == Role.FARMER)) {
+      throw new UnauthorizedException('Không có quyền tạo QR cho sản phẩm');
+    }
+    return this.productsService.generateQRCode(Number(id), userId);
+  }
+
+  @Post(':id/activate-blockchain')
+  async activateBlockchain(
+    @Headers('x-user-id') userId: string,
+    @Headers('x-user-role') role: string,
+    @Param('id') id: string,
+  ) {
+    if (!(role == Role.ADMIN || role == Role.FARMER)) {
+      throw new UnauthorizedException(
+        'Không có quyền kích hoạt blockchain cho sản phẩm',
+      );
+    }
+    return this.productsService.activateBlockchain(Number(id), userId);
+  }
+
+  @Get(':id/qr')
+  async getQRCode(@Param('id') id: string) {
+    return this.productsService.getQRCode(Number(id));
+  }
+
+  @Get(':id/traceability')
+  async getTraceabilityData(@Param('id') id: string) {
+    return this.productsService.getTraceabilityData(Number(id));
+  }
+
+  @Get(':id/verify-traceability')
+  async verifyTraceability(@Param('id') id: string) {
+    return this.productsService.verifyProductTraceability(Number(id));
   }
 
   // @Get()
@@ -125,7 +168,6 @@ export class ProductsController {
   //     sortOrder
   //   );
   // }
-
 
   // @Post('by-ids')
   // async getMultipleProductsByIds(

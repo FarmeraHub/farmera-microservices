@@ -7,9 +7,17 @@ export class ProductOptions {
 
     @IsOptional()
     @IsBoolean()
+    include_farm_address?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
     include_processes?: boolean;
 
     @IsOptional()
     @IsBoolean()
     include_categories?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    include_farm_stats?: boolean;
 }

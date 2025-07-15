@@ -5,19 +5,21 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { CreateUserDto, CreateUserSignUpDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { Location } from './entities/location.entity';
 import { PaymentMethod } from './entities/payment_method.entity';
-import * as bcrypt from 'bcrypt';
 import { VerificationService } from 'src/verification/verification.service';
 import { UserRole } from 'src/enums/roles.enum';
 import { HashService } from 'src/services/hash.service';
 import { UserStatus } from 'src/enums/status.enum';
-import { PaymentProvider } from 'src/enums/payment_method.enum';
 import { JwtDecoded } from 'src/guards/jwt.strategy';
+import { CreateLocationDto } from './dto/create-location.dto';
+import { CreatePaymentDto } from './dto/create-payment.dto';
+import { UpdateAddressDto } from './dto/update-address.dto';
+import { UpdatePaymentMethodDto } from './dto/payment-method.dto';
+import { UserLite } from './dto/user-lite.dto';
 
 @Injectable()
 export class UsersService {
@@ -35,8 +37,6 @@ export class UsersService {
   ) { }
 
   async createUserSignUp(createUserSignUpDto: CreateUserSignUpDto) {
-    console.log(createUserSignUpDto);
-
     await this.verificationService.verifyCode({
       email: createUserSignUpDto.email,
       code: createUserSignUpDto.code,
@@ -75,11 +75,13 @@ export class UsersService {
     return userWithoutPassword;
   }
 
-  async getUserById(id: string) {
-
+  async getUserById(id: string, location?: boolean, paymentMethod?: boolean): Promise<User> {
+    const relations = [];
+    if (location) relations.push("locations");
+    if (paymentMethod) relations.push("payment_methods");
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['locations', 'payment_methods'],
+      relations: relations,
     });
 
     if (!user) {
@@ -107,7 +109,10 @@ export class UsersService {
   }
 
   // Additional User Management Methods
-  async updateUser(id: string, updateData: Partial<UpdateUserDto>) {
+  async updateUser(
+    id: string,
+    updateData: Partial<CreateUserDto>,
+  ): Promise<User> {
     const user = await this.getUserById(id);
 
     const updateFields: any = { updated_at: new Date() };
@@ -117,9 +122,6 @@ export class UsersService {
     if (updateData.gender) updateFields.gender = updateData.gender;
     if (updateData.avatar) updateFields.avatar = updateData.avatar;
     if (updateData.birthday) updateFields.birthday = updateData.birthday;
-    if (updateData.farm_id) updateFields.farm_id = updateData.farm_id;
-    if (updateData.points !== undefined)
-      updateFields.points = updateData.points;
 
     await this.usersRepository.update(id, updateFields);
 
@@ -161,9 +163,12 @@ export class UsersService {
       role_filter?: UserRole;
       status_filter?: UserStatus;
       search_query?: string;
+      sort_by?: string;
+      sort_order?: "ASC" | "DESC"
       created_date_range?: { start_time?: Date; end_time?: Date };
     } = {},
   ) {
+    const validOrder = ["id", "email", "first_name", "last_name", "gender", "role", "status", "updated_at", "created_at", "points"]
     const {
       page = 1,
       limit = 10,
@@ -171,7 +176,10 @@ export class UsersService {
       status_filter,
       search_query,
       created_date_range,
+      sort_by,
+      sort_order = "ASC"
     } = filters;
+    if (sort_by && !validOrder.includes(sort_by)) throw new BadRequestException(`Invalid properties ${sort_by}`)
 
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
 
@@ -199,7 +207,44 @@ export class UsersService {
 
     const offset = (page - 1) * limit;
     queryBuilder.skip(offset).take(limit);
-    queryBuilder.orderBy('user.created_at', 'DESC');
+    if (sort_by) {
+      switch (sort_by) {
+        case "id":
+          queryBuilder.orderBy('user.id', sort_order);
+          break;
+        case "email":
+          queryBuilder.orderBy('user.email', sort_order);
+          break;
+        case "first_name":
+          queryBuilder.orderBy('user.first_name', sort_order);
+          break;
+        case "last_name":
+          queryBuilder.orderBy('user.last_name', sort_order);
+          break;
+        case "gender":
+          queryBuilder.orderBy('user.gender', sort_order);
+          break;
+        case "role":
+          queryBuilder.orderBy('user.role', sort_order);
+          break;
+        case "status":
+          queryBuilder.orderBy('user.status', sort_order);
+          break;
+        case "updated_at":
+          queryBuilder.orderBy('user.updated_at', sort_order);
+          break;
+        case "created_at":
+          queryBuilder.orderBy('user.created_at', sort_order);
+          break;
+        case "points":
+          queryBuilder.orderBy('user.points', sort_order);
+          break;
+        default:
+          throw new BadRequestException(`Invalid sort_by value: ${sort_by}`);
+      }
+    } else {
+      queryBuilder.orderBy('user.created_at', 'DESC');
+    }
 
     const [users, total] = await queryBuilder.getManyAndCount();
 
@@ -242,9 +287,31 @@ export class UsersService {
       updated_at: new Date(),
     });
 
-    console.log(
-      `User ${id} status changed to ${status} by admin ${adminId}. Reason: ${reason}`,
-    );
+    return this.getUserById(id);
+  }
+
+  async updateUserRole(
+    id: string,
+    role: UserRole,
+    farmId?: string,
+  ): Promise<User> {
+    const user = await this.getUserById(id);
+    if (!user) throw new NotFoundException("User not found");
+
+    if (role === UserRole.FARMER && !farmId)
+      throw new BadRequestException("Cannot update to farmer role because farm ID is not specified")
+
+    const updateData: any = {
+      role,
+      updated_at: new Date(),
+    };
+
+    // If farmId is provided, update it as well
+    if (farmId) {
+      updateData.farm_id = farmId;
+    }
+
+    await this.usersRepository.update(id, updateData);
 
     return this.getUserById(id);
   }
@@ -252,10 +319,11 @@ export class UsersService {
   async getUserByEmail(email: string) {
     const user = await this.usersRepository.findOne({
       where: { email },
+      relations: ['locations', 'payment_methods'],
     });
 
     if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
+      throw new NotFoundException(`User with this email not found`);
     }
 
     return user;
@@ -264,57 +332,68 @@ export class UsersService {
   // Location Management
   async addUserLocation(
     userId: string,
-    locationData: {
-      address_line: string;
-      city: string;
-      state: string;
-      postal_code?: string;
-      country: string;
-      latitude?: number;
-      longitude?: number;
-      is_default?: boolean;
-    },
-  ) {
+    locationData: CreateLocationDto,
+  ): Promise<Location> {
     const user = await this.getUserById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
 
-    if (locationData.is_default) {
+    if (locationData.is_primary) {
       await this.locationsRepository.update(
-        { user_id: parseInt(userId) },
-        { is_primary: false },
+        { user: { id: userId } },
+        { is_primary: false, updated_at: new Date() },
       );
     }
 
     const newLocation = this.locationsRepository.create({
-      user_id: parseInt(userId),
+      user: { id: userId },
       city: locationData.city,
-      district: locationData.state,
+      district: locationData.district,
       address_line: locationData.address_line,
       street: locationData.address_line,
-      is_primary: locationData.is_default || false,
-      created_at: new Date(),
-      updated_at: new Date(),
+      ward: locationData.ward,
+      type: locationData.type,
+      is_primary: locationData.is_primary || false,
+      name: locationData.name,
+      phone: locationData.phone,
     });
 
     const savedLocation = await this.locationsRepository.save(newLocation);
     return savedLocation;
   }
 
-  async getUserLocations(userId: string) {
-    await this.getUserById(userId);
+  async getUserLocations(userId: string): Promise<Location[]> {
+    const user = await this.getUserById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
 
     return this.locationsRepository.find({
-      where: { user_id: parseInt(userId) },
+      where: { user: { id: userId } },
       order: { is_primary: 'DESC', created_at: 'DESC' },
     });
   }
 
-  async updateUserLocation(locationId: string, locationData: any) {
+  async updateUserLocation(
+    locationId: number,
+    userId: string,
+    locationData: UpdateAddressDto,
+  ) {
     const location = await this.locationsRepository.findOne({
-      where: { id: parseInt(locationId) },
+      where: { location_id: locationId, user: { id: userId } },
     });
 
     if (!location) {
       throw new NotFoundException(`Location with ID ${locationId} not found`);
+    }
+
+    // If setting this as primary, unset other primary locations for this user
+    if (locationData.is_primary) {
+      await this.locationsRepository.update(
+        { user: { id: userId } },
+        { is_primary: false, updated_at: new Date() },
+      );
     }
 
     await this.locationsRepository.update(locationId, {
@@ -323,13 +402,13 @@ export class UsersService {
     });
 
     return this.locationsRepository.findOne({
-      where: { id: parseInt(locationId) },
+      where: { location_id: locationId },
     });
   }
 
-  async deleteUserLocation(locationId: string) {
+  async deleteUserLocation(userId: string, locationId: number) {
     const location = await this.locationsRepository.findOne({
-      where: { id: parseInt(locationId) },
+      where: { location_id: locationId, user: { id: userId } },
     });
 
     if (!location) {
@@ -340,61 +419,76 @@ export class UsersService {
     return { success: true, message: 'Location deleted successfully' };
   }
 
+  async findLocationById(locationId: number) {
+    return await this.locationsRepository.findOne({
+      where: { location_id: locationId },
+    });
+  }
+
   // Payment Method Management
   async addPaymentMethod(
     userId: string,
-    paymentData: {
-      type: string;
-      display_name: string;
-      last_four_digits?: string;
-      provider: string;
-      is_default?: boolean;
-      expires_at?: Date;
-      metadata?: any;
-    },
-  ) {
+    createPaymentDto: CreatePaymentDto,
+  ): Promise<PaymentMethod> {
     const user = await this.getUserById(userId);
 
-    if (paymentData.is_default) {
+    if (createPaymentDto.is_default) {
       await this.paymentMethodsRepository.update(
-        { user_id: parseInt(userId) },
+        { user: { id: userId } },
         { is_default: false },
       );
     }
 
-    const newPaymentMethod = new PaymentMethod();
-    newPaymentMethod.user_id = parseInt(userId);
-    newPaymentMethod.provider = paymentData.provider as PaymentProvider;
-    newPaymentMethod.external_id = `ext_${Date.now()}`;
-    // newPaymentMethod.last_four = paymentData.last_four_digits;
-    // newPaymentMethod.cardholder_name = paymentData.display_name;
-    // newPaymentMethod.is_default = paymentData.is_default || false;
-    // newPaymentMethod.expiry_date = paymentData.expires_at
-    //   ? this.formatExpiryDate(paymentData.expires_at)
-    //   : null;
-    // newPaymentMethod.metadata = paymentData.metadata
-    //   ? JSON.stringify(paymentData.metadata)
-    //   : null;
-    newPaymentMethod.created_at = new Date();
-    newPaymentMethod.updated_at = new Date();
+    const newPaymentMethod =
+      this.paymentMethodsRepository.create(createPaymentDto);
+    newPaymentMethod.user = user;
 
-    const savedPaymentMethod =
-      await this.paymentMethodsRepository.save(newPaymentMethod);
-    return savedPaymentMethod;
+    return await this.paymentMethodsRepository.save(newPaymentMethod);
   }
 
-  async getUserPaymentMethods(userId: string) {
-    await this.getUserById(userId);
-
+  async getUserPaymentMethods(userId: string): Promise<PaymentMethod[]> {
     return this.paymentMethodsRepository.find({
-      where: { user_id: parseInt(userId), is_active: true },
+      where: { user: { id: userId }, is_active: true },
       order: { is_default: 'DESC', created_at: 'DESC' },
     });
   }
 
-  async deletePaymentMethod(paymentMethodId: string) {
+  async updatePaymentMethod(
+    userId: string,
+    paymentMethodId: number,
+    paymentData: UpdatePaymentMethodDto,
+  ): Promise<PaymentMethod> {
     const paymentMethod = await this.paymentMethodsRepository.findOne({
-      where: { id: parseInt(paymentMethodId) },
+      where: { payment_method_id: paymentMethodId, user: { id: userId } },
+    });
+
+    if (!paymentMethod) {
+      throw new NotFoundException(
+        `Payment method with ID ${paymentMethodId} not found`,
+      );
+    }
+
+    // If setting this as default, unset other default payment methods for this user
+    if (paymentData.is_default) {
+      await this.paymentMethodsRepository.update(
+        { user: { id: userId } },
+        { is_default: false },
+      );
+    }
+
+    await this.paymentMethodsRepository.update(paymentMethodId, {
+      ...paymentData,
+      updated_at: new Date(),
+    });
+
+    return await this.paymentMethodsRepository.findOne({
+      where: { payment_method_id: paymentMethodId },
+    });
+  }
+
+  async deletePaymentMethod(paymentMethodId: number) {
+    const paymentMethod = await this.paymentMethodsRepository.findOne({
+      where: { payment_method_id: paymentMethodId },
     });
 
     if (!paymentMethod) {
@@ -497,5 +591,20 @@ export class UsersService {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear().toString().slice(-2);
     return `${month}/${year}`;
+  }
+
+  async getUserLite(id: string): Promise<UserLite> {
+    const user = await this.usersRepository.findOne({ where: { id: id } });
+    if (user) {
+      return {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        farm_id: user.farm_id,
+        avatar: user.avatar,
+      }
+    }
+    throw new NotFoundException("User not found");
   }
 }

@@ -35,7 +35,7 @@ import { User as UserInterface } from '../common/interfaces/user.interface';
 @ApiTags('Media')
 @Controller('media')
 export class MediaController {
-  constructor(private readonly mediaService: MediaService) {}
+  constructor(private readonly mediaService: MediaService) { }
 
   @Post('upload')
   @ApiOperation({
@@ -85,10 +85,10 @@ export class MediaController {
     @UploadedFile(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new MaxFileSizeValidator({ maxSize: 25 * 1024 * 1024 }), // 25MB
           new FileTypeValidator({
             fileType:
-              /^(image\/(jpeg|jpg|png|gif|webp)|video\/(mp4|webm)|application\/pdf)$/,
+              /^(image\/(jpeg|jpg|png|gif|webp|jfif)|video\/(mp4|webm)|application\/pdf)$/,
           }),
         ],
       }),

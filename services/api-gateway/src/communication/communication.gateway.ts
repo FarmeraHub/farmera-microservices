@@ -11,9 +11,8 @@ export class CommunicationGateway implements OnModuleInit {
 
   private server: WebSocketServer;
   private readonly logger: Logger = new Logger("Websocket Gateway");
-  private comm_client: WebSocket;
-
   private userConnections: Map<string, { comm_client: WebSocket }>;
+  private clientUser: Map<WebSocket, string>;
 
   constructor(
     private readonly configService: ConfigService,
@@ -25,6 +24,7 @@ export class CommunicationGateway implements OnModuleInit {
     const httpServer = this.httpAdapterHost.httpAdapter.getHttpServer();
 
     this.userConnections = new Map();
+    this.clientUser = new Map();
 
     this.server = new WebSocketServer({ server: httpServer });
 
@@ -46,28 +46,31 @@ export class CommunicationGateway implements OnModuleInit {
       if (token) {
         try {
           user = this.jwtService.verify(token);
+          this.clientUser.set(client, user.id);
           this.logger.log(`Client authenticated: ${user.id}`);
         } catch (err) {
-          this.logger.error('Client connection rejected: Invalid token');
+          this.logger.error('Client connection rejected: Invalid token', err);
           client.close(4001, 'Invalid token')
           return;
         }
       }
 
       client.on('message', (data) => {
+        console.log(user.id);
         const message = data.toString();
-        this.logger.log(`Received from client: ${message}`);
+        this.logger.debug(`Received from client: ${message}`);
 
-        if (this.comm_client?.readyState === WebSocket.OPEN) {
-          this.comm_client.send(message);
+        if (this.userConnections.get(user.id).comm_client?.readyState === WebSocket.OPEN) {
+          this.userConnections.get(user.id).comm_client.send(message);
         } else {
-          this.logger.warn('Communication websocket not connected');
+          this.logger.debug('Communication websocket not connected');
         }
       });
 
       client.on('close', () => {
         this.disconnectUser(user.id);
-        this.logger.log(`Client ${user.id} disconnected`);
+        this.clientUser.delete(client);
+        this.logger.debug(`Client ${user.id} disconnected`);
       });
 
       this.connect(user);
@@ -78,43 +81,41 @@ export class CommunicationGateway implements OnModuleInit {
   connect(user: User) {
     const comm_ws_addr = this.configService.get<string>("COMMUNICATION_WS_ADDR") || "ws://127.0.0.1:3005/ws";
     // put user id in header
-    this.comm_client = new WebSocket(comm_ws_addr, {
+    let comm_client = new WebSocket(comm_ws_addr, {
       headers: {
         "X-user-id": user.id
       }
     });
 
-    this.userConnections.set(user.id, { comm_client: this.comm_client });
+    this.userConnections.set(user.id, { comm_client: comm_client });
 
-    this.comm_client.on("open", () => {
-      this.logger.log('Connected to Communication WebSocket server');
-
+    comm_client.on("open", () => {
+      this.logger.debug('Connected to Communication WebSocket server');
     });
 
     // handle received messages
-    this.comm_client.on("message", (data: Buffer) => {
+    comm_client.on("message", (data: Buffer) => {
       // received messages from communication service
       const message = data.toString();
-      this.logger.log("Received: ", message);
+      this.logger.debug("Received: ", message);
 
-      // send communication's message to clients
       this.server.clients.forEach((client) => {
-        if (client.readyState == client.OPEN) {
+        if (this.clientUser.get(client) === user.id && client.readyState == client.OPEN) {
           client.send(message);
         }
       });
     });
 
     // handle errors
-    this.comm_client.on("error", (error) => {
+    comm_client.on("error", (error) => {
       this.logger.error(`Communication websocket error: ${error.message}`,);
     });
 
-    this.comm_client.on("close", () => {
+    comm_client.on("close", () => {
       this.logger.warn('Disconnected from Communication webSocket server');
       // Close all client connections
       this.server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
+        if (this.clientUser.get(client) === user.id && client.readyState === WebSocket.OPEN) {
           client.close(1011, 'Communication backend disconnected'); // 1011 = internal error
         }
       });
@@ -130,7 +131,7 @@ export class CommunicationGateway implements OnModuleInit {
       }
       // Remove from map
       this.userConnections.delete(userId);
-      this.logger.log(`Cleaned up connections for user ${userId}`);
+      this.logger.debug(`Cleaned up connections for user ${userId}`);
     }
   }
 }

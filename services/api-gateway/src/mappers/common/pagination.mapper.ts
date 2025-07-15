@@ -2,7 +2,7 @@ import { PaginationOrder as GrpcPaginationOrder } from "@farmera/grpc-proto/dist
 import { PaginationRequest, PaginationResponse, SimpleCursorPaginationRequest } from "@farmera/grpc-proto/dist/common/pagination";
 import { BadRequestException } from "@nestjs/common";
 import { PaginationMeta } from "src/pagination/dto/pagination-meta.dto";
-import { Order, PaginationOptions, SimpleCursorPagination } from "src/pagination/dto/pagination-options.dto";
+import { Order, PaginationOptions, SimpleCursorPagination, SortOption } from "src/pagination/dto/pagination-options.dto";
 import { EnumMapper } from "./enum.mapper";
 
 export class PaginationMapper {
@@ -26,6 +26,7 @@ export class PaginationMapper {
 
     static toGrpcSimpleCursorPaginationRequest(value: SimpleCursorPagination): SimpleCursorPaginationRequest {
         return {
+            sort_by: value.sort_by,
             limit: value.limit,
             order: this.toGrpcPaginationOrder(value.order),
             cursor: value.cursor,

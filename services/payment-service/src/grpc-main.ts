@@ -5,6 +5,9 @@ import { join } from "path";
 
 async function bootstrap() {
 
+    const grpcPort = process.env.GRPC_PORT || '50053';
+    const grpcUrl = `0.0.0.0:${grpcPort}`;
+
     const app = await NestFactory.createMicroservice<MicroserviceOptions>(
         AppModule,
         {
@@ -12,7 +15,7 @@ async function bootstrap() {
             options: {
                 package: 'farmera.payment',
                 protoPath: '../../../shared/grpc-protos/payment/payment.proto',
-                url: 'localhost:50053',
+                url: grpcUrl,
                 loader: {
                     keepCase: true,
                     longs: String,

@@ -44,6 +44,8 @@ service CommunicationService {
 
   // Users
   rpc CheckOnlineUser(CheckOnlineUserRequest) returns (CheckOnlineUserResponse);
+  rpc GetUnreadCount(GetUnreadCountRequest) returns (GetUnreadCountResponse);
+  rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse);
 }
 
 // Common
@@ -74,6 +76,8 @@ message ConversationDTO {
   optional farmera.common.Timestamp sent_at = 7;
   optional bool is_read = 8;
   optional farmera.common.MessageType type = 9;
+  repeated string participants = 10;
+  farmera.common.Timestamp created_at = 11;
 }
 
 // Conversation
@@ -190,4 +194,21 @@ message CheckOnlineUserRequest {
 
 message CheckOnlineUserResponse {
   bool is_online = 1;
+}
+
+message GetUnreadCountRequest {
+  string user_id = 1;
+}
+
+message GetUnreadCountResponse {
+  int32 count = 1;
+}
+
+message MarkAsReadRequest {
+  int32 conversation_id = 1;
+  string user_id = 2;
+}
+
+message MarkAsReadResponse {
+  bool success = 1;
 }

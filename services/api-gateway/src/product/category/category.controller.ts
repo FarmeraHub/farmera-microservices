@@ -7,18 +7,21 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { SearchCategoryDto } from './dto/search-categories.dto';
 import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { UserRole } from 'src/common/interfaces/user.interface';
 
 @Controller('category')
 export class CategoryController {
 
     constructor(private readonly categoryService: CategoryService) { }
 
-    // Is admin
+    @Roles(UserRole.ADMIN)
     @Post("create")
     async createCategory(@Body() newCategory: CreateCategoryDto) {
         return await this.categoryService.createCategory(newCategory);
     }
 
+    @Roles(UserRole.ADMIN)
     @Post("subcategory/create")
     async createSubCategory(@Body() newSubCategory: CreateSubcategoryDto) {
         return await this.categoryService.createSubcategoryDto(newSubCategory);

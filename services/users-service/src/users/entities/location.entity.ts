@@ -1,10 +1,17 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity({ name: 'locations' })
 export class Location {
   @PrimaryGeneratedColumn()
-  id: number;
+  location_id: number;
+
+
+  @Column({ nullable: false })
+  name: string;
+
+  @Column({ nullable: false })
+  phone: string
 
   @Column({ nullable: false })
   city: string;
@@ -27,15 +34,28 @@ export class Location {
   @Column({ default: false })
   is_primary: boolean;
 
+  @Column({ nullable: true })
+  latitude: number;
+
+  @Column({ nullable: true })
+  longitude: number;
+
+  @Column({ nullable: true })
+  country: string;
+
+  @Column({ nullable: true })
+  postal_code: string;
+
+  @Column({ nullable: true })
+  state: string;
+
   @ManyToOne(() => User, (user) => user.locations)
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
-  user_id: number;
-
-  @Column({ nullable: true })
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @Column({ nullable: true })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 }

@@ -9,10 +9,11 @@ import { Identification } from './entities/identification.entity';
 import { GhnModule } from 'src/ghn/ghn.module';
 import { AddressGHN } from './entities/address-ghn.entity';
 import { AzureBlobService } from 'src/services/azure-blob.service';
+import { Product } from 'src/products/entities/product.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Farm, Address, Identification, AddressGHN]),
+    TypeOrmModule.forFeature([Farm, Address, Identification, AddressGHN, Product]),
     BiometricsModule,
     GhnModule,
   ],

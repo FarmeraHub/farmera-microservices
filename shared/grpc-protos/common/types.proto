@@ -15,14 +15,34 @@ message Timestamp {
 message Location {
   string id = 1;
   string user_id = 2;
-  string address_line = 3;
-  string city = 4;
-  string state = 5;
-  string postal_code = 6;
-  string country = 7;
-  double latitude = 8;
-  double longitude = 9;
-  bool is_default = 10;
+  string name = 3;  // Name associated with this address (e.g., recipient name)
+  string phone = 4; // Phone number for this address
+  string address_line = 5;
+  string city = 6;
+  string state = 7;
+  string district = 8; // Administrative district
+  string ward = 9;     // Smallest administrative division (commune/ward)
+  string street = 10;  // Street name
+  string postal_code = 11;
+  string country = 12;
+  double latitude = 13;
+  double longitude = 14;
+  bool is_primary = 15;
+  Timestamp created_at = 16;
+  Timestamp updated_at = 17;
+}
+
+message UserLocation {
+  int32 id = 1;
+  string city = 2;
+  string district = 3;
+  string ward = 4;
+  string street = 5;
+  string address_line = 6;
+  string type = 7;
+  bool is_primary = 8;
+  string name = 9;
+  string phone = 10;
   Timestamp created_at = 11;
   Timestamp updated_at = 12;
 }
@@ -144,6 +164,15 @@ message ProductOptions {
   optional bool include_farm = 1;
   optional bool include_processes = 2;
   optional bool include_categories = 3;
+  optional bool include_farm_address = 4;
+  optional bool include_farm_stats = 5;
+}
+
+message FarmStats {
+  double average_rating = 1;
+  int32 sold_count = 2;
+  int32 products_count = 3;
+  int32 followers_count = 4;
 }
 
 // List

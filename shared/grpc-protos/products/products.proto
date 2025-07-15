@@ -15,6 +15,8 @@ service ProductsService {
   rpc GetProduct(GetProductRequest) returns (GetProductResponse);
   rpc GetListProducts(GetListProductsRequest) returns (GetListProductsResponse);
   rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
+  rpc UpdateProductQuantity(UpdateQuantityRequest) returns (UpdateQuantityResponse);
+  rpc UpdateProductsQuantity(UpdateQuantitiesRequest) returns (UpdateQuantitiesResponse);
   rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
   rpc SearchProducts(SearchProductsRequest) returns (SearchProductsResponse);
   rpc GetProductsByFarm(GetProductsByFarmRequest) returns (GetProductsByFarmResponse);
@@ -22,6 +24,15 @@ service ProductsService {
   rpc GetProductsBySubCategory(GetProductsBySubCategoryRequest) returns (GetProductsBySubCategoryResponse);
   rpc UpdateProductStatus(UpdateProductStatusRequest) returns (UpdateProductStatusResponse);
   rpc OpenProductForSale(OpenProductForSaleRequest) returns (OpenProductForSaleResponse);
+  
+  // QR Code and Blockchain functionality
+  rpc GenerateQRCode(GenerateQRCodeRequest) returns (GenerateQRCodeResponse);
+  rpc ActivateBlockchain(ActivateBlockchainRequest) returns (ActivateBlockchainResponse);
+  rpc GetQRCode(GetQRCodeRequest) returns (GetQRCodeResponse);
+  
+  // Traceability functionality
+  rpc GetTraceabilityData(GetTraceabilityDataRequest) returns (GetTraceabilityDataResponse);
+  rpc VerifyTraceability(VerifyTraceabilityRequest) returns (VerifyTraceabilityResponse);
   
   // Farm management
   rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
@@ -32,7 +43,7 @@ service ProductsService {
   rpc SearchFarm(SearchFarmRequest) returns (SearchFarmResponse);
   //rpc GetFarmsByLocation(GetFarmsByLocationRequest) returns (GetFarmsByLocationResponse);
   rpc GetFarmByUser(GetFarmByUserRequest) returns (GetFarmByUserResponse);
-  rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
+  rpc GetFarmStats(GetFarmStatsRequest) returns (GetFarmStatsResponse);
 
   // Category management
   rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
@@ -57,12 +68,48 @@ service ProductsService {
   rpc DeleteReview(DeleteReviewRequest) returns (DeleteReviewResponse);
   rpc DeleteReply(DeleteReplyRequest) returns (DeleteReplyResponse);
   rpc ApproveReview(ApproveReviewRequest) returns (ApproveReviewResponse);
-  //rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse);
+  rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse);
+  rpc GetReviewOverview(GetReviewOverviewRequest) returns (GetReviewOverviewResponse);
   
   // Process tracking
   rpc CreateProcess(CreateProcessRequest) returns (CreateProcessResponse);
   rpc GetProcess(GetProcessRequest) returns (GetProcessResponse);
   rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse);  
+  
+  // Process Template management
+  rpc CreateProcessTemplate(CreateProcessTemplateRequest) returns (CreateProcessTemplateResponse);
+  rpc GetProcessTemplatesByFarm(GetProcessTemplatesByFarmRequest) returns (GetProcessTemplatesByFarmResponse);
+  rpc GetProcessTemplateById(GetProcessTemplateByIdRequest) returns (GetProcessTemplateByIdResponse);
+  rpc UpdateProcessTemplate(UpdateProcessTemplateRequest) returns (UpdateProcessTemplateResponse);
+  rpc DeleteProcessTemplate(DeleteProcessTemplateRequest) returns (DeleteProcessTemplateResponse);
+  rpc GetProductsAssignedToProcess(GetProductsAssignedToProcessRequest) returns (GetProductsAssignedToProcessResponse);
+  rpc GetProcessSteps(GetProcessStepsRequest) returns (GetProcessStepsResponse);
+  rpc ReorderProcessSteps(ReorderProcessStepsRequest) returns (ReorderProcessStepsResponse);
+  
+  // Product Process Assignment
+  rpc AssignProductToProcess(AssignProductToProcessRequest) returns (AssignProductToProcessResponse);
+  rpc GetProductProcessAssignment(GetProductProcessAssignmentRequest) returns (GetProductProcessAssignmentResponse);
+  rpc UnassignProductFromProcess(UnassignProductFromProcessRequest) returns (UnassignProductFromProcessResponse);
+  
+  // Diary management
+  rpc CreateDiary(CreateDiaryRequest) returns (CreateDiaryResponse);
+  rpc GetDiary(GetDiaryRequest) returns (GetDiaryResponse);
+  rpc GetDiariesByProcess(GetDiariesByProcessRequest) returns (GetDiariesByProcessResponse);
+  rpc UpdateDiary(UpdateDiaryRequest) returns (UpdateDiaryResponse);
+  rpc DeleteDiary(DeleteDiaryRequest) returns (DeleteDiaryResponse);
+  
+  // Step Diary management
+  rpc CreateStepDiary(CreateStepDiaryRequest) returns (CreateStepDiaryResponse);
+  rpc GetStepDiaries(GetStepDiariesRequest) returns (GetStepDiariesResponse);
+  rpc GetProductDiaries(GetProductDiariesRequest) returns (GetProductDiariesResponse);
+  rpc UpdateStepDiary(UpdateStepDiaryRequest) returns (UpdateStepDiaryResponse);
+  rpc DeleteStepDiary(DeleteStepDiaryRequest) returns (DeleteStepDiaryResponse);
+
+  // Admin
+  rpc UpdateProductStatusForAdmin(UpdateProductStatusForAdminRequest) returns (UpdateProductStatusForAdminResponse);
+  rpc UpdateFarmStatus(UpdateFarmStatusRequest) returns (UpdateFarmStatusResponse);
+  rpc SearchFarmForAdmin(SearchFarmForAdminRequest) returns (SearchFarmForAdminResponse);
+
 }
 
 // ======================================Product==========================================
@@ -84,6 +131,9 @@ message Product {
   int32 total_sold = 15;
   optional Farm farm = 16;
   optional ProcessList processes = 17;
+  optional string qr_code = 18;
+  bool blockchain_activated = 19;
+  optional string blockchain_hash = 20;
 }
 
 message SubcategoryList {
@@ -121,7 +171,7 @@ message GetProductResponse {
 }
 
 message GetListProductsRequest{
-  int32 product_id = 1;
+  repeated int32 product_ids = 1;
   optional farmera.common.PaginationRequest pagination = 2;
   optional farmera.common.ProductOptions options = 3;
 }
@@ -230,6 +280,27 @@ message OpenProductForSaleResponse {
   string qr_code = 1;
 }
 
+// ==================================Admin==================================
+message UpdateProductStatusForAdminRequest {
+  int32 product_id = 1;
+  farmera.common.ProductStatus status = 2;
+}
+
+message UpdateProductStatusForAdminResponse {
+  bool success = 1;
+}
+
+message UpdateFarmStatusRequest{
+  string farm_id = 1;
+  string user_id = 2;
+  string status = 3;
+  optional string reason = 4;
+ }
+
+message UpdateFarmStatusResponse{
+  Farm farm = 1;
+}
+
 // ==================================Farm==================================
 // Farm
 message Farm {
@@ -248,6 +319,7 @@ message Farm {
   farmera.common.Timestamp updated = 13;
   optional Address address = 14;
   optional Identification identification = 15;
+  optional farmera.common.FarmStats stats = 16;
 }
 
 message Identification {
@@ -336,6 +408,7 @@ message UpdateFarmRequest {
   string farm_id = 1;
   optional string farm_name = 2;
   optional string description = 3;
+  string user_id = 4;
 }
 
 message UpdateFarmResponse {
@@ -363,6 +436,18 @@ message SearchFarmResponse {
   optional farmera.common.PaginationResponse pagination = 2;
 }
 
+message SearchFarmForAdminRequest {
+  optional string search_query = 1;
+  optional farmera.common.PaginationRequest pagination = 2;
+  optional farmera.common.FarmStatus status_filter = 3;
+  optional farmera.common.GeoLocation location_filter = 4;
+}
+
+message SearchFarmForAdminResponse {
+  repeated Farm farms = 1;
+  optional farmera.common.PaginationResponse pagination = 2;
+}
+
 message GetFarmByUserRequest{
   string user_id = 1;
 }
@@ -371,15 +456,15 @@ message GetFarmByUserResponse {
   Farm farm = 1;
 }
 
-message UpdateFarmStatusRequest{
+message GetFarmStatsRequest {
   string farm_id = 1;
-  string user_id = 2;
-  string status = 3;
-  optional string reason = 4;
- }
+}
 
-message UpdateFarmStatusResponse{
-  Farm farm = 1;
+message GetFarmStatsResponse {
+  double average_rating = 1;
+  int32 sold_count = 2;
+  int32 products_count = 3;
+  int32 followers_count = 4;
 }
 
 // ======================================Category============================================
@@ -579,6 +664,33 @@ message ApproveReviewResponse {
   bool success = 1;
 }
 
+message ListReviewsRequest {
+  int32 product_id = 1;
+  farmera.common.SimpleCursorPaginationRequest pagination = 3;
+  optional int32 rating_filter = 4;
+}
+
+message ListReviewsResponse {
+  repeated Review reviews = 1;
+  farmera.common.SimpleCursorPaginationResponse pagination = 2;
+}
+
+message RatingOverview {
+  int32 count = 1;
+  double percentage = 2;
+}
+
+message GetReviewOverviewRequest {
+  int32 product_id = 1;
+}
+
+message GetReviewOverviewResponse {
+  int32 total_count = 1;
+  int32 total_ratings = 2;
+  double average_rating = 3;
+  map<int32, RatingOverview> rating_overview = 4;
+}
+
 // ========================================Process=======================================
 // Product process tracking
 message ProductProcess {
@@ -635,11 +747,458 @@ message GetProcessResponse {
 }
 
 message ListProcessesRequest {
-  farmera.common.SimpleCursorPaginationRequest pagination = 1;
-  int32 product_id = 2;
+  int32 product_id = 1;
 }
 
 message ListProcessesResponse {
   repeated ProductProcess processes = 1;
-  farmera.common.SimpleCursorPaginationResponse pagination = 2;
+}
+
+// QR Code and Blockchain message definitions
+message GenerateQRCodeRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message GenerateQRCodeResponse {
+  string qr_code = 1;
+}
+
+message ActivateBlockchainRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message ActivateBlockchainResponse {
+  string blockchain_hash = 1;
+  bool success = 2;
+}
+
+message GetQRCodeRequest {
+  int32 product_id = 1;
+}
+
+message GetQRCodeResponse {
+  optional string qr_code = 1;
+}
+
+// =========================================Diary========================================
+message Diary {
+  int32 diary_id = 1;
+  int32 process_id = 2;
+  string step_name = 3;
+  string step_description = 4;
+  optional farmera.common.StringList image_urls = 5;
+  optional farmera.common.StringList video_urls = 6;
+  farmera.common.Timestamp recorded_date = 7;
+  optional double latitude = 8;
+  optional double longitude = 9;
+  optional string notes = 10;
+  farmera.common.Timestamp created = 11;
+}
+
+message CreateDiaryRequest {
+  int32 process_id = 1;
+  string step_name = 2;
+  string step_description = 3;
+  optional farmera.common.StringList image_urls = 4;
+  optional farmera.common.StringList video_urls = 5;
+  farmera.common.Timestamp recorded_date = 6;
+  optional double latitude = 7;
+  optional double longitude = 8;
+  optional string notes = 9;
+  string user_id = 10;
+}
+
+message CreateDiaryResponse {
+  Diary diary = 1;
+}
+
+message GetDiaryRequest {
+  int32 diary_id = 1;
+}
+
+message GetDiaryResponse {
+  Diary diary = 1;
+}
+
+message GetDiariesByProcessRequest {
+  int32 process_id = 1;
+}
+
+message GetDiariesByProcessResponse {
+  repeated Diary diaries = 1;
+}
+
+message UpdateDiaryRequest {
+  int32 diary_id = 1;
+  optional string step_name = 2;
+  optional string step_description = 3;
+  optional farmera.common.StringList image_urls = 4;
+  optional farmera.common.StringList video_urls = 5;
+  optional farmera.common.Timestamp recorded_date = 6;
+  optional double latitude = 7;
+  optional double longitude = 8;
+  optional string notes = 9;
+  string user_id = 10;
+}
+
+message UpdateDiaryResponse {
+  Diary diary = 1;
+}
+
+message DeleteDiaryRequest {
+  int32 diary_id = 1;
+  string user_id = 2;
+}
+
+message DeleteDiaryResponse {
+  bool success = 1;
+}
+
+// ======================================Process Templates===============================
+// Process Template messages
+message ProcessTemplate {
+  int32 process_id = 1;
+  string process_name = 2;
+  string description = 3;
+  string farm_id = 4;
+  optional int32 estimated_duration_days = 5;
+  bool is_active = 6;
+  repeated ProcessStep steps = 7;
+  optional int32 step_count = 8;
+  farmera.common.Timestamp created = 9;
+  farmera.common.Timestamp updated = 10;
+}
+
+message ProcessStep {
+  int32 step_id = 1;
+  int32 process_id = 2;
+  int32 step_order = 3;
+  string step_name = 4;
+  string step_description = 5;
+  bool is_required = 6;
+  optional int32 estimated_duration_days = 7;
+  optional string instructions = 8;
+  farmera.common.Timestamp created = 9;
+}
+
+message CreateProcessStepInput {
+  int32 step_order = 1;
+  string step_name = 2;
+  string step_description = 3;
+  optional bool is_required = 4;
+  optional int32 estimated_duration_days = 5;
+  optional string instructions = 6;
+}
+
+message UpdateProcessStepInput {
+  optional int32 step_id = 1;
+  optional int32 step_order = 2;
+  optional string step_name = 3;
+  optional string step_description = 4;
+  optional bool is_required = 5;
+  optional int32 estimated_duration_days = 6;
+  optional string instructions = 7;
+}
+
+// Process Template CRUD messages
+message CreateProcessTemplateRequest {
+  string process_name = 1;
+  string description = 2;
+  optional int32 estimated_duration_days = 3;
+  optional bool is_active = 4;
+  repeated CreateProcessStepInput steps = 5;
+  string user_id = 6;
+}
+
+message CreateProcessTemplateResponse {
+  ProcessTemplate template = 1;
+}
+
+message GetProcessTemplatesByFarmRequest {
+  string user_id = 1;
+}
+
+message GetProcessTemplatesByFarmResponse {
+  repeated ProcessTemplate templates = 1;
+}
+
+message GetProcessTemplateByIdRequest {
+  int32 process_id = 1;
+  string user_id = 2;
+}
+
+message GetProcessTemplateByIdResponse {
+  ProcessTemplate template = 1;
+}
+
+message UpdateProcessTemplateRequest {
+  int32 process_id = 1;
+  optional string process_name = 2;
+  optional string description = 3;
+  optional int32 estimated_duration_days = 4;
+  optional bool is_active = 5;
+  repeated UpdateProcessStepInput steps = 6;
+  string user_id = 7;
+}
+
+message UpdateProcessTemplateResponse {
+  ProcessTemplate template = 1;
+}
+
+message DeleteProcessTemplateRequest {
+  int32 process_id = 1;
+  string user_id = 2;
+}
+
+message DeleteProcessTemplateResponse {
+  bool success = 1;
+}
+
+message GetProductsAssignedToProcessRequest {
+  int32 process_id = 1;
+  string user_id = 2;
+}
+
+message GetProductsAssignedToProcessResponse {
+  repeated Product products = 1;
+}
+
+message GetProcessStepsRequest {
+  int32 process_id = 1;
+  string user_id = 2;
+}
+
+message GetProcessStepsResponse {
+  repeated ProcessStep steps = 1;
+}
+
+message StepOrderInput {
+  int32 step_id = 1;
+  int32 step_order = 2;
+}
+
+message ReorderProcessStepsRequest {
+  int32 process_id = 1;
+  repeated StepOrderInput step_orders = 2;
+  string user_id = 3;
+}
+
+message ReorderProcessStepsResponse {
+  bool success = 1;
+}
+
+// Product Process Assignment messages
+enum AssignmentStatus {
+  ASSIGNMENT_ACTIVE = 0;
+  ASSIGNMENT_COMPLETED = 1;
+  ASSIGNMENT_CANCELLED = 2;
+}
+
+message ProductProcessAssignment {
+  int32 assignment_id = 1;
+  int32 product_id = 2;
+  int32 process_id = 3;
+  farmera.common.Timestamp assigned_date = 4;
+  AssignmentStatus status = 5;
+  optional int32 current_step_order = 6;
+  double completion_percentage = 7;
+  optional farmera.common.Timestamp start_date = 8;
+  optional farmera.common.Timestamp target_completion_date = 9;
+  optional farmera.common.Timestamp actual_completion_date = 10;
+  farmera.common.Timestamp created = 11;
+  farmera.common.Timestamp updated = 12;
+  optional ProcessTemplate process_template = 13;
+}
+
+message AssignProductToProcessRequest {
+  int32 product_id = 1;
+  int32 process_id = 2;
+  optional farmera.common.Timestamp start_date = 3;
+  optional farmera.common.Timestamp target_completion_date = 4;
+  string user_id = 5;
+}
+
+message AssignProductToProcessResponse {
+  ProductProcessAssignment assignment = 1;
+}
+
+message GetProductProcessAssignmentRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message GetProductProcessAssignmentResponse {
+  optional ProductProcessAssignment assignment = 1;
+}
+
+message UnassignProductFromProcessRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message UnassignProductFromProcessResponse {
+  bool success = 1;
+}
+
+// Step Diary messages
+enum DiaryCompletionStatus {
+  IN_PROGRESS = 0;
+  COMPLETED = 1;
+  SKIPPED = 2;
+}
+
+message StepDiaryEntry {
+  int32 diary_id = 1;
+  int32 assignment_id = 2;
+  int32 step_id = 3;
+  int32 product_id = 4;
+  string step_name = 5;
+  int32 step_order = 6;
+  string notes = 7;
+  DiaryCompletionStatus completion_status = 8;
+  repeated string image_urls = 9;
+  repeated string video_urls = 10;
+  farmera.common.Timestamp recorded_date = 11;
+  optional double latitude = 12;
+  optional double longitude = 13;
+  optional string weather_conditions = 14;
+  optional int32 quality_rating = 15;
+  optional string issues_encountered = 16;
+  optional string additional_data = 17; // JSON string
+  farmera.common.Timestamp created = 18;
+  farmera.common.Timestamp updated = 19;
+  optional ProcessStep step = 20;
+  optional ProductProcessAssignment assignment = 21;
+}
+
+message CreateStepDiaryRequest {
+  int32 assignment_id = 1;
+  int32 step_id = 2;
+  int32 product_id = 3;
+  string step_name = 4;
+  int32 step_order = 5;
+  string notes = 6;
+  optional DiaryCompletionStatus completion_status = 7;
+  repeated string image_urls = 8;
+  repeated string video_urls = 9;
+  optional farmera.common.Timestamp recorded_date = 10;
+  optional double latitude = 11;
+  optional double longitude = 12;
+  optional string weather_conditions = 13;
+  optional int32 quality_rating = 14;
+  optional string issues_encountered = 15;
+  optional string additional_data = 16;
+  string user_id = 17;
+}
+
+message CreateStepDiaryResponse {
+  StepDiaryEntry diary = 1;
+}
+
+message GetStepDiariesRequest {
+  int32 product_id = 1;
+  int32 step_id = 2;
+  string user_id = 3;
+}
+
+message GetStepDiariesResponse {
+  repeated StepDiaryEntry diaries = 1;
+}
+
+message GetProductDiariesRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+}
+
+message GetProductDiariesResponse {
+  repeated StepDiaryEntry diaries = 1;
+}
+
+// Update and Delete Step Diary messages
+
+message UpdateStepDiaryRequest {
+  int32 diary_id = 1;
+  optional string step_name = 2;
+  optional int32 step_order = 3;
+  optional string notes = 4;
+  optional DiaryCompletionStatus completion_status = 5;
+  repeated string image_urls = 6;
+  repeated string video_urls = 7;
+  optional farmera.common.Timestamp recorded_date = 8;
+  optional double latitude = 9;
+  optional double longitude = 10;
+  optional string weather_conditions = 11;
+  optional int32 quality_rating = 12;
+  optional string issues_encountered = 13;
+  optional string additional_data = 14;
+  string user_id = 15;
+}
+
+message UpdateStepDiaryResponse {
+  StepDiaryEntry diary = 1;
+}
+
+message DeleteStepDiaryRequest {
+  int32 diary_id = 1;
+  string user_id = 2;
+}
+
+message DeleteStepDiaryResponse {
+  bool success = 1;
+}
+message UpdateQuantityItem{
+  int32 product_id = 1;
+  int32 request_quantity = 2;
+  farmera.common.UpdateProductQuantityOperation operation = 3;
+}
+
+message UpdateQuantityRequest {
+  UpdateQuantityItem item = 1;
+}
+message UpdateQuantityResponse{
+  bool success = 1;
+  string message = 2;
+}
+
+message UpdateQuantityResult{
+  int32 product_id = 1;
+  bool success = 2;
+  string message = 3;
+  int32 previous_quantity = 4;
+  int32 new_quantity = 5;
+}
+message UpdateQuantitiesRequest{
+  repeated UpdateQuantityItem items = 1;
+}
+message UpdateQuantitiesResponse {
+  bool success = 1;
+  string message = 2;
+  repeated UpdateQuantityResult results = 3;
+}
+
+// Traceability messages
+message TraceabilityData {
+  Product product = 1;
+  repeated ProductProcessAssignment assignments = 2;
+  repeated StepDiaryEntry step_diaries = 3;
+}
+
+message GetTraceabilityDataRequest {
+  int32 product_id = 1;
+}
+
+message GetTraceabilityDataResponse {
+  TraceabilityData traceability_data = 1;
+}
+
+message VerifyTraceabilityRequest {
+  int32 product_id = 1;
+}
+
+message VerifyTraceabilityResponse {
+  bool is_valid = 1;
+  optional string error = 2;
+  string verification_date = 3;
 }

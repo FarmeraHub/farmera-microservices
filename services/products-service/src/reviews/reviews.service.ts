@@ -7,7 +7,8 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { AzureBlobService } from 'src/services/azure-blob.service';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { ErrorMapper } from 'src/grpc/server/mappers/common/error.mapper';
+import { ErrorMapper } from 'src/mappers/common/error.mapper';
+import { RatingStatsDto } from './dto/rating-stat.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -54,7 +55,7 @@ export class ReviewsService {
             return await this.reviewRepository.save(review);
 
         } catch (error) {
-            this.logger.error(error);
+            this.logger.error(error.message);
             throw new InternalServerErrorException(`Không thể đánh giá`);
         }
     }
@@ -66,7 +67,7 @@ export class ReviewsService {
     ): Promise<ReviewReply> {
         try {
             const review = await this.reviewRepository.findOne({
-                where: { review_id: createReplyDto.review_id }
+                where: { review_id: createReplyDto.review_id, is_deleted: false }
             });
 
             if (review) {
@@ -86,7 +87,7 @@ export class ReviewsService {
             throw new NotFoundException("Đánh giá không tồn tại");
         }
         catch (error) {
-            this.logger.error(error);
+            this.logger.error(error.message);
 
             if (error instanceof NotFoundException || error instanceof BadRequestException) {
                 throw error;
@@ -97,11 +98,17 @@ export class ReviewsService {
 
     async getReviewsByCursor(
         productId: number,
-        sortBy: 'created' | 'rating' = 'created',
+        sortBy: string,
         order: 'ASC' | 'DESC' = 'DESC',
         limit = 10,
         cursor: string,
+        raingFilter?: number,
     ) {
+        const validSortBy = ['created', 'rating'];
+        if (!validSortBy.includes(sortBy)) {
+            throw new BadRequestException('Valid sort by: created, rating');
+        }
+
         const qb = this.reviewRepository.createQueryBuilder('review')
             .leftJoinAndSelect('review.replies', 'reply', 'reply.is_deleted = false')
             .where('review.is_deleted = false')
@@ -112,6 +119,10 @@ export class ReviewsService {
             qb.orderBy('review.created', order);
         } else {
             qb.orderBy('review.rating', order).addOrderBy('review.created', order);
+        }
+
+        if (raingFilter) {
+            qb.andWhere('review.rating = :rating', { rating: raingFilter });
         }
 
         if (cursor) {
@@ -331,4 +342,29 @@ export class ReviewsService {
         }
     }
 
+    async getReviewOverview(productId: number): Promise<RatingStatsDto> {
+        const ratings = await this.reviewRepository.createQueryBuilder('review')
+            .select('review.rating', 'rating')
+            .addSelect('review.rating', 'rating')
+            .addSelect('COUNT(*)', 'count')
+            .where('review.is_deleted = false')
+            .andWhere('review.product_id = :productId', { productId })
+            .groupBy('review.rating')
+            .getRawMany();
+
+        const counts: Record<number, number> = {
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0,
+            5: 0,
+        };
+
+        for (const row of ratings) {
+            const rating = Number(row.rating);
+            const count = Number(row.count);
+            counts[rating] = count;
+        }
+        return new RatingStatsDto(counts);
+    }
 }

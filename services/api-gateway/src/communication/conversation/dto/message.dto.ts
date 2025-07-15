@@ -1,4 +1,5 @@
-import { IsDate, IsNumber, IsPositive, IsUUID } from "class-validator";
+import { Type } from "class-transformer";
+import { IsDate, IsNumber, IsOptional, IsPositive, IsUUID } from "class-validator";
 import { MessageType } from "src/communication/enums/message-type.enums";
 
 export class ConversationMessage {
@@ -24,4 +25,17 @@ export class GetMessagesDto {
     @IsNumber()
     @IsPositive()
     limit?: number;
+}
+
+export class ListMessagesDto {
+    @IsNumber()
+    @IsPositive()
+    @IsOptional()
+    @Type(() => Number)
+    limit?: number = 20;
+
+    @IsDate()
+    @IsOptional()
+    @Type(() => Date)
+    before?: Date = new Date();
 }
