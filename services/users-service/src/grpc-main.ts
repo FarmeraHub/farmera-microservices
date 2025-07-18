@@ -7,8 +7,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { Logger } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -55,30 +53,30 @@ import { GrpcModule } from './grpc/grpc.module';
     UsersModule,
     EmailModule,
     VerificationModule,
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => ({
-        transport: {
-          host: config.get('MAIL_HOST'),
-          secure: false,
-          auth: {
-            user: config.get('MAIL_USER'),
-            pass: config.get('MAIL_PASSWORD'),
-          },
-        },
-        defaults: {
-          from: `"No Reply" <${config.get('MAIL_FROM')}>`,
-        },
-        template: {
-          dir: join(__dirname, 'src/templates'),
-          adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
-          },
-        },
-      }),
-      inject: [ConfigService],
-    }),
+    // MailerModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   useFactory: async (config: ConfigService) => ({
+    //     transport: {
+    //       host: config.get('MAIL_HOST'),
+    //       secure: false,
+    //       auth: {
+    //         user: config.get('MAIL_USER'),
+    //         pass: config.get('MAIL_PASSWORD'),
+    //       },
+    //     },
+    //     defaults: {
+    //       from: `"No Reply" <${config.get('MAIL_FROM')}>`,
+    //     },
+    //     template: {
+    //       dir: join(__dirname, 'src/templates'),
+    // adapter: new HandlebarsAdapter(),
+    //       options: {
+    //         strict: true,
+    //       },
+    //     },
+    //   }),
+    //   inject: [ConfigService],
+    // }),
     GrpcModule,
   ],
   controllers: [AppController],

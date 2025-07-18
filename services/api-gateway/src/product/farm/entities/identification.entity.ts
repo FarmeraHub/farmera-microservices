@@ -1,6 +1,3 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
-import { Farm } from './farm.entity';
-
 export enum IdentificationStatus {
     PENDING = 'PENDING',
     APPROVED = 'APPROVED',
