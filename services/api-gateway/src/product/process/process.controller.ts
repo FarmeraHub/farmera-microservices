@@ -1,49 +1,188 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { ProcessService } from './process.service';
-import { User } from 'src/common/decorators/user.decorator';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  Patch,
+} from '@nestjs/common';
+import { User } from '../../common/decorators/user.decorator';
 import { User as UserInterface } from '../../common/interfaces/user.interface';
+import { AssignProductToProcessDto } from './dto/assign-product-process.dto';
+import { CreateStepDiaryDto } from './dto/create-step-diary.dto';
+import { UpdateStepDiaryDto } from './dto/update-step-diary.dto';
+import { ProcessService } from './process.service';
 import { CreateProcessDto } from './dto/create-process.dto';
-import { Public } from 'src/common/decorators/public.decorator';
-import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiBadRequestResponse } from '@nestjs/swagger';
-import { Process } from './entities/process.entity';
+import { UpdateProcessDto } from './dto/update-process.dto';
 
-@ApiTags('Process')
 @Controller('process')
 export class ProcessController {
+  constructor(
+    private readonly processService: ProcessService,
+  ) { }
 
-    constructor(private readonly processService: ProcessService) { }
+  @Post()
+  async createProcess(
+    @Body() createDto: CreateProcessDto,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.createProcess(
+      createDto,
+      user,
+    );
+  }
 
-    @Post()
-    @ApiOperation({ summary: 'Create a process', description: 'Creates a new process for a product.' })
-    @ApiBody({ type: CreateProcessDto })
-    @ApiResponse({ status: 201, description: 'Process created successfully', type: Process })
-    @ApiBadRequestResponse({ description: 'Invalid input or creation failed' })
-    @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-    async createProcess(@User() user: UserInterface, @Body() createProcessDto: CreateProcessDto) {
-        return await this.processService.createProcess(user.id, createProcessDto);
-    }
+  @Get('farm')
+  async getProcessByFarm(@User() user: UserInterface) {
+    return await this.processService.getProcessesByFarm(user);
+  }
 
-    @Public()
-    @Get("product/:process_id")
-    @ApiOperation({ summary: 'Get processes for a product', description: 'Retrieves all processes for a product.' })
-    @ApiParam({ name: 'process_id', description: 'ID of the product' })
-    @ApiQuery({ name: 'next_cursor', required: false, type: String })
-    @ApiResponse({ status: 200, description: 'List of processes', type: [Process] })
-    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-    async getProcesses(@Param("process_id") processId: number, @Query() pagination?: SimpleCursorPagination) {
-        return await this.processService.getProcesses(processId, pagination);
-    }
+  @Get(':id')
+  async getProcessById(
+    @Param('id', ParseIntPipe) processId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.getProcessById(
+      processId,
+      user,
+    );
+  }
 
-    @Public()
-    @Get(":process_id")
-    @ApiOperation({ summary: 'Get process by ID', description: 'Retrieves a process by its ID.' })
-    @ApiParam({ name: 'process_id', description: 'ID of the process' })
-    @ApiResponse({ status: 200, description: 'Process retrieved successfully', type: Process })
-    @ApiNotFoundResponse({ description: 'Process not found' })
-    @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-    async getProcess(@Param("process_id") processId: number) {
-        return await this.processService.getProcess(processId);
-    }
+  @Patch(':id')
+  async updateProcess(
+    @Param('id', ParseIntPipe) processId: number,
+    @Body() updateDto: UpdateProcessDto,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.updateProcess(
+      processId,
+      updateDto,
+      user,
+    );
+  }
+
+  // @Delete(':id')
+  // async deleteProcess(
+  //   @Param('id', ParseIntPipe) processId: number,
+  //   @User() user: UserInterface,
+  // ) {
+  //   return await this.processService.deleteProcess(
+  //     processId,
+  //     user,
+  //   );
+  // }
+
+  @Get(':id/steps')
+  async getProcessSteps(
+    @Param('id', ParseIntPipe) processId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.getProcessSteps(processId, user);
+  }
+
+  @Put(':id/steps/reorder')
+  async reorderProcessSteps(
+    @Param('id', ParseIntPipe) processId: number,
+    @Body() stepOrders: { step_id: number; step_order: number }[],
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.reorderProcessSteps(
+      processId,
+      stepOrders,
+      user,
+    );
+  }
+
+  // Product assignment endpoints
+  @Post('product/:productId/assign')
+  async assignProductToProcess(
+    @Param('productId', ParseIntPipe) productId: number,
+    @Body() assignDto: AssignProductToProcessDto,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.assignProductToProcess(
+      productId,
+      assignDto,
+      user,
+    );
+  }
+
+  @Get('product/:productId/assignment')
+  async getProductProcess(
+    @Param('productId', ParseIntPipe) productId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.getProductProcess(
+      productId,
+      user,
+    );
+  }
+
+  @Delete('product/:productId/assignment')
+  async unassignProductFromProcess(
+    @Param('productId', ParseIntPipe) productId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.unassignProductFromProcess(
+      productId,
+      user,
+    );
+  }
+
+  // Step Diary endpoints
+  @Post('step-diary')
+  async createStepDiary(
+    @Body() createStepDiaryDto: CreateStepDiaryDto,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.createStepDiary(
+      createStepDiaryDto,
+      user,
+    );
+  }
+
+  @Get('product/:productId/step/:stepId/diaries')
+  async getStepDiaries(
+    @Param('productId', ParseIntPipe) productId: number,
+    @Param('stepId', ParseIntPipe) stepId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.getStepDiaries(
+      productId,
+      stepId,
+      user,
+    );
+  }
+
+  @Get('product/:productId/diaries')
+  async getProductDiaries(
+    @Param('productId', ParseIntPipe) productId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.getProductDiaries(productId, user);
+  }
+
+  @Patch('step-diary/:diaryId')
+  async updateStepDiary(
+    @Param('diaryId', ParseIntPipe) diaryId: number,
+    @Body() updateDto: UpdateStepDiaryDto,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.updateStepDiary(
+      updateDto,
+      diaryId,
+      user,
+    );
+  }
+
+  @Delete('step-diary/:diaryId')
+  async deleteStepDiary(
+    @Param('diaryId', ParseIntPipe) diaryId: number,
+    @User() user: UserInterface,
+  ) {
+    return await this.processService.deleteStepDiary(diaryId, user);
+  }
 }

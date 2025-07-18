@@ -7,30 +7,17 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { ProductProcessAssignment } from '../../process/entities/product-process-assignment.entity';
-import { ProcessStep } from '../../process/entities/process-step.entity';
-
-export enum DiaryCompletionStatus {
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  SKIPPED = 'SKIPPED',
-}
+import { ProcessStep } from './process-step.entity';
+import { DiaryCompletionStatus } from 'src/common/enums/diary-completion-status';
 
 @Entity('step_diary_entries')
 export class StepDiaryEntry {
   @PrimaryGeneratedColumn('increment')
   diary_id: number;
 
-  @ManyToOne(() => ProductProcessAssignment)
-  @JoinColumn({ name: 'assignment_id' })
-  assignment: ProductProcessAssignment;
-
   @ManyToOne(() => ProcessStep)
   @JoinColumn({ name: 'step_id' })
   step: ProcessStep;
-
-  @Column({ type: 'int', nullable: false })
-  product_id: number;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   step_name: string;
@@ -57,17 +44,17 @@ export class StepDiaryEntry {
   @Column({ type: 'timestamptz', nullable: false })
   recorded_date: Date;
 
-  @Column({ type: 'numeric', precision: 9, scale: 6, nullable: true })
-  latitude: number | null;
+  @Column({ type: 'numeric', precision: 9, scale: 6, nullable: false })
+  latitude: number;
 
-  @Column({ type: 'numeric', precision: 9, scale: 6, nullable: true })
-  longitude: number | null;
+  @Column({ type: 'numeric', precision: 9, scale: 6, nullable: false })
+  longitude: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  weather_conditions: string | null;
+  @Column({ type: 'text', nullable: false })
+  weather_conditions: string;
 
-  @Column({ type: 'int', nullable: true })
-  quality_rating: number | null; // 1-5 stars
+  @Column({ type: 'int', nullable: false })
+  quality_rating: number; // 1-5 stars
 
   @Column({ type: 'text', nullable: true })
   issues_encountered: string | null;

@@ -6,7 +6,7 @@ import {
   IsDate,
   IsEnum,
 } from 'class-validator';
-import { AssignmentStatus } from 'src/common/enums/process-assignment-status';
+import { AssignmentStatus } from 'src/common/enums/product/process-assignment-status';
 
 export class AssignProductToProcessDto {
   @IsNumber()

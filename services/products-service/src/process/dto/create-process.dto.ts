@@ -1,41 +1,38 @@
-import { Type } from "class-transformer";
-import { IsArray, IsDate, IsEnum, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString, IsUUID } from "class-validator";
-import { ProcessStage } from "src/common/enums/process-stage.enum";
+import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsPositive,
+  IsBoolean,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
+import { CreateProcessStepDto } from './create-process-step.dto';
 
 export class CreateProcessDto {
-    @IsNumber()
-    @IsPositive()
-    product_id: number;
+  @IsString()
+  @IsNotEmpty()
+  process_name: string;
 
-    @IsEnum(ProcessStage)
-    stage_name: ProcessStage;
+  @IsString()
+  @IsNotEmpty()
+  description: string;
 
-    @Type(() => Object)
-    @IsObject()
-    description: Record<string, string>
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  estimated_duration_days: number;
 
-    @Type(() => Date)
-    @IsDate()
-    start_date: Date;
+  @IsOptional()
+  @IsBoolean()
+  is_active?: boolean = true;
 
-    @Type(() => Date)
-    @IsDate()
-    end_date: Date;
-
-    @IsLatitude()
-    @Type(() => Number)
-    latitude: number;
-
-    @IsLongitude()
-    @Type(() => Number)
-    longitude: number;
-
-    @IsArray()
-    @IsString({ each: true })
-    image_urls: string[];
-
-    @IsArray()
-    @IsOptional()
-    @IsString({ each: true })
-    video_urls?: string[];
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Process template must have at least one step' })
+  @ValidateNested({ each: true })
+  @Type(() => CreateProcessStepDto)
+  steps: CreateProcessStepDto[];
 }

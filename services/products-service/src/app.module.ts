@@ -9,7 +9,6 @@ import { ProductsModule } from './products/products.module';
 import { BiometricsModule } from './biometrics/biometrics.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ProcessModule } from './process/process.module';
-import { DiaryModule } from './diary/diary.module';
 import { ProductGrpcServerModule } from './grpc/server/product-grpc.server.module';
 import { GhnModule } from './ghn/ghn.module';
 import { AzureBlobService } from './services/azure-blob.service';
@@ -29,10 +28,9 @@ import { AzureBlobService } from './services/azure-blob.service';
     ProductsModule,
     ReviewsModule,
     ProcessModule,
-    DiaryModule,
     ProductGrpcServerModule,
     GhnModule,
   ],
   providers: [AzureBlobService],
 })
-export class AppModule {}
+export class AppModule { }

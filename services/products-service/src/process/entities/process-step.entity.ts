@@ -7,24 +7,24 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { ProcessTemplate } from './process-template.entity';
-import { StepDiaryEntry } from '../../diary/entities/step-diary-entry.entity';
+import { Process } from './process.entity';
+import { StepDiaryEntry } from './step-diary-entry.entity';
 
 @Entity('process_steps')
 export class ProcessStep {
   @PrimaryGeneratedColumn('increment')
   step_id: number;
 
-  @ManyToOne(() => ProcessTemplate, (template) => template.steps, {
+  @ManyToOne(() => Process, (process) => process.steps, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'process_id' })
-  processTemplate: ProcessTemplate;
+  process: Process;
 
   @Column({ type: 'int', nullable: false })
   step_order: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ type: 'text', nullable: false })
   step_name: string;
 
   @Column({ type: 'text', nullable: false })
@@ -33,14 +33,14 @@ export class ProcessStep {
   @Column({ type: 'boolean', default: true })
   is_required: boolean;
 
-  @Column({ type: 'int', nullable: true })
-  estimated_duration_days: number | null;
+  @Column({ type: 'int', nullable: false })
+  estimated_duration_days: number;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: false })
   instructions: string | null;
 
   @OneToMany(() => StepDiaryEntry, (diary) => diary.step)
-  diaryEntries: StepDiaryEntry[];
+  diary_entries: StepDiaryEntry[];
 
   @CreateDateColumn({ type: 'timestamptz' })
   created: Date;

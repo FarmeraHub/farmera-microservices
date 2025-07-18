@@ -6,6 +6,8 @@ import {
     PaginationOrder as GrpcPaginationOrder,
     ProcessStage as GrpcProcessStage,
     UpdateProductQuantityOperation as GrpcUpdateProductQuantityOperation,
+    AssignmentStatus as GrpcAssignmentStatus,
+    DiaryCompletionStatus as GrpcDiaryCompletionStatus
 } from "@farmera/grpc-proto/dist/common/enums";
 import { BadRequestException, InternalServerErrorException } from "@nestjs/common";
 import { FarmStatus } from "src/common/enums/farm-status.enum";
@@ -14,7 +16,9 @@ import { IdentificationMethod, IdentificationStatus } from "src/farms/entities/i
 import { Order } from "src/pagination/dto/pagination-options.dto";
 import { ProcessStage } from "src/common/enums/process-stage.enum";
 import { UpdateProductQuantityOperation } from "src/common/enums/update-product-quantity-operation.enum";
-
+import { AssignmentStatus } from "src/common/enums/process-assignment-status";
+import { DiaryCompletionStatus } from "src/common/enums/diary-completion-status";
+import { status } from "@grpc/grpc-js";
 export class EnumsMapper {
     static toGrpcProductStatus(status: ProductStatus): GrpcProductStatus {
         switch (status) {
@@ -132,6 +136,47 @@ export class EnumsMapper {
             case "INCREASE": return UpdateProductQuantityOperation.INCREASE;
             case "DECREASE": return UpdateProductQuantityOperation.DECREASE;
             default: throw new Error("Invalid update product quantity operation");
+        }
+    }
+
+    static toGrpcAssignmentStatus(value: AssignmentStatus): GrpcAssignmentStatus {
+        switch (value) {
+            case AssignmentStatus.ACTIVE: return GrpcAssignmentStatus.ASSIGNMENT_ACTIVE;
+            case AssignmentStatus.CANCELLED: return GrpcAssignmentStatus.ASSIGNMENT_CANCELLED;
+            case AssignmentStatus.UNACTIVATED: return GrpcAssignmentStatus.ASSIGNMENT_UNACTIVATED;
+            default: return GrpcAssignmentStatus.UNRECOGNIZED;
+        }
+    }
+
+    static fromGrpcAssignmentStatus(value: GrpcAssignmentStatus): AssignmentStatus | undefined {
+        switch (value.toString()) {
+            case "ASSIGNMENT_UNACTIVATED": return AssignmentStatus.UNACTIVATED;
+            case "ASSIGNMENT_ACTIVE": return AssignmentStatus.ACTIVE;
+            case "ASSIGNMENT_COMPLETED": return AssignmentStatus.COMPLETED;
+            case "ASSIGNMENT_CANCELLED": return AssignmentStatus.CANCELLED;
+            default: return undefined;
+        }
+    }
+
+    static toGrpcDiaryCompletionStatus(status: DiaryCompletionStatus,): GrpcDiaryCompletionStatus {
+        switch (status) {
+            case DiaryCompletionStatus.IN_PROGRESS:
+                return GrpcDiaryCompletionStatus.IN_PROGRESS;
+            case DiaryCompletionStatus.COMPLETED:
+                return GrpcDiaryCompletionStatus.COMPLETED;
+            case DiaryCompletionStatus.SKIPPED:
+                return GrpcDiaryCompletionStatus.SKIPPED;
+            default:
+                return GrpcDiaryCompletionStatus.COMPLETION_STATUS_UNSPECIFIED;
+        }
+    }
+
+    static fromGrpcDiaryCompletionStatus(value: GrpcDiaryCompletionStatus): DiaryCompletionStatus | undefined {
+        switch (value.toString()) {
+            case "IN_PROGRESS": return DiaryCompletionStatus.IN_PROGRESS;
+            case "COMPLETED": return DiaryCompletionStatus.COMPLETED;
+            case "SKIPPED": return DiaryCompletionStatus.SKIPPED;
+            default: return undefined;
         }
     }
 }

@@ -17,6 +17,8 @@ import {
   PaymentStatus as GrpcPaymentStatus,
   PaymentMethod as GrpcPaymentMethod,
   DeliveryStatus as GrpcDeliveryStatus,
+  DiaryCompletionStatus as GrpcDiaryCompletionStatus,
+  AssignmentStatus as GrpcAssignmentStatus,
 } from '@farmera/grpc-proto/dist/common/enums';
 import { MessageType } from 'src/communication/enums/message-type.enums';
 import { FarmStatus } from 'src/common/enums/product/farm-status.enum';
@@ -38,6 +40,8 @@ import { OrderStatus } from 'src/common/enums/payment/order-status.enum';
 import { SubOrderStatus } from 'src/common/enums/payment/sub-order-status.enum';
 import { PaymentMethod, PaymentStatus } from 'src/common/enums/payment/payment.enum';
 import { DeliveryStatus } from 'src/common/enums/payment/delivery.enum';
+import { AssignmentStatus } from 'src/common/enums/product/process-assignment-status';
+import { DiaryCompletionStatus } from 'src/common/enums/product/diary-completion-status';
 
 export class EnumMapper {
   static fromGrpcIdentificationMethod(
@@ -537,6 +541,46 @@ export class EnumMapper {
       case FarmStatus.BLOCKED: return GrpcFarmStatus.FARM_STATUS_BLOCKED;
       case FarmStatus.REJECTED: return GrpcFarmStatus.FARM_STATUS_REJECTED;
       default: return GrpcFarmStatus.FARM_STATUS_UNSPECIFIED;
+    }
+  }
+  static toGrpcAssignmentStatus(value: AssignmentStatus): GrpcAssignmentStatus {
+    switch (value) {
+      case AssignmentStatus.ACTIVE: return GrpcAssignmentStatus.ASSIGNMENT_ACTIVE;
+      case AssignmentStatus.CANCELLED: return GrpcAssignmentStatus.ASSIGNMENT_CANCELLED;
+      case AssignmentStatus.UNACTIVATED: return GrpcAssignmentStatus.ASSIGNMENT_UNACTIVATED;
+      default: return GrpcAssignmentStatus.UNRECOGNIZED;
+    }
+  }
+
+  static fromGrpcAssignmentStatus(value: GrpcAssignmentStatus): AssignmentStatus | undefined {
+    switch (value.toString()) {
+      case "ASSIGNMENT_UNACTIVATED": return AssignmentStatus.UNACTIVATED;
+      case "ASSIGNMENT_ACTIVE": return AssignmentStatus.ACTIVE;
+      case "ASSIGNMENT_COMPLETED": return AssignmentStatus.COMPLETED;
+      case "ASSIGNMENT_CANCELLED": return AssignmentStatus.CANCELLED;
+      default: return undefined;
+    }
+  }
+
+  static toGrpcDiaryCompletionStatus(status: DiaryCompletionStatus): GrpcDiaryCompletionStatus {
+    switch (status) {
+      case DiaryCompletionStatus.IN_PROGRESS:
+        return GrpcDiaryCompletionStatus.IN_PROGRESS;
+      case DiaryCompletionStatus.COMPLETED:
+        return GrpcDiaryCompletionStatus.COMPLETED;
+      case DiaryCompletionStatus.SKIPPED:
+        return GrpcDiaryCompletionStatus.SKIPPED;
+      default:
+        return GrpcDiaryCompletionStatus.COMPLETION_STATUS_UNSPECIFIED;
+    }
+  }
+
+  static fromGrpcDiaryCompletionStatus(value: GrpcDiaryCompletionStatus): DiaryCompletionStatus | undefined {
+    switch (value.toString()) {
+      case "IN_PROGRESS": return DiaryCompletionStatus.IN_PROGRESS;
+      case "COMPLETED": return DiaryCompletionStatus.COMPLETED;
+      case "SKIPPED": return DiaryCompletionStatus.SKIPPED;
+      default: return undefined;
     }
   }
 }

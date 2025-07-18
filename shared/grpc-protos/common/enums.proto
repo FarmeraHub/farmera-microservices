@@ -223,8 +223,25 @@ enum ProcessStage {
   PROCESS_STAGE_PRODUCTION = 2;
   PROCESS_STAGE_COMPLETION = 3;
 }
+
 enum UpdateProductQuantityOperation {
-  UNSPECIFIED = 0;
+  UPDATE_QUANTITY_STATUS_UNSPECIFIED = 0;
   INCREASE = 1;
   DECREASE = 2;
+}
+
+enum AssignmentStatus {
+  ASSIGNMENT_UNSPECIFIED = 0;
+  ASSIGNMENT_UNACTIVATED = 1;
+  ASSIGNMENT_ACTIVE = 2;
+  ASSIGNMENT_COMPLETED = 3;
+  ASSIGNMENT_CANCELLED = 4;
+}
+
+// Step Diary messages
+enum DiaryCompletionStatus {
+  COMPLETION_STATUS_UNSPECIFIED = 0;
+  IN_PROGRESS = 1;
+  COMPLETED = 2;
+  SKIPPED = 3;
 }

@@ -8,15 +8,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  StepDiaryEntry,
-  DiaryCompletionStatus,
-} from './entities/step-diary-entry.entity';
-import { ProductProcessAssignment } from '../process/entities/product-process-assignment.entity';
-import { ProcessStep } from '../process/entities/process-step.entity';
+import { StepDiaryEntry } from './entities/step-diary-entry.entity';
+import { ProcessStep } from './entities/process-step.entity';
 import { Product } from '../products/entities/product.entity';
 import { CreateStepDiaryDto } from './dto/create-step-diary.dto';
 import { UpdateStepDiaryDto } from './dto/update-step-diary.dto';
+import { DiaryCompletionStatus } from 'src/common/enums/diary-completion-status';
+import { Process } from './entities/process.entity';
+import { AssignmentStatus } from 'src/common/enums/process-assignment-status';
 
 @Injectable()
 export class StepDiaryService {
@@ -25,13 +24,13 @@ export class StepDiaryService {
   constructor(
     @InjectRepository(StepDiaryEntry)
     private readonly stepDiaryRepository: Repository<StepDiaryEntry>,
-    @InjectRepository(ProductProcessAssignment)
-    private readonly assignmentRepository: Repository<ProductProcessAssignment>,
+    @InjectRepository(Process)
+    private readonly processRepository: Repository<Process>,
     @InjectRepository(ProcessStep)
     private readonly processStepRepository: Repository<ProcessStep>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-  ) {}
+  ) { }
 
   async createStepDiary(
     createDto: CreateStepDiaryDto,
@@ -43,8 +42,7 @@ export class StepDiaryService {
         where: {
           product_id: createDto.product_id,
           farm: { user_id: userId },
-        },
-        relations: ['farm'],
+        }
       });
 
       if (!product) {
@@ -52,26 +50,25 @@ export class StepDiaryService {
       }
 
       // Verify assignment exists and is active
-      const assignment = await this.assignmentRepository.findOne({
+      const process = await this.processRepository.findOne({
         where: {
-          assignment_id: createDto.assignment_id,
           product: { product_id: createDto.product_id },
-        },
-        relations: ['processTemplate', 'product'],
+        }
       });
 
-      if (!assignment) {
-        throw new NotFoundException('Product process assignment not found');
+      if (!process) {
+        throw new NotFoundException('Product process assigment not found');
       }
 
       // Verify step belongs to the assigned process template
       const step = await this.processStepRepository.findOne({
         where: {
           step_id: createDto.step_id,
-          processTemplate: {
-            process_id: assignment.processTemplate.process_id,
+          process: {
+            process_id: process.process_id,
           },
         },
+        relations: ['diary_entries']
       });
 
       if (!step) {
@@ -79,12 +76,16 @@ export class StepDiaryService {
           'Step does not belong to assigned process template',
         );
       }
+      const hasCompleted = step.diary_entries.some(
+        (d) => d.completion_status === DiaryCompletionStatus.COMPLETED
+      );
+      if (hasCompleted) {
+        throw new BadRequestException("Step is completed");
+      }
 
       // Create diary entry
       const diaryEntry = this.stepDiaryRepository.create({
-        assignment: assignment,
         step: step,
-        product_id: createDto.product_id,
         step_name: createDto.step_name,
         step_order: createDto.step_order,
         notes: createDto.notes,
@@ -104,7 +105,7 @@ export class StepDiaryService {
 
       // Update assignment progress if step is completed
       if (createDto.completion_status === DiaryCompletionStatus.COMPLETED) {
-        await this.updateAssignmentProgress(assignment.assignment_id);
+        await this.updateAssignmentProgress(process.process_id);
       }
 
       return savedEntry;
@@ -141,11 +142,10 @@ export class StepDiaryService {
 
       return await this.stepDiaryRepository.find({
         where: {
-          product_id: productId,
           step: { step_id: stepId },
         },
         order: { recorded_date: 'DESC' },
-        relations: ['step', 'assignment'],
+        relations: ['step'],
       });
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -174,9 +174,9 @@ export class StepDiaryService {
       }
 
       return await this.stepDiaryRepository.find({
-        where: { product_id: productId },
+        where: { step: { process: { product: { product_id: productId } } } },
         order: { step_order: 'ASC', recorded_date: 'DESC' },
-        relations: ['step', 'assignment', 'assignment.processTemplate'],
+        relations: ['step'],
       });
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -193,23 +193,11 @@ export class StepDiaryService {
   ): Promise<StepDiaryEntry> {
     // Find diary entry
     const diary = await this.stepDiaryRepository.findOne({
-      where: { diary_id: updateDto.diary_id },
-      relations: [
-        'assignment',
-        'assignment.product',
-        'assignment.product.farm',
-      ],
+      where: { diary_id: updateDto.diary_id, step: { process: { farm: { user_id: userId } } } },
     });
 
     if (!diary) {
       throw new NotFoundException('Diary entry not found');
-    }
-
-    // Verify ownership
-    if (diary.assignment?.product?.farm?.user_id !== userId) {
-      throw new BadRequestException(
-        'You can only update your own diary entries',
-      );
     }
 
     const previousStatus = diary.completion_status;
@@ -224,7 +212,7 @@ export class StepDiaryService {
 
     const updatedDiary = (await this.stepDiaryRepository.findOne({
       where: { diary_id: updateDto.diary_id },
-      relations: ['assignment', 'step'],
+      relations: ['step', 'step.process'],
     })) as StepDiaryEntry;
 
     // If completion status changed to COMPLETED, update assignment progress
@@ -232,7 +220,7 @@ export class StepDiaryService {
       updateDto.completion_status === DiaryCompletionStatus.COMPLETED &&
       previousStatus !== DiaryCompletionStatus.COMPLETED
     ) {
-      await this.updateAssignmentProgress(diary.assignment.assignment_id);
+      await this.updateAssignmentProgress(updatedDiary.step.process.process_id);
     }
 
     return updatedDiary;
@@ -240,66 +228,55 @@ export class StepDiaryService {
 
   async deleteStepDiary(diaryId: number, userId: string): Promise<boolean> {
     const diary = await this.stepDiaryRepository.findOne({
-      where: { diary_id: diaryId },
-      relations: [
-        'assignment',
-        'assignment.product',
-        'assignment.product.farm',
-      ],
+      where: { diary_id: diaryId, step: { process: { farm: { user_id: userId } } } },
+      relations: ['step'],
     });
 
     if (!diary) {
       throw new NotFoundException('Diary entry not found');
     }
 
-    if (diary.assignment?.product?.farm?.user_id !== userId) {
-      throw new BadRequestException(
-        'You can only delete your own diary entries',
-      );
-    }
-
     await this.stepDiaryRepository.delete(diaryId);
 
     if (diary.completion_status === DiaryCompletionStatus.COMPLETED) {
-      await this.updateAssignmentProgress(diary.assignment.assignment_id);
+      await this.updateAssignmentProgress(diary.step.process.process_id);
     }
 
     return true;
   }
 
-  private async updateAssignmentProgress(assignmentId: number): Promise<void> {
+  private async updateAssignmentProgress(processId: number): Promise<void> {
     try {
-      const assignment = await this.assignmentRepository.findOne({
-        where: { assignment_id: assignmentId },
-        relations: ['processTemplate', 'processTemplate.steps'],
+      const process = await this.processRepository.findOne({
+        where: { process_id: processId },
+        relations: ['steps'],
       });
 
-      if (!assignment) {
+      if (!process) {
         return;
       }
 
       // Count completed steps
       const completedSteps = await this.stepDiaryRepository.count({
         where: {
-          assignment: { assignment_id: assignmentId },
           completion_status: DiaryCompletionStatus.COMPLETED,
         },
       });
 
-      const totalSteps = assignment.processTemplate.steps.length;
+      const totalSteps = process.steps.length;
       const completionPercentage =
         totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
 
       // Update assignment
-      assignment.completion_percentage = completionPercentage;
-      assignment.current_step_order = completedSteps + 1; // Next step to work on
+      process.completion_percentage = completionPercentage;
+      process.current_step_order = completedSteps + 1; // Next step to work on
 
       if (completionPercentage >= 100) {
-        assignment.status = 'COMPLETED' as any;
-        assignment.actual_completion_date = new Date();
+        process.assignment_status = AssignmentStatus.COMPLETED;
+        process.actual_completion_date = new Date();
       }
 
-      await this.assignmentRepository.save(assignment);
+      await this.processRepository.save(process);
     } catch (error) {
       this.logger.error(`Error updating assignment progress: ${error.message}`);
       // Don't throw error here, just log it

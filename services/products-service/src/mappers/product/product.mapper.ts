@@ -3,7 +3,6 @@ import { Product } from 'src/products/entities/product.entity';
 import { EnumsMapper } from '../common/enums.mapper';
 import { TypesMapper } from '../common/types.mapper';
 import { CategoryMapper } from './category.mapper';
-import { ProcessMapper } from './process.mapper';
 import { FarmMapper } from './farm.mapper';
 
 export class ProductMapper {
@@ -23,24 +22,17 @@ export class ProductMapper {
       updated: TypesMapper.toGrpcTimestamp(value.updated),
       subcategories: value.subcategories
         ? {
-            subcategories: value.subcategories.map((subcategory) =>
-              CategoryMapper.toGrpcSubcategoryLite(subcategory),
-            ),
-          }
+          subcategories: value.subcategories.map((subcategory) =>
+            CategoryMapper.toGrpcSubcategoryLite(subcategory),
+          ),
+        }
         : undefined,
       average_rating: value.average_rating,
       total_sold: value.total_sold,
       farm: value.farm ? FarmMapper.toGrpcFarm(value.farm) : undefined,
-      processes: value.processes
-        ? {
-            process: value.processes.map((process) =>
-              ProcessMapper.toGrpcProcessLite(process),
-            ),
-          }
-        : undefined,
       qr_code: value.qr_code,
       blockchain_activated: value.blockchain_activated,
-      blockchain_hash: value.blockchain_hash,
+      blockchain_transaction_hash: value.blockchain_transaction_hash,
     };
   }
 }

@@ -6,7 +6,6 @@ import { ProductGrpcServerController } from './product-grpc.server.controller';
 import { AdminModule } from 'src/admin/admin.module';
 import { ReviewsModule } from 'src/reviews/reviews.module';
 import { ProcessModule } from 'src/process/process.module';
-import { DiaryModule } from 'src/diary/diary.module';
 
 @Module({
   imports: [
@@ -16,8 +15,7 @@ import { DiaryModule } from 'src/diary/diary.module';
     AdminModule,
     ReviewsModule,
     ProcessModule,
-    DiaryModule,
   ],
   controllers: [ProductGrpcServerController],
 })
-export class ProductGrpcServerModule {}
+export class ProductGrpcServerModule { }

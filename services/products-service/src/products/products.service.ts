@@ -1,4 +1,3 @@
-import { map } from 'rxjs';
 import { Subcategory } from 'src/categories/entities/subcategory.entity';
 import { Farm } from './../farms/entities/farm.entity';
 import {
@@ -14,7 +13,6 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { DataSource, In, Not, Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
-import { FarmStatus } from 'src/common/enums/farm-status.enum';
 import {
   ProductStatus,
   ProductStatusOrder,
@@ -25,19 +23,16 @@ import { PaginationResult } from 'src/pagination/dto/pagination-result.dto';
 import { PaginationMeta } from 'src/pagination/dto/pagination-meta.dto';
 import { ProductOptions } from './dto/product-options.dto';
 import { AzureBlobService } from 'src/services/azure-blob.service';
-import { Process } from 'src/process/entities/process.entity';
 import * as QRCode from 'qrcode';
 import { ConfigService } from '@nestjs/config';
 import { ProcessStage } from 'src/common/enums/process-stage.enum';
 import { UpdateProductQuantityOperation } from 'src/common/enums/update-product-quantity-operation.enum';
-import { ProductProcessAssignment } from 'src/process/entities/product-process-assignment.entity';
-import { StepDiaryEntry } from 'src/diary/entities/step-diary-entry.entity';
+import { StepDiaryEntry } from 'src/process/entities/step-diary-entry.entity';
 import {
   BlockchainService,
-  TraceabilityData,
 } from 'src/services/blockchain.service';
-import { Address } from 'src/farms/entities/address.entity';
 import { FarmsService } from 'src/farms/farms.service';
+import { Process } from 'src/process/entities/process.entity';
 
 @Injectable()
 export class ProductsService implements OnModuleInit {
@@ -62,8 +57,6 @@ export class ProductsService implements OnModuleInit {
     private readonly farmRepository: Repository<Farm>,
     @InjectRepository(Process)
     private readonly processRepository: Repository<Process>,
-    @InjectRepository(ProductProcessAssignment)
-    private readonly assignmentRepository: Repository<ProductProcessAssignment>,
     @InjectRepository(StepDiaryEntry)
     private readonly stepDiaryRepository: Repository<StepDiaryEntry>,
     private readonly fileStorageService: AzureBlobService,
@@ -891,62 +884,62 @@ export class ProductsService implements OnModuleInit {
     }
   }
 
-  async openProductForSale(userId: string, productId: number): Promise<string> {
-    try {
-      // check valid user
-      if (!(await this.isProductUserValid(userId, productId)))
-        throw new UnauthorizedException(
-          'Người dùng không có quyền thao tác trên sản phẩm',
-        );
+  // async openProductForSale(userId: string, productId: number): Promise<string> {
+  //   try {
+  //     // check valid user
+  //     if (!(await this.isProductUserValid(userId, productId)))
+  //       throw new UnauthorizedException(
+  //         'Người dùng không có quyền thao tác trên sản phẩm',
+  //       );
 
-      // validate product processes
-      if (!(await this.validProductProcess(productId)))
-        throw new BadRequestException(
-          'Quy trình sản xuất của sản phẩm không hợp lệ',
-        );
+  //     // validate product processes
+  //     if (!(await this.validProductProcess(productId)))
+  //       throw new BadRequestException(
+  //         'Quy trình sản xuất của sản phẩm không hợp lệ',
+  //       );
 
-      // generate QR code
-      const deepLink = `${this.appUrl}/redirect/product/${productId}`;
-      const qrCode = await QRCode.toDataURL(deepLink);
+  //     // generate QR code
+  //     const deepLink = `${this.appUrl}/redirect/product/${productId}`;
+  //     const qrCode = await QRCode.toDataURL(deepLink);
 
-      // update open for sale if the processes is valid
-      const result = await this.productsRepository.update(
-        { product_id: productId },
-        { status: ProductStatus.OPEN_FOR_SALE },
-      );
-      if (result.affected === 0) {
-        throw new NotFoundException(
-          `Không tìm thấy sản phẩm ID: ${productId}.`,
-        );
-      }
-      return qrCode;
-    } catch (err) {
-      if (
-        err instanceof UnauthorizedException ||
-        err instanceof BadRequestException ||
-        err instanceof NotFoundException
-      )
-        throw err;
-      this.logger.error(err.message);
-      throw new InternalServerErrorException('Không thể mở bán sản phẩm');
-    }
-  }
+  //     // update open for sale if the processes is valid
+  //     const result = await this.productsRepository.update(
+  //       { product_id: productId },
+  //       { status: ProductStatus.OPEN_FOR_SALE },
+  //     );
+  //     if (result.affected === 0) {
+  //       throw new NotFoundException(
+  //         `Không tìm thấy sản phẩm ID: ${productId}.`,
+  //       );
+  //     }
+  //     return qrCode;
+  //   } catch (err) {
+  //     if (
+  //       err instanceof UnauthorizedException ||
+  //       err instanceof BadRequestException ||
+  //       err instanceof NotFoundException
+  //     )
+  //       throw err;
+  //     this.logger.error(err.message);
+  //     throw new InternalServerErrorException('Không thể mở bán sản phẩm');
+  //   }
+  // }
 
-  private async validProductProcess(productId: number): Promise<boolean> {
-    const stages = await this.processRepository.find({
-      where: { product: { product_id: productId } },
-      select: ['stage_name'],
-    });
-    const hasStart = stages.some((p) => p.stage_name === ProcessStage.START);
-    const hasProduction = stages.some(
-      (p) => p.stage_name === ProcessStage.PRODUCTION,
-    );
-    const hasCompletion = stages.some(
-      (p) => p.stage_name === ProcessStage.COMPLETION,
-    );
+  // private async validProductProcess(productId: number): Promise<boolean> {
+  //   const stages = await this.processRepository.find({
+  //     where: { product: { product_id: productId } },
+  //     select: ['stage_name'],
+  //   });
+  //   const hasStart = stages.some((p) => p.stage_name === ProcessStage.START);
+  //   const hasProduction = stages.some(
+  //     (p) => p.stage_name === ProcessStage.PRODUCTION,
+  //   );
+  //   const hasCompletion = stages.some(
+  //     (p) => p.stage_name === ProcessStage.COMPLETION,
+  //   );
 
-    return hasStart && hasProduction && hasCompletion;
-  }
+  //   return hasStart && hasProduction && hasCompletion;
+  // }
 
   private async isProductUserValid(
     userId: string,
@@ -1005,121 +998,121 @@ export class ProductsService implements OnModuleInit {
     }
   }
 
-  async activateBlockchain(
-    productId: number,
-    userId: string,
-  ): Promise<{ blockchain_hash: string; success: boolean }> {
-    // Verify product ownership
-    const isValid = await this.isProductUserValid(userId, productId);
-    if (!isValid) {
-      throw new UnauthorizedException(
-        'Bạn không có quyền kích hoạt blockchain cho sản phẩm này',
-      );
-    }
+  // async activateBlockchain(
+  //   productId: number,
+  //   userId: string,
+  // ): Promise<{ blockchain_hash: string; success: boolean }> {
+  //   // Verify product ownership
+  //   const isValid = await this.isProductUserValid(userId, productId);
+  //   if (!isValid) {
+  //     throw new UnauthorizedException(
+  //       'Bạn không có quyền kích hoạt blockchain cho sản phẩm này',
+  //     );
+  //   }
 
-    const product = await this.productsRepository.findOne({
-      where: { product_id: productId },
-      relations: ['farm'],
-    });
+  //   const product = await this.productsRepository.findOne({
+  //     where: { product_id: productId },
+  //     relations: ['farm'],
+  //   });
 
-    if (!product) {
-      throw new NotFoundException('Sản phẩm không tồn tại');
-    }
+  //   if (!product) {
+  //     throw new NotFoundException('Sản phẩm không tồn tại');
+  //   }
 
-    if (product.blockchain_activated) {
-      throw new BadRequestException('Sản phẩm đã được kích hoạt blockchain');
-    }
+  //   if (product.blockchain_activated) {
+  //     throw new BadRequestException('Sản phẩm đã được kích hoạt blockchain');
+  //   }
 
-    try {
-      // Get all process assignments for this product
-      const assignments = await this.assignmentRepository.find({
-        where: { product: { product_id: productId } },
-        relations: ['processTemplate', 'processTemplate.steps'],
-      });
+  //   try {
+  //     // Get all process assignments for this product
+  //     const assignments = await this.assignmentRepository.find({
+  //       where: { product: { product_id: productId } },
+  //       relations: ['processTemplate', 'processTemplate.steps'],
+  //     });
 
-      if (!assignments || assignments.length === 0) {
-        throw new BadRequestException(
-          'Sản phẩm chưa có quy trình sản xuất nào được gán',
-        );
-      }
+  //     if (!assignments || assignments.length === 0) {
+  //       throw new BadRequestException(
+  //         'Sản phẩm chưa có quy trình sản xuất nào được gán',
+  //       );
+  //     }
 
-      // Get all step diary entries for these assignments
-      const stepDiaries = await this.stepDiaryRepository.find({
-        where: {
-          assignment: {
-            assignment_id: In(assignments.map((a) => a.assignment_id)),
-          },
-        },
-        relations: ['assignment', 'step'],
-        order: { step_order: 'ASC', recorded_date: 'ASC' },
-      });
+  //     // Get all step diary entries for these assignments
+  //     const stepDiaries = await this.stepDiaryRepository.find({
+  //       where: {
+  //         assignment: {
+  //           assignment_id: In(assignments.map((a) => a.assignment_id)),
+  //         },
+  //       },
+  //       relations: ['assignment', 'step'],
+  //       order: { step_order: 'ASC', recorded_date: 'ASC' },
+  //     });
 
-      // Validate that all required steps are completed
-      const incompleteSteps = stepDiaries.filter(
-        (diary) => diary.completion_status !== 'COMPLETED',
-      );
+  //     // Validate that all required steps are completed
+  //     const incompleteSteps = stepDiaries.filter(
+  //       (diary) => diary.completion_status !== 'COMPLETED',
+  //     );
 
-      if (incompleteSteps.length > 0) {
-        const incompleteStepNames = incompleteSteps
-          .map((d) => d.step_name)
-          .join(', ');
-        throw new BadRequestException(
-          `Không thể kích hoạt blockchain: còn ${incompleteSteps.length} bước chưa hoàn thành (${incompleteStepNames})`,
-        );
-      }
+  //     if (incompleteSteps.length > 0) {
+  //       const incompleteStepNames = incompleteSteps
+  //         .map((d) => d.step_name)
+  //         .join(', ');
+  //       throw new BadRequestException(
+  //         `Không thể kích hoạt blockchain: còn ${incompleteSteps.length} bước chưa hoàn thành (${incompleteStepNames})`,
+  //       );
+  //     }
 
-      // Validate that all assignments are completed
-      const incompleteAssignments = assignments.filter(
-        (assignment) => assignment.status !== 'COMPLETED',
-      );
+  //     // Validate that all assignments are completed
+  //     const incompleteAssignments = assignments.filter(
+  //       (assignment) => assignment.status !== 'COMPLETED',
+  //     );
 
-      if (incompleteAssignments.length > 0) {
-        const incompleteProcessNames = incompleteAssignments
-          .map((a) => a.processTemplate.process_name)
-          .join(', ');
-        throw new BadRequestException(
-          `Không thể kích hoạt blockchain: còn ${incompleteAssignments.length} quy trình chưa hoàn thành (${incompleteProcessNames})`,
-        );
-      }
+  //     if (incompleteAssignments.length > 0) {
+  //       const incompleteProcessNames = incompleteAssignments
+  //         .map((a) => a.processTemplate.process_name)
+  //         .join(', ');
+  //       throw new BadRequestException(
+  //         `Không thể kích hoạt blockchain: còn ${incompleteAssignments.length} quy trình chưa hoàn thành (${incompleteProcessNames})`,
+  //       );
+  //     }
 
-      // Create traceability data for blockchain
-      const traceabilityData: TraceabilityData = {
-        product,
-        assignments,
-        stepDiaries,
-      };
+  //     // Create traceability data for blockchain
+  //     const traceabilityData: TraceabilityData = {
+  //       product,
+  //       assignments,
+  //       stepDiaries,
+  //     };
 
-      // Add to blockchain using the new service
-      const blockchainHash =
-        await this.blockchainService.addProductWithTraceability(
-          traceabilityData,
-        );
+  //     // Add to blockchain using the new service
+  //     const blockchainHash =
+  //       await this.blockchainService.addProductWithTraceability(
+  //         traceabilityData,
+  //       );
 
-      // Update product with blockchain activation
-      await this.productsRepository.update(productId, {
-        blockchain_activated: true,
-        blockchain_hash: blockchainHash,
-      });
+  //     // Update product with blockchain activation
+  //     await this.productsRepository.update(productId, {
+  //       blockchain_activated: true,
+  //       blockchain_hash: blockchainHash,
+  //     });
 
-      this.logger.log(
-        `Blockchain activated for product ${productId} with hash: ${blockchainHash}`,
-      );
+  //     this.logger.log(
+  //       `Blockchain activated for product ${productId} with hash: ${blockchainHash}`,
+  //     );
 
-      return {
-        blockchain_hash: blockchainHash,
-        success: true,
-      };
-    } catch (error) {
-      this.logger.error(`Blockchain activation failed: ${error.message}`);
-      if (
-        error instanceof BadRequestException ||
-        error instanceof UnauthorizedException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Không thể kích hoạt blockchain');
-    }
-  }
+  //     return {
+  //       blockchain_hash: blockchainHash,
+  //       success: true,
+  //     };
+  //   } catch (error) {
+  //     this.logger.error(`Blockchain activation failed: ${error.message}`);
+  //     if (
+  //       error instanceof BadRequestException ||
+  //       error instanceof UnauthorizedException
+  //     ) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException('Không thể kích hoạt blockchain');
+  //   }
+  // }
 
   private generateBlockchainHash(data: any): string {
     // Simple hash generation for demo purposes
@@ -1385,81 +1378,81 @@ export class ProductsService implements OnModuleInit {
     }
   }
 
-  async getTraceabilityData(productId: number): Promise<TraceabilityData> {
-    // Check if product exists
-    const product = await this.productsRepository.findOne({
-      where: { product_id: productId, status: Not(ProductStatus.DELETED) },
-      relations: ['farm'],
-    });
+  // async getTraceabilityData(productId: number): Promise<TraceabilityData> {
+  //   // Check if product exists
+  //   const product = await this.productsRepository.findOne({
+  //     where: { product_id: productId, status: Not(ProductStatus.DELETED) },
+  //     relations: ['farm'],
+  //   });
 
-    if (!product) {
-      throw new NotFoundException('Sản phẩm không tồn tại');
-    }
+  //   if (!product) {
+  //     throw new NotFoundException('Sản phẩm không tồn tại');
+  //   }
 
-    // Get all process assignments for this product
-    const assignments = await this.assignmentRepository.find({
-      where: { product: { product_id: productId } },
-      relations: ['processTemplate', 'processTemplate.steps'],
-      order: { assigned_date: 'ASC' },
-    });
+  //   // Get all process assignments for this product
+  //   const assignments = await this.assignmentRepository.find({
+  //     where: { product: { product_id: productId } },
+  //     relations: ['processTemplate', 'processTemplate.steps'],
+  //     order: { assigned_date: 'ASC' },
+  //   });
 
-    // Get all step diary entries for these assignments
-    const assignmentIds = assignments.map((a) => a.assignment_id);
-    const stepDiaries =
-      assignmentIds.length > 0
-        ? await this.stepDiaryRepository.find({
-          where: {
-            assignment: { assignment_id: In(assignmentIds) },
-          },
-          relations: ['assignment', 'step'],
-          order: { step_order: 'ASC', recorded_date: 'ASC' },
-        })
-        : [];
+  //   // Get all step diary entries for these assignments
+  //   const assignmentIds = assignments.map((a) => a.assignment_id);
+  //   const stepDiaries =
+  //     assignmentIds.length > 0
+  //       ? await this.stepDiaryRepository.find({
+  //         where: {
+  //           assignment: { assignment_id: In(assignmentIds) },
+  //         },
+  //         relations: ['assignment', 'step'],
+  //         order: { step_order: 'ASC', recorded_date: 'ASC' },
+  //       })
+  //       : [];
 
-    return {
-      product,
-      assignments,
-      stepDiaries,
-    };
-  }
+  //   return {
+  //     product,
+  //     assignments,
+  //     stepDiaries,
+  //   };
+  // }
 
-  async verifyProductTraceability(productId: number): Promise<{
-    isValid: boolean;
-    error?: string;
-    verificationDate: Date;
-  }> {
-    try {
-      // Get traceability data
-      const traceabilityData = await this.getTraceabilityData(productId);
+  // async verifyProductTraceability(productId: number): Promise<{
+  //   isValid: boolean;
+  //   error?: string;
+  //   verificationDate: Date;
+  // }> {
+  //   try {
+  //     // Get traceability data
+  //     const traceabilityData = await this.getTraceabilityData(productId);
 
-      if (!traceabilityData.product.blockchain_activated) {
-        return {
-          isValid: false,
-          error: 'Sản phẩm chưa được kích hoạt blockchain',
-          verificationDate: new Date(),
-        };
-      }
+  //     if (!traceabilityData.product.blockchain_activated) {
+  //       return {
+  //         isValid: false,
+  //         error: 'Sản phẩm chưa được kích hoạt blockchain',
+  //         verificationDate: new Date(),
+  //       };
+  //     }
 
-      // Verify with blockchain
-      const verificationResult =
-        await this.blockchainService.verifyProductTraceability(
-          traceabilityData,
-        );
+  //     // Verify with blockchain
+  //     const verificationResult =
+  //       await this.blockchainService.verifyProductTraceability(
+  //         traceabilityData,
+  //       );
 
-      return {
-        isValid: verificationResult.isValid,
-        error: verificationResult.error,
-        verificationDate: new Date(),
-      };
-    } catch (error) {
-      this.logger.error(
-        `Traceability verification failed for product ${productId}: ${error.message}`,
-      );
-      return {
-        isValid: false,
-        error: 'Không thể xác minh truy xuất nguồn gốc',
-        verificationDate: new Date(),
-      };
-    }
-  }
+  //     return {
+  //       isValid: verificationResult.isValid,
+  //       error: verificationResult.error,
+  //       verificationDate: new Date(),
+  //     };
+  //   } catch (error) {
+  //     this.logger.error(
+  //       `Traceability verification failed for product ${productId}: ${error.message}`,
+  //     );
+  //     return {
+  //       isValid: false,
+  //       error: 'Không thể xác minh truy xuất nguồn gốc',
+  //       verificationDate: new Date(),
+  //     };
+  //   }
+  // }
 }

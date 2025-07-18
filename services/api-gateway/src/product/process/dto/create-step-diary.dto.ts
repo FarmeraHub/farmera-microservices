@@ -14,13 +14,9 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { DiaryCompletionStatus } from '../entities/step-diary-entry.entity';
+import { DiaryCompletionStatus } from 'src/common/enums/product/diary-completion-status';
 
 export class CreateStepDiaryDto {
-  @IsNumber()
-  @IsPositive()
-  assignment_id: number;
-
   @IsNumber()
   @IsPositive()
   step_id: number;

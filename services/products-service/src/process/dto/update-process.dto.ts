@@ -8,41 +8,9 @@ import {
   IsArray,
   ValidateNested,
 } from 'class-validator';
+import { UpdateProcessStepDto } from './update-process-step.dto';
 
-export class UpdateProcessStepDto {
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  step_id?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  step_order?: number;
-
-  @IsOptional()
-  @IsString()
-  step_name?: string;
-
-  @IsOptional()
-  @IsString()
-  step_description?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  is_required?: boolean;
-
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  estimated_duration_days?: number;
-
-  @IsOptional()
-  @IsString()
-  instructions?: string;
-}
-
-export class UpdateProcessTemplateDto {
+export class UpdateProcessDto {
   @IsOptional()
   @IsString()
   process_name?: string;

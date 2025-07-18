@@ -1,8 +1,8 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateDiaryDto } from './create-diary.dto';
+import { CreateStepDiaryDto } from './create-step-diary.dto';
 import { IsNotEmpty, IsNumber } from 'class-validator';
 
-export class UpdateDiaryDto extends PartialType(CreateDiaryDto) {
+export class UpdateStepDiaryDto extends PartialType(CreateStepDiaryDto) {
   @IsNotEmpty()
   @IsNumber()
   diary_id: number;

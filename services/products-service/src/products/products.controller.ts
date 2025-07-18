@@ -28,7 +28,7 @@ export class GetProductsByIdsRequestDto {
 @Controller('product')
 export class ProductsController {
   private readonly logger = new Logger(ProductsController.name);
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(private readonly productsService: ProductsService) { }
 
   @Post('create')
   async createProduct(
@@ -90,34 +90,34 @@ export class ProductsController {
     return this.productsService.generateQRCode(Number(id), userId);
   }
 
-  @Post(':id/activate-blockchain')
-  async activateBlockchain(
-    @Headers('x-user-id') userId: string,
-    @Headers('x-user-role') role: string,
-    @Param('id') id: string,
-  ) {
-    if (!(role == Role.ADMIN || role == Role.FARMER)) {
-      throw new UnauthorizedException(
-        'Không có quyền kích hoạt blockchain cho sản phẩm',
-      );
-    }
-    return this.productsService.activateBlockchain(Number(id), userId);
-  }
+  // @Post(':id/activate-blockchain')
+  // async activateBlockchain(
+  //   @Headers('x-user-id') userId: string,
+  //   @Headers('x-user-role') role: string,
+  //   @Param('id') id: string,
+  // ) {
+  //   if (!(role == Role.ADMIN || role == Role.FARMER)) {
+  //     throw new UnauthorizedException(
+  //       'Không có quyền kích hoạt blockchain cho sản phẩm',
+  //     );
+  //   }
+  //   return this.productsService.activateBlockchain(Number(id), userId);
+  // }
 
-  @Get(':id/qr')
-  async getQRCode(@Param('id') id: string) {
-    return this.productsService.getQRCode(Number(id));
-  }
+  // @Get(':id/qr')
+  // async getQRCode(@Param('id') id: string) {
+  //   return this.productsService.getQRCode(Number(id));
+  // }
 
-  @Get(':id/traceability')
-  async getTraceabilityData(@Param('id') id: string) {
-    return this.productsService.getTraceabilityData(Number(id));
-  }
+  // @Get(':id/traceability')
+  // async getTraceabilityData(@Param('id') id: string) {
+  //   return this.productsService.getTraceabilityData(Number(id));
+  // }
 
-  @Get(':id/verify-traceability')
-  async verifyTraceability(@Param('id') id: string) {
-    return this.productsService.verifyProductTraceability(Number(id));
-  }
+  // @Get(':id/verify-traceability')
+  // async verifyTraceability(@Param('id') id: string) {
+  //   return this.productsService.verifyProductTraceability(Number(id));
+  // }
 
   // @Get()
   // async searchAndFilterProducts(

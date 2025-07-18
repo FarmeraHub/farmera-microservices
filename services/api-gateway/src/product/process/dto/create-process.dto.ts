@@ -1,51 +1,38 @@
-import { Type } from "class-transformer";
-import { IsArray, IsDate, IsEnum, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString, IsUUID } from "class-validator";
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProcessStage } from "src/common/enums/product/process-stage.enum";
+import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsPositive,
+  IsBoolean,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
+import { CreateProcessStepDto } from './create-process-step.dto';
 
 export class CreateProcessDto {
-    @ApiProperty({ description: 'ID of the product', example: 1 })
-    @IsNumber()
-    @IsPositive()
-    product_id: number;
+  @IsString()
+  @IsNotEmpty()
+  process_name: string;
 
-    @ApiProperty({ description: 'Stage of the process', example: ProcessStage.PRODUCTION })
-    @IsEnum(ProcessStage)
-    stage_name: ProcessStage;
+  @IsString()
+  @IsNotEmpty()
+  description: string;
 
-    @ApiProperty({ description: 'Description object for the process', example: { en: 'Harvesting stage', vi: 'Giai đoạn thu hoạch' } })
-    @Type(() => Object)
-    @IsObject()
-    description: Record<string, string>
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  estimated_duration_days: number;
 
-    @ApiProperty({ description: 'Start date of the process', example: '2024-01-01T00:00:00.000Z' })
-    @Type(() => Date)
-    @IsDate()
-    start_date: Date;
+  @IsOptional()
+  @IsBoolean()
+  is_active?: boolean = true;
 
-    @ApiProperty({ description: 'End date of the process', example: '2024-01-10T00:00:00.000Z' })
-    @Type(() => Date)
-    @IsDate()
-    end_date: Date;
-
-    @ApiProperty({ description: 'Latitude of the process location', example: 21.0285 })
-    @IsLatitude()
-    @Type(() => Number)
-    latitude: number;
-
-    @ApiProperty({ description: 'Longitude of the process location', example: 105.8542 })
-    @IsLongitude()
-    @Type(() => Number)
-    longitude: number;
-
-    @ApiProperty({ description: 'Image URLs for the process', example: ['https://example.com/img1.jpg'] })
-    @IsArray()
-    @IsString({ each: true })
-    image_urls: string[];
-
-    @ApiPropertyOptional({ description: 'Video URLs for the process', example: ['https://example.com/video1.mp4'] })
-    @IsArray()
-    @IsOptional()
-    @IsString({ each: true })
-    video_urls?: string[];
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Process template must have at least one step' })
+  @ValidateNested({ each: true })
+  @Type(() => CreateProcessStepDto)
+  steps: CreateProcessStepDto[];
 }

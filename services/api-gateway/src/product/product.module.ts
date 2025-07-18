@@ -10,16 +10,12 @@ import { CategoryController } from './category/category.controller';
 import { CategoryService } from './category/category.service';
 import { ReviewController } from './review/review.controller';
 import { ReviewService } from './review/review.service';
-import { ProcessController } from './process/process.controller';
-import { ProcessService } from './process/process.service';
-import { ProcessTemplateController } from './process-template/process-template.controller';
-import { ProcessTemplateService } from './process-template/process-template.service';
 import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
 import { RedirectController } from './redirect/redirect.controller';
 import { UserModule } from '../user/user.module';
-import { DiaryController } from './diary/diary.controller';
-import { DiaryService } from './diary/diary.service';
+import { ProcessController } from './process/process.controller';
+import { ProcessService } from './process/process.service';
 
 @Module({
   imports: [
@@ -60,10 +56,8 @@ import { DiaryService } from './diary/diary.service';
     CategoryController,
     ReviewController,
     ProcessController,
-    ProcessTemplateController,
     AdminController,
     RedirectController,
-    DiaryController,
   ],
   providers: [
     ProductService,
@@ -71,10 +65,8 @@ import { DiaryService } from './diary/diary.service';
     CategoryService,
     ReviewService,
     ProcessService,
-    ProcessTemplateService,
     AdminService,
-    DiaryService,
   ],
   exports: [ProductService],
 })
-export class ProductModule {}
+export class ProductModule { }

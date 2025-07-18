@@ -1,69 +1,81 @@
-import { ProcessStage } from 'src/common/enums/process-stage.enum';
-import { Product } from 'src/products/entities/product.entity';
 import {
+  Entity,
+  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
+  UpdateDateColumn,
   OneToMany,
-  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
 } from 'typeorm';
-import { Diary } from '../../diary/entities/diary.entity';
+import { ProcessStep } from './process-step.entity';
+import { Farm } from 'src/farms/entities/farm.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { AssignmentStatus } from 'src/common/enums/process-assignment-status';
 
 @Entity('process')
 export class Process {
-  @PrimaryGeneratedColumn('increment', { name: 'process_id' })
+  @PrimaryGeneratedColumn('increment')
   process_id: number;
 
-  @ManyToOne(() => Product, (product) => product.processes)
+  @Column({ type: 'text', nullable: false })
+  process_name: string;
+
+  @Column({ type: 'text', nullable: false })
+  description: string;
+
+  @ManyToOne(() => Farm)
+  @JoinColumn({ name: 'farm_id' })
+  farm: Farm;
+
+  @Column({ type: 'int', nullable: false })
+  estimated_duration_days: number;
+
+  @Column({ type: 'boolean', default: true })
+  is_active: boolean;
+
+  @OneToMany(() => ProcessStep, (step) => step.process, {
+    cascade: true,
+    eager: false,
+  })
+  steps: ProcessStep[];
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  created: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updated: Date;
+
+  // Virtual field for step count
+  step_count?: number;
+
+  @OneToOne(() => Product)
   @JoinColumn({ name: 'product_id' })
-  product: Product;
+  product?: Product | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  assigned_date: Date;
 
   @Column({
     type: 'enum',
-    enum: ProcessStage,
-    nullable: false,
-    name: 'stage_name',
+    enum: AssignmentStatus,
+    default: AssignmentStatus.UNACTIVATED,
   })
-  stage_name: ProcessStage;
+  assignment_status: AssignmentStatus;
 
-  @Column({ type: 'jsonb', nullable: false, name: 'description' })
-  description: Record<string, string>;
+  @Column({ type: 'int', nullable: true })
+  current_step_order: number | undefined;
 
-  @Column({ type: 'text', array: true, nullable: false, name: 'image_cids' })
-  image_urls: string[];
+  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0.0 })
+  completion_percentage: number;
 
-  @Column({ type: 'text', array: true, nullable: true, name: 'video_cids' })
-  video_urls: string[] | null;
+  @Column({ type: 'timestamptz', nullable: true })
+  start_date: Date | undefined;
 
-  @Column({ type: 'date', nullable: false, name: 'start_date' })
-  start_date: Date;
+  @Column({ type: 'timestamptz', nullable: true })
+  target_completion_date: Date | undefined;
 
-  @Column({ type: 'date', nullable: true, name: 'end_date' })
-  end_date: Date;
-
-  @Column({
-    type: 'numeric',
-    precision: 9,
-    scale: 6,
-    nullable: true,
-    name: 'latitude',
-  })
-  latitude: number;
-
-  @Column({
-    type: 'numeric',
-    precision: 9,
-    scale: 6,
-    nullable: true,
-    name: 'longitude',
-  })
-  longitude: number;
-
-  @CreateDateColumn({ type: 'timestamptz', nullable: false })
-  created: Date;
-
-  @OneToMany(() => Diary, (diary) => diary.process)
-  diaryEntries?: Diary[];
+  @Column({ type: 'timestamptz', nullable: true })
+  actual_completion_date: Date | undefined;
 }

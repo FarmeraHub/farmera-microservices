@@ -28,12 +28,10 @@ export class ProductMapper {
       subcategories: value.subcategories?.subcategories.map((value) =>
         CategoryMapper.fromGrpcSubcategoryLite(value),
       ),
-      processes: value.processes?.process.map((value) =>
-        ProcessMapper.fromGrpcProcessLite(value),
-      ),
+      // process: value.process ? ProcessMapper.fromGrpcProcessLite(value) : undefined,
       qr_code: value.qr_code,
       blockchain_activated: value.blockchain_activated,
-      blockchain_hash: value.blockchain_hash,
+      blockchain_transaction_hash: value.blockchain_transaction_hash,
     };
   }
 }

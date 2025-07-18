@@ -6,9 +6,10 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
   ManyToMany,
   JoinTable,
+  OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { Farm } from 'src/farms/entities/farm.entity';
 import { ProductStatus } from 'src/common/enums/product-status.enum';
@@ -71,9 +72,9 @@ export class Product {
   @JoinTable()
   subcategories?: Subcategory[];
 
-  @OneToMany(() => Process, (process) => process.product)
+  @OneToOne(() => Process, (process) => process.product)
   @JoinColumn({ name: 'process_id' })
-  processes?: Process[];
+  process?: Process;
 
   // QR Code and Blockchain fields
   @Column({ type: 'text', nullable: true, name: 'qr_code' })
@@ -82,8 +83,8 @@ export class Product {
   @Column({ type: 'boolean', default: false, name: 'blockchain_activated' })
   blockchain_activated: boolean;
 
-  @Column({ type: 'text', nullable: true, name: 'blockchain_hash' })
-  blockchain_hash?: string;
+  @Column({ type: 'text', nullable: true, name: 'blockchain_transaction_hash' })
+  blockchain_transaction_hash?: string;
 
   // @Column({ type: 'numeric', precision: 10, scale: 2 })
   // price_per_unit: number; // price for 1 selling unit (e.g 20.000 VND/1kg)
