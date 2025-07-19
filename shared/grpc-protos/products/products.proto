@@ -27,12 +27,11 @@ service ProductsService {
   
   // QR Code and Blockchain functionality
   //rpc GenerateQRCode(GenerateQRCodeRequest) returns (GenerateQRCodeResponse);
-  //rpc ActivateBlockchain(ActivateBlockchainRequest) returns (ActivateBlockchainResponse);
-  //rpc GetQRCode(GetQRCodeRequest) returns (GetQRCodeResponse);
+  rpc ActivateBlockchain(ActivateBlockchainRequest) returns (ActivateBlockchainResponse);
+  rpc GetQRCode(GetQRCodeRequest) returns (GetQRCodeResponse);
   
   // Traceability functionality
-  //rpc GetTraceabilityData(GetTraceabilityDataRequest) returns (GetTraceabilityDataResponse);
-  //rpc VerifyTraceability(VerifyTraceabilityRequest) returns (VerifyTraceabilityResponse);
+  rpc VerifyTraceability(VerifyTraceabilityRequest) returns (VerifyTraceabilityResponse);
   
   // Farm management
   rpc CreateFarm(CreateFarmRequest) returns (CreateFarmResponse);
@@ -931,6 +930,7 @@ message DeleteStepDiaryResponse {
   bool success = 1;
 }
 
+// ======================================Payment===============================
 message UpdateQuantityItem{
   int32 product_id = 1;
   int32 request_quantity = 2;
@@ -961,21 +961,7 @@ message UpdateQuantitiesResponse {
   repeated UpdateQuantityResult results = 3;
 }
 
-// Traceability messages
-message TraceabilityData {
-  Product product = 1;
-  repeated Process process = 2;
-  repeated StepDiaryEntry step_diaries = 3;
-}
-
-message GetTraceabilityDataRequest {
-  int32 product_id = 1;
-}
-
-message GetTraceabilityDataResponse {
-  TraceabilityData traceability_data = 1;
-}
-
+// ======================================Payment===============================
 message VerifyTraceabilityRequest {
   int32 product_id = 1;
 }
@@ -983,5 +969,25 @@ message VerifyTraceabilityRequest {
 message VerifyTraceabilityResponse {
   bool is_valid = 1;
   optional string error = 2;
-  string verification_date = 3;
+  farmera.common.Timestamp verification_date = 3;
+}
+
+message ActivateBlockchainRequest {
+  int32 product_id = 1;
+  string user_id = 2;
+  double latitude = 3;
+  double longitude = 4;
+}
+
+message ActivateBlockchainResponse {
+  string blockchain_hash = 1;
+  bool success = 2;
+}
+
+message GetQRCodeRequest {
+  int32 product_id = 1;
+}
+
+message GetQRCodeResponse {
+  string qr_code = 1;
 }

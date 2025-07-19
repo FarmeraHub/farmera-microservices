@@ -260,6 +260,7 @@ export class StepDiaryService {
       const completedSteps = await this.stepDiaryRepository.count({
         where: {
           completion_status: DiaryCompletionStatus.COMPLETED,
+          step: { process: { process_id: processId } }
         },
       });
 

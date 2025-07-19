@@ -78,17 +78,17 @@ export class ProductsController {
     return this.productsService.findProductById(id);
   }
 
-  @Post(':id/generate-qr')
-  async generateQRCode(
-    @Headers('x-user-id') userId: string,
-    @Headers('x-user-role') role: string,
-    @Param('id') id: string,
-  ) {
-    if (!(role == Role.ADMIN || role == Role.FARMER)) {
-      throw new UnauthorizedException('Không có quyền tạo QR cho sản phẩm');
-    }
-    return this.productsService.generateQRCode(Number(id), userId);
-  }
+  // @Post(':id/generate-qr')
+  // async generateQRCode(
+  //   @Headers('x-user-id') userId: string,
+  //   @Headers('x-user-role') role: string,
+  //   @Param('id') id: string,
+  // ) {
+  //   if (!(role == Role.ADMIN || role == Role.FARMER)) {
+  //     throw new UnauthorizedException('Không có quyền tạo QR cho sản phẩm');
+  //   }
+  //   return this.productsService.generateQRCode(Number(id), userId);
+  // }
 
   // @Post(':id/activate-blockchain')
   // async activateBlockchain(

@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
 import { ethers } from 'ethers';
 import * as geohash from 'ngeohash';
+import { Process } from 'src/process/entities/process.entity';
+import { Product } from 'src/products/entities/product.entity';
 
 const BIT_DEPTH = 50;
 
@@ -30,6 +32,7 @@ export interface BlockchainProcess {
 export interface VerificationResult {
   isValid: boolean;
   error?: string;
+  verification_date: Date;
 }
 
 export interface BlockChainProduct {
@@ -37,6 +40,13 @@ export interface BlockChainProduct {
   productId: bigint,
   timestamp: bigint;
   location: bigint;
+}
+
+export interface TraceabilityData {
+  product: Product;
+  process: Process;
+  latitude: number;
+  longitude: number;
 }
 
 @Injectable()
@@ -65,28 +75,79 @@ export class BlockchainService {
     this.contract = new ethers.Contract(contractAddress, PRODUCT_TRACKING_ABI, this.wallet);
   }
 
-  async addProduct(product: BlockChainProduct) {
+  async addProduct(traceabilityData: TraceabilityData) {
     try {
+      const blockchainData = this.createTraceabilityPayload(traceabilityData);
+
+      const dataHash = createHash('sha256')
+        .update(JSON.stringify(blockchainData))
+        .digest('hex');
+
+      const geoHash = geohash.encode_int(
+        traceabilityData.latitude,
+        traceabilityData.longitude,
+        BIT_DEPTH,
+      );
+
       // Add to blockchain
       const result = await this.contract.addProduct(
-        product.productId,
-        product.timestamp,
-        product.dataHash,
-        product.dataHash,
+        blockchainData.product.product_id,
+        Math.floor(new Date().getTime() / 1000),
+        geoHash,
+        dataHash,
       );
-      this.logger.log(`Transaction: ${result.hash}`);
 
       return result.hash;
 
     } catch (error) {
-      this.logger.error(`Error adding product ${product.productId}`);
+      this.logger.error(`Error adding product ${traceabilityData.product.product_id}`);
       throw error;
+    }
+  }
+
+  async verifyProductTraceability(
+    traceabilityData: { product: Product, process: Process }
+  ): Promise<VerificationResult> {
+    try {
+      // Get blockchain data
+      const onChainProduct = await this.getProduct(
+        traceabilityData.product.product_id,
+      );
+
+      // Create current traceability payload
+      const currentData = this.createTraceabilityPayload(traceabilityData);
+      const currentHash = createHash('sha256')
+        .update(JSON.stringify(currentData))
+        .digest('hex');
+
+      // Verify data integrity
+      if (currentHash !== onChainProduct.dataHash) {
+        return {
+          isValid: false,
+          error: `Traceability data has been modified for product ${traceabilityData.product.product_id}`,
+          verification_date: new Date()
+        };
+      }
+
+      return {
+        isValid: true,
+        verification_date: new Date()
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error verifying traceability for product ${traceabilityData.product.product_id}: ${error}`,
+      );
+      return {
+        isValid: false,
+        error: error.message,
+        verification_date: new Date()
+      };
     }
   }
 
   async getProduct(productId: number): Promise<BlockChainProduct> {
     try {
-      const result = await this.contract.getProcess(productId);
+      const result = await this.contract.getProduct(productId);
 
       // Parse the result
       const product: BlockChainProduct = {
@@ -106,5 +167,21 @@ export class BlockchainService {
       this.logger.error(`Error getting product ${productId}: ${error}`);
       throw error;
     }
+  }
+
+  private createTraceabilityPayload(traceabilityData: { product: Product, process: Process }) {
+    const { product, process } = traceabilityData;
+
+    return {
+      product: {
+        product_id: product.product_id,
+        product_name: product.product_name,
+        description: product.description,
+        farm_id: product.farm?.farm_id,
+        farm_name: product.farm?.farm_name,
+        created: product.created,
+      },
+      process: process,
+    };
   }
 }

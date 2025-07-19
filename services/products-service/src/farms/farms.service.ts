@@ -315,10 +315,6 @@ export class FarmsService {
         throw new NotFoundException('Không tìm thấy trang trại');
       }
 
-      console.log('farm', farm);
-      console.log('updateFarmDto', updateFarmDto);
-      console.log('user_id', user_id);
-
       if (farm.user_id !== user_id) {
         throw new BadRequestException(
           'Người dùng không có quyền cập nhật trang trại này',

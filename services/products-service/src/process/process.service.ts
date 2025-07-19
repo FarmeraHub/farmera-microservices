@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { Process } from './entities/process.entity';
 import { ProcessStep } from './entities/process-step.entity';
 import { Farm } from '../farms/entities/farm.entity';
@@ -303,7 +303,7 @@ export class ProcessService {
       const process = await this.processRepository.findOne({
         where: {
           farm: { user_id: userId },
-          assignment_status: AssignmentStatus.ACTIVE,
+          assignment_status: In([AssignmentStatus.ACTIVE, AssignmentStatus.COMPLETED]),
           product: { product_id: productId }
         },
         relations: ['product', 'steps', 'steps.diary_entries']

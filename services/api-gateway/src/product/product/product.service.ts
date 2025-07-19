@@ -15,6 +15,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchProductsDto } from './dto/search-products.dto';
 import { EnumMapper } from 'src/mappers/common/enum.mapper';
 import { ProductStatus } from 'src/common/enums/product/product-status.enum';
+import { ActivateBlockchainDto } from './dto/activate-blockchain.dto';
 
 @Injectable()
 export class ProductService {
@@ -288,20 +289,20 @@ export class ProductService {
     }
   }
 
-  // async openProductForSale(userId: string, productId: number): Promise<string> {
-  //   try {
-  //     const result = await firstValueFrom(
-  //       this.productGrpcService.openProductForSale({
-  //         product_id: productId,
-  //         user_id: userId,
-  //       }),
-  //     );
-  //     return result.qr_code;
-  //   } catch (err) {
-  //     this.logger.error(`[openProductForSale] ${err.message}`);
-  //     throw ErrorMapper.fromGrpcError(err);
-  //   }
-  // }
+  async openProductForSale(userId: string, productId: number): Promise<string> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.openProductForSale({
+          product_id: productId,
+          user_id: userId,
+        }),
+      );
+      return result.qr_code;
+    } catch (err) {
+      this.logger.error(`[openProductForSale] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
 
   // async generateQRCode(
   //   productId: number,
@@ -321,160 +322,59 @@ export class ProductService {
   //   }
   // }
 
-  // async activateBlockchain(
-  //   productId: number,
-  //   userId: string,
-  // ): Promise<{ blockchain_hash: string; success: boolean }> {
-  //   try {
-  //     const result = await firstValueFrom(
-  //       this.productGrpcService.activateBlockchain({
-  //         product_id: productId,
-  //         user_id: userId,
-  //       }),
-  //     );
-  //     return {
-  //       blockchain_hash: result.blockchain_hash,
-  //       success: result.success,
-  //     };
-  //   } catch (err) {
-  //     this.logger.error(`[activateBlockchain] ${err.message}`);
-  //     throw ErrorMapper.fromGrpcError(err);
-  //   }
-  // }
+  async activateBlockchain(
+    productId: number,
+    userId: string,
+    activateDto: ActivateBlockchainDto
+  ): Promise<{ blockchain_hash: string; success: boolean }> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.activateBlockchain({
+          product_id: productId,
+          user_id: userId,
+          latitude: activateDto.latitude,
+          longitude: activateDto.longitude
+        }),
+      );
+      return {
+        blockchain_hash: result.blockchain_hash,
+        success: result.success,
+      };
+    } catch (err) {
+      this.logger.error(`[activateBlockchain] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
 
-  // async getQRCode(productId: number): Promise<{ qr_code: string | null }> {
-  //   try {
-  //     const result = await firstValueFrom(
-  //       this.productGrpcService.getQrCode({
-  //         product_id: productId,
-  //       }),
-  //     );
-  //     return { qr_code: (result as any).qr_code || null };
-  //   } catch (err) {
-  //     this.logger.error(`[getQRCode] ${err.message}`);
-  //     throw ErrorMapper.fromGrpcError(err);
-  //   }
-  // }
+  async getQRCode(productId: number) {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.getQrCode({
+          product_id: productId,
+        }),
+      );
+      return { qr_code: result.qr_code };
+    } catch (err) {
+      this.logger.error(`[getQRCode] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
 
-  // async getTraceabilityData(productId: number): Promise<any> {
-  //   try {
-  //     const result = await firstValueFrom(
-  //       this.productGrpcService.getTraceabilityData({
-  //         product_id: productId,
-  //       }),
-  //     );
-
-  //     // Helper function to convert gRPC timestamp to ISO string
-  //     const convertTimestamp = (timestamp: any): string => {
-  //       if (!timestamp?.value?.seconds) return new Date().toISOString();
-  //       const seconds = parseInt(timestamp.value.seconds);
-  //       const nanos = timestamp.value.nanos || 0;
-  //       return new Date(seconds * 1000 + nanos / 1000000).toISOString();
-  //     };
-
-  //     // Map gRPC response to REST format like other endpoints
-  //     const traceabilityData = result.traceability_data;
-
-  //     return {
-  //       product: traceabilityData?.product
-  //         ? ProductMapper.fromGrpcProduct(traceabilityData.product)
-  //         : null,
-  //       assignments:
-  //         traceabilityData?.assignments?.map((assignment) => ({
-  //           assignment_id: assignment.assignment_id,
-  //           product_id: assignment.product_id,
-  //           process_id: assignment.process_id,
-  //           assigned_date: convertTimestamp(assignment.assigned_date),
-  //           status: assignment.status,
-  //           completion_percentage: assignment.completion_percentage,
-  //           created: convertTimestamp(assignment.created),
-  //           updated: convertTimestamp(assignment.updated),
-  //           current_step_order: assignment.current_step_order,
-  //           start_date: assignment.start_date
-  //             ? convertTimestamp(assignment.start_date)
-  //             : null,
-  //           actual_completion_date: assignment.actual_completion_date
-  //             ? convertTimestamp(assignment.actual_completion_date)
-  //             : null,
-  //           process_template: assignment.process_template
-  //             ? {
-  //               process_id: assignment.process_template.process_id,
-  //               process_name: assignment.process_template.process_name,
-  //               description: assignment.process_template.description,
-  //               farm_id: assignment.process_template.farm_id,
-  //               is_active: assignment.process_template.is_active,
-  //               created: convertTimestamp(
-  //                 assignment.process_template.created,
-  //               ),
-  //               updated: convertTimestamp(
-  //                 assignment.process_template.updated,
-  //               ),
-  //               estimated_duration_days:
-  //                 assignment.process_template.estimated_duration_days,
-  //               steps:
-  //                 assignment.process_template.steps?.map((step) => ({
-  //                   step_id: step.step_id,
-  //                   process_id: step.process_id,
-  //                   step_order: step.step_order,
-  //                   step_name: step.step_name,
-  //                   step_description: step.step_description,
-  //                   is_required: step.is_required,
-  //                   created: convertTimestamp(step.created),
-  //                   estimated_duration_days: step.estimated_duration_days,
-  //                   instructions: step.instructions,
-  //                 })) || [],
-  //             }
-  //             : null,
-  //         })) || [],
-  //       step_diaries:
-  //         traceabilityData?.step_diaries?.map((diary) => ({
-  //           entry_id: diary.diary_id, // Map diary_id to entry_id
-  //           assignment_id: diary.assignment_id,
-  //           step_id: diary.step_id,
-  //           step_name: diary.step_name,
-  //           step_order: diary.step_order,
-  //           notes: diary.notes,
-  //           image_urls: diary.image_urls || [], // Map image_urls directly
-  //           video_urls: diary.video_urls || [], // Map video_urls directly
-  //           recorded_date: convertTimestamp(diary.recorded_date),
-  //           is_completed: diary.completion_status === 1, // Fix: Use enum value instead of string
-  //           created_by: null, // Not available in gRPC response
-  //           updated_at: convertTimestamp(diary.updated),
-  //           // Additional fields for potential future use
-  //           latitude: diary.latitude,
-  //           longitude: diary.longitude,
-  //           weather_conditions: diary.weather_conditions,
-  //           quality_rating: diary.quality_rating,
-  //           issues_encountered: diary.issues_encountered,
-  //           additional_data: diary.additional_data,
-  //           created: convertTimestamp(diary.created),
-  //         })) || [],
-  //     };
-  //   } catch (err) {
-  //     this.logger.error(`[getTraceabilityData] ${err.message}`);
-  //     throw ErrorMapper.fromGrpcError(err);
-  //   }
-  // }
-
-  // async verifyTraceability(productId: number): Promise<{
-  //   isValid: boolean;
-  //   error?: string;
-  //   verificationDate: string;
-  // }> {
-  //   try {
-  //     const result = await firstValueFrom(
-  //       this.productGrpcService.verifyTraceability({
-  //         product_id: productId,
-  //       }),
-  //     );
-  //     return {
-  //       isValid: result.is_valid,
-  //       error: result.error,
-  //       verificationDate: result.verification_date,
-  //     };
-  //   } catch (err) {
-  //     this.logger.error(`[verifyTraceability] ${err.message}`);
-  //     throw ErrorMapper.fromGrpcError(err);
-  //   }
-  // }
+  async verifyTraceability(productId: number) {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.verifyTraceability({
+          product_id: productId,
+        }),
+      );
+      return {
+        isValid: result.is_valid,
+        error: result.error,
+        verificationDate: TypesMapper.fromGrpcTimestamp(result.verification_date)
+      };
+    } catch (err) {
+      this.logger.error(`[verifyTraceability] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
 }

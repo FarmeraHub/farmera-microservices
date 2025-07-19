@@ -73,7 +73,6 @@ export class Product {
   subcategories?: Subcategory[];
 
   @OneToOne(() => Process, (process) => process.product)
-  @JoinColumn({ name: 'process_id' })
   process?: Process;
 
   // QR Code and Blockchain fields

@@ -122,6 +122,12 @@ import {
   GetProcessByIdResponse,
   GetProductProcessRequest,
   GetProductProcessResponse,
+  ActivateBlockchainRequest,
+  ActivateBlockchainResponse,
+  VerifyTraceabilityRequest,
+  VerifyTraceabilityResponse,
+  GetQRCodeRequest,
+  GetQRCodeResponse,
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
@@ -380,91 +386,61 @@ export class ProductGrpcServerController implements ProductsServiceController {
   async openProductForSale(
     request: OpenProductForSaleRequest,
   ): Promise<OpenProductForSaleResponse> {
-    throw new Error('Method not implemented.');
-    // try {
-    //   const result = await this.productsService.openProductForSale(
-    //     request.user_id,
-    //     request.product_id,
-    //   );
-    //   return {
-    //     qr_code: result,
-    //   };
-    // } catch (err) {
-    //   throw ErrorMapper.toRpcException(err);
-    // }
-  }
-
-  async generateQrCode(request: any): Promise<any> {
     try {
-      const result = await this.productsService.generateQRCode(
-        request.product_id,
+      const result = await this.productsService.openProductForSale(
         request.user_id,
+        request.product_id,
       );
-      return { qr_code: result };
+      return {
+        qr_code: result,
+      };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);
     }
   }
 
-  // async activateBlockchain(request: any): Promise<any> {
-  //   try {
-  //     const result = await this.productsService.activateBlockchain(
-  //       request.product_id,
-  //       request.user_id,
-  //     );
-  //     return {
-  //       blockchain_hash: result.blockchain_hash,
-  //       success: result.success,
-  //     };
-  //   } catch (err) {
-  //     throw ErrorMapper.toRpcException(err);
-  //   }
-  // }
+  async activateBlockchain(request: ActivateBlockchainRequest): Promise<ActivateBlockchainResponse> {
+    try {
+      const result = await this.productsService.activateBlockchain(
+        request.product_id,
+        request.user_id,
+        request.latitude,
+        request.longitude
+      );
+      return {
+        blockchain_hash: result.blockchain_hash,
+        success: result.success,
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
 
-  async getQrCode(request: any): Promise<any> {
+  async getQrCode(request: GetQRCodeRequest): Promise<GetQRCodeResponse> {
     try {
       const result = await this.productsService.getQRCode(request.product_id);
-      return result;
+      return {
+        qr_code: result
+      };
     } catch (error) {
       throw ErrorMapper.toRpcException(error);
     }
   }
 
-  // async getTraceabilityData(request: any): Promise<any> {
-  //   try {
-  //     const traceabilityData = await this.productsService.getTraceabilityData(
-  //       request.product_id,
-  //     );
-  //     return {
-  //       traceability_data: {
-  //         product: ProductMapper.toGrpcProduct(traceabilityData.product),
-  //         assignments: traceabilityData.assignments.map((assignment) =>
-  //           ProcessMapper.toGrpcProductProcessAssignment(assignment),
-  //         ),
-  //         step_diaries: traceabilityData.stepDiaries.map((diary) =>
-  //           ProcessMapper.toGrpcStepDiaryEntry(diary),
-  //         ),
-  //       },
-  //     };
-  //   } catch (error) {
-  //     throw ErrorMapper.toRpcException(error);
-  //   }
-  // }
-
-  // async verifyTraceability(request: any): Promise<any> {
-  //   try {
-  //     const result = await this.productsService.verifyProductTraceability(
-  //       request.product_id,
-  //     );
-  //     return {
-  //       is_valid: result.isValid,
-  //       error: result.error,
-  //       verification_date: result.verificationDate.toISOString(),
-  //     };
-  //   } catch (error) {
-  //     throw ErrorMapper.toRpcException(error);
-  //   }
-  // }
+  async verifyTraceability(request: VerifyTraceabilityRequest): Promise<VerifyTraceabilityResponse> {
+    try {
+      const result = await this.productsService.verifyProductTraceability(
+        request.product_id,
+      );
+      return {
+        is_valid: result.isValid,
+        error: result.error,
+        verification_date: TypesMapper.toGrpcTimestamp(result.verificationDate)
+      };
+    } catch (error) {
+      throw ErrorMapper.toRpcException(error);
+    }
+  }
 
   // Farm methods
   async createFarm(request: CreateFarmRequest): Promise<CreateFarmResponse> {

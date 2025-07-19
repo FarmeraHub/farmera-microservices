@@ -35,6 +35,7 @@ import {
   ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import { Product } from './entities/product.entity';
+import { ActivateBlockchainDto } from './dto/activate-blockchain.dto';
 
 @ApiTags('Product')
 @Controller('product')
@@ -127,30 +128,30 @@ export class ProductController {
     );
   }
 
-  // @Post('open-for-sale/:product_id')
-  // @ApiOperation({
-  //   summary: 'Open product for sale',
-  //   description: 'Marks a product as open for sale.',
-  // })
-  // @ApiParam({
-  //   name: 'product_id',
-  //   description: 'ID of the product to open for sale',
-  //   type: Number,
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Product opened for sale successfully',
-  //   type: String,
-  // })
-  // @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  // @ApiNotFoundResponse({ description: 'Product not found' })
-  // @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  // async openProductForSale(
-  //   @User() user: UserInterface,
-  //   @Param('product_id', ParseIntPipe) productId: number,
-  // ) {
-  //   return await this.productService.openProductForSale(user.id, productId);
-  // }
+  @Post('open-for-sale/:product_id')
+  @ApiOperation({
+    summary: 'Open product for sale',
+    description: 'Marks a product as open for sale.',
+  })
+  @ApiParam({
+    name: 'product_id',
+    description: 'ID of the product to open for sale',
+    type: Number,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Product opened for sale successfully',
+    type: String,
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async openProductForSale(
+    @User() user: UserInterface,
+    @Param('product_id', ParseIntPipe) productId: number,
+  ) {
+    return await this.productService.openProductForSale(user.id, productId);
+  }
 
   @Delete(':product_id')
   @ApiOperation({
@@ -321,120 +322,92 @@ export class ProductController {
   //   return await this.productService.generateQRCode(productId, user.id);
   // }
 
-  // @Post(':product_id/activate-blockchain')
-  // @ApiOperation({
-  //   summary: 'Activate blockchain for product',
-  //   description: 'Activates blockchain traceability for the product.',
-  // })
-  // @ApiParam({
-  //   name: 'product_id',
-  //   description: 'ID of the product',
-  //   type: Number,
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Blockchain activated successfully',
-  //   schema: {
-  //     properties: {
-  //       blockchain_hash: { type: 'string' },
-  //       success: { type: 'boolean' },
-  //     },
-  //   },
-  // })
-  // @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  // @ApiNotFoundResponse({ description: 'Product not found' })
-  // @ApiBadRequestResponse({
-  //   description: 'Product already activated or invalid',
-  // })
-  // @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  // async activateBlockchain(
-  //   @User() user: UserInterface,
-  //   @Param('product_id', ParseIntPipe) productId: number,
-  // ) {
-  //   return await this.productService.activateBlockchain(productId, user.id);
-  // }
+  @Post(':product_id/activate-blockchain')
+  @ApiOperation({
+    summary: 'Activate blockchain for product',
+    description: 'Activates blockchain traceability for the product.',
+  })
+  @ApiParam({
+    name: 'product_id',
+    description: 'ID of the product',
+    type: Number,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Blockchain activated successfully',
+    schema: {
+      properties: {
+        blockchain_hash: { type: 'string' },
+        success: { type: 'boolean' },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  @ApiBadRequestResponse({
+    description: 'Product already activated or invalid',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async activateBlockchain(
+    @User() user: UserInterface,
+    @Param('product_id', ParseIntPipe) productId: number,
+    @Body() activateDto: ActivateBlockchainDto,
+  ) {
+    return await this.productService.activateBlockchain(productId, user.id, activateDto);
+  }
 
-  // @Public()
-  // @Get(':product_id/qr')
-  // @ApiOperation({
-  //   summary: 'Get QR code for product',
-  //   description: 'Retrieves the QR code for a product.',
-  // })
-  // @ApiParam({
-  //   name: 'product_id',
-  //   description: 'ID of the product',
-  //   type: Number,
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'QR code retrieved successfully',
-  //   schema: { properties: { qr_code: { type: 'string', nullable: true } } },
-  // })
-  // @ApiNotFoundResponse({ description: 'Product not found' })
-  // @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  // async getQRCode(@Param('product_id', ParseIntPipe) productId: number) {
-  //   return await this.productService.getQRCode(productId);
-  // }
+  @Public()
+  @Get(':product_id/qr')
+  @ApiOperation({
+    summary: 'Get QR code for product',
+    description: 'Retrieves the QR code for a product.',
+  })
+  @ApiParam({
+    name: 'product_id',
+    description: 'ID of the product',
+    type: Number,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'QR code retrieved successfully',
+    schema: { properties: { qr_code: { type: 'string', nullable: true } } },
+  })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async getQRCode(@Param('product_id', ParseIntPipe) productId: number) {
+    return await this.productService.getQRCode(productId);
+  }
 
-  // @Public()
-  // @Get(':product_id/traceability')
-  // @ApiOperation({
-  //   summary: 'Get traceability data for product',
-  //   description:
-  //     'Retrieves comprehensive traceability data including process assignments and step diaries.',
-  // })
-  // @ApiParam({
-  //   name: 'product_id',
-  //   description: 'ID of the product',
-  //   type: Number,
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Traceability data retrieved successfully',
-  // })
-  // @ApiNotFoundResponse({ description: 'Product not found' })
-  // @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  // async getTraceabilityData(
-  //   @Param('product_id', ParseIntPipe) productId: number,
-  // ) {
-  //   const traceabilityData =
-  //     await this.productService.getTraceabilityData(productId);
-  //   return {
-  //     data: traceabilityData,
-  //     message: 'Traceability data retrieved successfully',
-  //   };
-  // }
-
-  // @Public()
-  // @Get(':product_id/verify-traceability')
-  // @ApiOperation({
-  //   summary: 'Verify product traceability',
-  //   description:
-  //     'Verifies the integrity of product traceability data against blockchain records.',
-  // })
-  // @ApiParam({
-  //   name: 'product_id',
-  //   description: 'ID of the product',
-  //   type: Number,
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Traceability verification completed',
-  //   schema: {
-  //     properties: {
-  //       isValid: { type: 'boolean' },
-  //       error: { type: 'string', nullable: true },
-  //       verificationDate: { type: 'string' },
-  //     },
-  //   },
-  // })
-  // @ApiNotFoundResponse({ description: 'Product not found' })
-  // @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  // async verifyTraceability(
-  //   @Param('product_id', ParseIntPipe) productId: number,
-  // ) {
-  //   return await this.productService.verifyTraceability(productId);
-  // }
+  @Public()
+  @Get(':product_id/verify-traceability')
+  @ApiOperation({
+    summary: 'Verify product traceability',
+    description:
+      'Verifies the integrity of product traceability data against blockchain records.',
+  })
+  @ApiParam({
+    name: 'product_id',
+    description: 'ID of the product',
+    type: Number,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Traceability verification completed',
+    schema: {
+      properties: {
+        isValid: { type: 'boolean' },
+        error: { type: 'string', nullable: true },
+        verificationDate: { type: 'string' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  async verifyTraceability(
+    @Param('product_id', ParseIntPipe) productId: number,
+  ) {
+    return await this.productService.verifyTraceability(productId);
+  }
 
   @Public()
   @Get(':product_id')
