@@ -1,4 +1,4 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, Get } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
   PaymentServiceControllerMethods,
@@ -17,6 +17,13 @@ import {
   CreatePayOSPaymentResponse,
   VerifyPayOSReturnRequest,
   VerifyPayOSReturnResponse,
+  GetSubOrderByIDRequest,
+  GetSubOrderByIDResponse,
+  GetSubOrdersByFarmRequest,
+  GetSubOrdersByFarmResonse,
+  GetSubOrdersByUserRequest,
+  GetSubOrdersByUserResponse,
+  FullSubOrderResponse,
 } from '@farmera/grpc-proto/dist/payment/payment';
 import { Observable } from 'rxjs';
 import { DeliveryService } from 'src/delivery/delivery.service';
@@ -33,6 +40,7 @@ import { PayosWebhookDto } from 'src/payos/dto/payos-webhook.dto';
 import { PaymentService } from 'src/payments/payment.service';
 import { DataPaymentCallbackMapper } from 'src/mappers/payment/data_payment_callback.mapper';
 import { PayOSService } from 'src/payos/payos.service';
+import { SubOrderService } from 'src/orders/sub-order/sub-order.service';
 
 @Controller()
 @PaymentServiceControllerMethods()
@@ -44,6 +52,7 @@ export class PaymentGrpcController implements PaymentServiceController {
     private readonly businessValidationService: BusinessValidationService,
     private readonly paymentService: PaymentService,
     private readonly payosService: PayOSService,
+    private readonly subOrderService: SubOrderService,
   ) {}
 
   async calculateShippingFee(
@@ -288,6 +297,144 @@ export class PaymentGrpcController implements PaymentServiceController {
       };
     } catch (error) {
       this.logger.error('Error getting user orders', error);
+      throw ErrorMapper.toRpcException(error);
+    }
+  }
+
+  async getSubOrderById(
+    request: GetSubOrderByIDRequest,
+  ): Promise<GetSubOrderByIDResponse> {
+    try {
+      this.logger.log('Received GetSubOrderByIDRequest', request);
+
+      const subOrder = await this.subOrderService.getSubOrderById(
+        request.suborder_id,
+      );
+      this.logger.log('SubOrder retrieved:', JSON.stringify(subOrder, null, 2));
+
+      if (!subOrder) {
+        throw ErrorMapper.toRpcException(new Error('Sub-order not found'));
+      }
+
+      const grpcSubOrder = SubOrderMapper.toGrpcSubOrder(subOrder);
+      this.logger.log(
+        `GrpcSubOrder: ${JSON.stringify(grpcSubOrder, null, 2)}`,
+      );
+      const grpcOrderDetail = subOrder.order_details
+        ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem) 
+        : [];
+      if (subOrder.order) {
+        const grpcOrder = OrderMapper.toGrpcOrder(subOrder.order);
+        return {
+          order: grpcOrder,
+          suborder: {
+            sub_order: grpcSubOrder,
+            order_items: grpcOrderDetail,
+          }
+        };
+      }
+      return {
+        suborder: {
+          sub_order: grpcSubOrder,
+          order_items: grpcOrderDetail
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error getting sub-order by ID', error);
+      throw ErrorMapper.toRpcException(error);
+    }
+  }
+
+  async getSubOrdersByFarm(
+    request: GetSubOrdersByFarmRequest,
+  ): Promise<GetSubOrdersByFarmResonse> {
+    try {
+      this.logger.log('Received GetSubOrdersByFarmRequest', request);
+
+      // const page = request.pagination?.page || 1;
+      // const limit = request.pagination?.limit || 10;
+      // const status = request.status_filter;
+
+      const result = await this.subOrderService.getSubOrdersByFarmId(
+        request.farm_id,
+        undefined,
+        1,
+        100,
+      );
+
+      const suborders: FullSubOrderResponse[] = result.subOrders.map(
+        (subOrder) => ({
+          order: subOrder.order
+            ? OrderMapper.toGrpcOrder(subOrder.order)
+            : undefined,
+          suborder: {
+            sub_order: SubOrderMapper.toGrpcSubOrder(subOrder),
+            order_items: subOrder.order_details
+              ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem)
+              : [],
+          }
+        }),
+      );
+
+      return {
+        suborders: suborders,
+        pagination: {
+          current_page: result.page,
+          page_size: result.limit,
+          total_items: result.total,
+          total_pages: Math.ceil(result.total / result.limit),
+          has_next_page: result.page * result.limit < result.total,
+          has_previous_page: result.page > 1,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error getting sub-orders by farm', error);
+      throw ErrorMapper.toRpcException(error);
+    }
+  }
+
+  async getSubOrdersByUser(request: GetSubOrdersByUserRequest): Promise<GetSubOrdersByUserResponse> {
+    try {
+      this.logger.log('Received GetSubOrdersByUserRequest', request);
+
+      // const page = request.pagination?.page || 1;
+      // const limit = request.pagination?.limit || 10;
+      // const status = request.status_filter;
+
+      const result = await this.subOrderService.getSubOrdersByCustomerId(
+        request.user_id,
+        undefined,
+        1,
+        100,
+      );
+
+      const suborders: FullSubOrderResponse[] = result.subOrders.map(
+        (subOrder) => ({
+          order: subOrder.order
+            ? OrderMapper.toGrpcOrder(subOrder.order)
+            : undefined,
+          suborder: {
+            sub_order: SubOrderMapper.toGrpcSubOrder(subOrder),
+            order_items: subOrder.order_details
+              ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem)
+              : [],
+          }
+        }),
+      );
+
+      return {
+        suborders: suborders,
+        pagination: {
+          current_page: result.page,
+          page_size: result.limit,
+          total_items: result.total,
+          total_pages: Math.ceil(result.total / result.limit),
+          has_next_page: result.page * result.limit < result.total,
+          has_previous_page: result.page > 1,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error getting sub-orders by user', error);
       throw ErrorMapper.toRpcException(error);
     }
   }
