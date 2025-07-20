@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Get, Logger, Req } from '@nestjs/common';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
 import { PayosWebhookDto } from './dto/payos-webhook.dto';
 import { PaymentClientService } from '../payment.client.service';
@@ -6,6 +6,7 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { SkipTransform } from 'src/common/decorators/skip.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { User as UserInterface } from 'src/common/interfaces/user.interface';
+import { Request } from 'express';
 
 @Controller('payment/payos')
 @SkipTransform()
@@ -109,7 +110,31 @@ export class PayosController {
   @Public()
   @Post('payment')
   @ApiOperation({ summary: 'Handle Payos payment webhook' })
-  async handlePaymentWebhook(@Body() body: PayosWebhookDto): Promise<any> {
+  async handlePaymentWebhook(@Req() req: Request): Promise<any> {
+    const body: PayosWebhookDto = {
+      code: req.body?.code || '',
+      desc: req.body?.desc || '',
+      success: req.body?.success || false,
+      data: {
+        amount: req.body?.data?.amount || 0,
+        orderCode: req.body?.data?.orderCode || 0,
+        description: req.body?.data?.description || '',
+        accountNumber: req.body?.data?.accountNumber || '',
+        reference: req.body?.data?.reference || '',
+        transactionDateTime: req.body?.data?.transactionDateTime || '',
+        currency: req.body?.data?.currency || '',
+        paymentLinkId: req.body?.data?.paymentLinkId || '',
+        code: req.body?.data?.code || '',
+        desc: req.body?.data?.desc || '',
+        virtualAccountNumber: req.body?.data?.virtualAccountNumber || '',
+        counterAccountBankId: req.body?.data?.counterAccountBankId || '',
+        counterAccountBankName: req.body?.data?.counterAccountBankName || '',
+        counterAccountName: req.body?.data?.counterAccountName || '',
+        counterAccountNumber: req.body?.data?.counterAccountNumber || '',
+        virtualAccountName: req.body?.data?.virtualAccountName || '',
+      },
+      signature: req.body?.signature || '',
+    };
     const result = await this.paymentClientService.handlePaymentCallback(body);
     console.log('Payos payment webhook handled successfully:', result);
     return { success: result };
