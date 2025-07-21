@@ -9,4 +9,10 @@ export class GetProductByFarmDto extends PaginationOptions {
     @IsBoolean()
     @Type(() => Boolean)
     include_categories?: boolean;
+
+    @ApiPropertyOptional({ description: 'Whether to include categories in the result', example: true })
+    @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    include_process?: boolean;
 }

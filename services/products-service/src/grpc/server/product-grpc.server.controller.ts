@@ -128,6 +128,8 @@ import {
   VerifyTraceabilityResponse,
   GetQRCodeRequest,
   GetQRCodeResponse,
+  GetUnassignedProductRequest,
+  GetUnassignedProductResponse,
 } from '@farmera/grpc-proto/dist/products/products';
 import { Observable, Subject } from 'rxjs';
 import { UpdateFarmStatusDto } from 'src/admin/farm/dto/update-farm-status.dto';
@@ -377,6 +379,21 @@ export class ProductGrpcServerController implements ProductsServiceController {
       );
       return {
         products: result.map((value) => ProductMapper.toGrpcProduct(value)),
+      };
+    } catch (err) {
+      throw ErrorMapper.toRpcException(err);
+    }
+  }
+
+  async getUnassignedProduct(request: GetUnassignedProductRequest): Promise<GetUnassignedProductResponse> {
+    try {
+      const result = await this.productsService.getUnassignedProduct(
+        request.user_id,
+        PaginationMapper.fromGrpcPaginationRequest(request.pagination),
+      );
+      return {
+        products: result.data.map((value) => ProductMapper.toGrpcProduct(value)),
+        pagination: PaginationMapper.toGrpcPaginationResponse(result.meta),
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);
@@ -1105,12 +1122,19 @@ export class ProductGrpcServerController implements ProductsServiceController {
       const result =
         await this.processService.getProcessesByFarm(
           request.user_id,
+          {
+            limit: request.pagination?.limit,
+            cursor: request.pagination?.cursor,
+          }
         );
 
       return {
-        processes: result.map((process) =>
+        processes: result.processes.map((process) =>
           ProcessMapper.toGrpcProcess(process),
         ),
+        pagination: {
+          next_cursor: result.cursor ?? undefined,
+        },
       };
     } catch (err) {
       throw ErrorMapper.toRpcException(err);

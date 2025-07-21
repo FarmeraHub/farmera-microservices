@@ -13,6 +13,7 @@ import { ErrorMapper } from 'src/mappers/common/error.mapper';
 import { EnumMapper } from 'src/mappers/common/enum.mapper';
 import { Process } from './entities/process.entity';
 import { ProcessMapper } from 'src/mappers/product/process.mapper';
+import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
 
 @Injectable()
 export class ProcessService {
@@ -47,12 +48,20 @@ export class ProcessService {
     }
   }
 
-  async getProcessesByFarm(user: UserInterface) {
+  async getProcessesByFarm(user: UserInterface, pagination?: SimpleCursorPagination) {
     try {
       const result = await firstValueFrom(
-        this.productGrpcService.getProcessesByFarm({ user_id: user.id }),
+        this.productGrpcService.getProcessesByFarm({
+          user_id: user.id, pagination: {
+            limit: pagination?.limit,
+            cursor: pagination?.cursor
+          }
+        }),
       );
-      return result.processes.map((value) => ProcessMapper.fromGrpcProcess(value));
+      return {
+        processes: result.processes.map((value) => ProcessMapper.fromGrpcProcess(value)),
+        next_cursor: result.pagination.next_cursor ?? null,
+      }
     }
     catch (err) {
       this.logger.error(err.message);

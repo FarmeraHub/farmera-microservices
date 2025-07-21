@@ -144,6 +144,7 @@ export class EnumsMapper {
             case AssignmentStatus.ACTIVE: return GrpcAssignmentStatus.ASSIGNMENT_ACTIVE;
             case AssignmentStatus.CANCELLED: return GrpcAssignmentStatus.ASSIGNMENT_CANCELLED;
             case AssignmentStatus.UNACTIVATED: return GrpcAssignmentStatus.ASSIGNMENT_UNACTIVATED;
+            case AssignmentStatus.COMPLETED: return GrpcAssignmentStatus.ASSIGNMENT_COMPLETED;
             default: return GrpcAssignmentStatus.UNRECOGNIZED;
         }
     }

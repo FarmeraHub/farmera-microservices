@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { User } from '../../common/decorators/user.decorator';
 import { User as UserInterface } from '../../common/interfaces/user.interface';
@@ -17,6 +18,7 @@ import { UpdateStepDiaryDto } from './dto/update-step-diary.dto';
 import { ProcessService } from './process.service';
 import { CreateProcessDto } from './dto/create-process.dto';
 import { UpdateProcessDto } from './dto/update-process.dto';
+import { SimpleCursorPagination } from 'src/pagination/dto/pagination-options.dto';
 
 @Controller('process')
 export class ProcessController {
@@ -36,8 +38,8 @@ export class ProcessController {
   }
 
   @Get('farm')
-  async getProcessByFarm(@User() user: UserInterface) {
-    return await this.processService.getProcessesByFarm(user);
+  async getProcessByFarm(@User() user: UserInterface, @Query() pagination: SimpleCursorPagination) {
+    return await this.processService.getProcessesByFarm(user, pagination);
   }
 
   @Get(':id')

@@ -16,6 +16,9 @@ import { UpdateProcessDto } from './dto/update-process.dto';
 import { AssignProductToProcessDto } from './dto/assign-product-process.dto';
 import { CreateProcessDto } from './dto/create-process.dto';
 import { AssignmentStatus } from 'src/common/enums/process-assignment-status';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
+import { SimpleCursorPagination } from 'src/pagination/dto/pagination-simple.dto';
+import { Decoder } from 'src/utils/decoder';
 
 @Injectable()
 export class ProcessService {
@@ -105,38 +108,75 @@ export class ProcessService {
     }
   }
 
-  async getProcessesByFarm(userId: string): Promise<Process[]> {
+  async getProcessesByFarm(userId: string, pagination?: SimpleCursorPagination): Promise<{ processes: Process[]; cursor?: string }> {
     try {
       const farm = await this.farmRepository.findOne({
         where: { user_id: userId },
       });
+
       if (!farm) {
         throw new UnauthorizedException('User does not have a farm');
+      }
+
+      const limit = pagination?.limit ?? 10;
+
+      const processIdQb = this.processRepository
+        .createQueryBuilder('process')
+        .select('process.process_id', 'process_id')
+        .where('process.farm.farm_id = :farmId', { farmId: farm.farm_id })
+        .orderBy('process.updated', 'DESC')
+        .limit(limit + 1);
+
+      if (pagination?.cursor) {
+        const decodedCursor = Decoder.decodeCursor(pagination.cursor);
+        processIdQb.andWhere('process.updated < :cursor', { cursor: decodedCursor });
+      }
+
+      const processIdRows = await processIdQb.getRawMany();
+      const processIds = processIdRows.map(row => row.process_id);
+
+      let nextCursor: string | undefined;
+      let hasMore = false;
+      if (processIds.length > limit) {
+        hasMore = true;
+        processIds.splice(limit);
       }
 
       const processes = await this.processRepository
         .createQueryBuilder('process')
         .leftJoinAndSelect('process.steps', 'steps')
-        .where('process.farm.farm_id = :farmId', { farmId: farm.farm_id })
-        .orderBy('process.created', 'DESC')
+        .leftJoinAndSelect('process.product', 'product')
+        .whereInIds(processIds)
+        .orderBy('process.updated', 'DESC')
         .addOrderBy('steps.step_order', 'ASC')
         .getMany();
 
-      // Add step count to each template
-      return processes.map((process) => ({
-        ...process,
-        step_count: process.steps?.length || 0,
-      }));
+      if (hasMore) {
+        const lastProcess = processes[limit - 1];
+        nextCursor = Decoder.encodeCursor(new Date(lastProcess.updated).toISOString());
+        processIds.splice(limit);
+      }
+
+      const sortedProcesses = processIds.map(
+        id => processes.find(p => p.process_id === id)!
+      );
+
+      return {
+        processes: sortedProcesses.map(process => ({
+          ...process,
+          step_count: process.steps?.length || 0,
+        })),
+        cursor: nextCursor,
+      };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
       this.logger.error(`Error fetching processes: ${error.message}`);
-      throw new InternalServerErrorException(
-        'Failed to fetch processes',
-      );
+      throw new InternalServerErrorException('Failed to fetch processes');
     }
   }
+
 
   async getProcessById(
     processId: number,
@@ -147,6 +187,7 @@ export class ProcessService {
         .createQueryBuilder('process')
         .leftJoinAndSelect('process.steps', 'steps')
         .leftJoinAndSelect('process.farm', 'farm')
+        .leftJoinAndSelect('process.product', 'product')
         .where('process.process_id = :processId', { processId })
         .andWhere('farm.user_id = :userId', { userId })
         .orderBy('steps.step_order', 'ASC')
@@ -276,6 +317,7 @@ export class ProcessService {
       process.target_completion_date = assignDto.target_completion_date;
       process.current_step_order = 1; // Start with first step
       process.assignment_status = AssignmentStatus.ACTIVE;
+      process.updated = new Date();
       process.product = product;
 
       return await this.processRepository.save(process);
@@ -310,7 +352,7 @@ export class ProcessService {
       });
 
       if (!process) {
-        throw new UnauthorizedException('Product not found or access denied');
+        throw new NotFoundException('Product not found');
       }
 
       return process;
@@ -338,7 +380,8 @@ export class ProcessService {
           where: {
             product: { product_id: productId },
             farm: { user_id: userId }
-          }
+          },
+          relations: ["product"]
         }
       );
 
@@ -348,6 +391,8 @@ export class ProcessService {
         );
       }
 
+      if (process.product && process.product.blockchain_activated == true) throw new BadRequestException("Blockchain activated")
+
       process.assignment_status = AssignmentStatus.CANCELLED;
       process.product = null;
 
@@ -355,7 +400,8 @@ export class ProcessService {
     } catch (error) {
       if (
         error instanceof NotFoundException ||
-        error instanceof UnauthorizedException
+        error instanceof UnauthorizedException ||
+        error instanceof BadRequestException
       ) {
         throw error;
       }

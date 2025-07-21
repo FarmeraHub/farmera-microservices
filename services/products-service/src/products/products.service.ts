@@ -598,6 +598,9 @@ export class ProductsService implements OnModuleInit {
       if (productOptions?.include_categories)
         qb.leftJoinAndSelect('product.subcategories', 'subcategory');
 
+      if (productOptions?.include_processes)
+        qb.leftJoinAndSelect('product.process', 'process');
+
       // Add sorting if specified
       if (paginationOptions.sort_by) {
         const validSortValue = [
@@ -1275,7 +1278,7 @@ export class ProductsService implements OnModuleInit {
       await this.validateProductProcess(productId);
 
       // generate QR code
-      const deepLink = `${this.appUrl}/redirect/product/${productId}`;
+      const deepLink = `${this.appUrl}/api/redirect/product/${productId}`;
       const qrCode = await QRCode.toDataURL(deepLink);
 
       // update open for sale if the processes is valid
@@ -1339,5 +1342,98 @@ export class ProductsService implements OnModuleInit {
     }
 
     return process;
+  }
+
+  async getUnassignedProduct(
+    userId: string,
+    paginationOptions: PaginationOptions,
+  ): Promise<PaginationResult<Product>> {
+    try {
+      const allowedStatuses = [
+        ProductStatus.PRE_ORDER,
+        ProductStatus.NOT_YET_OPEN,
+        ProductStatus.OPEN_FOR_SALE,
+        ProductStatus.SOLD_OUT,
+      ];
+
+      const queryBuilder = this.productsRepository
+        .createQueryBuilder('product')
+        .leftJoin('product.farm', 'farm')
+        .leftJoin('product.process', 'process')
+        .andWhere('farm.user_id = :userId', { userId })
+        .andWhere('product.status IN (:...allowedStatuses)', { allowedStatuses })
+        .andWhere('process.product_id IS NULL');
+
+      // Add sorting
+      if (paginationOptions.sort_by) {
+        const validSortValue = [
+          'created',
+          'product_name',
+          'status'
+        ];
+        if (!validSortValue.includes(paginationOptions.sort_by)) {
+          throw new BadRequestException('Cột sắp xếp không hợp lệ.');
+        }
+
+        const order = (paginationOptions.order || 'ASC') as 'ASC' | 'DESC';
+        switch (paginationOptions.sort_by) {
+          case 'created':
+            queryBuilder.orderBy('product.product_id', order);
+            break;
+          case 'product_name':
+            queryBuilder.orderBy('product.product_name', order);
+            break;
+          case 'status':
+            queryBuilder.orderBy('product.status', order);
+            break;
+          default:
+            queryBuilder.orderBy('product.product_id', 'DESC');
+        }
+      } else {
+        queryBuilder.orderBy(
+          'product.product_id',
+          (paginationOptions.order || 'DESC') as 'ASC' | 'DESC',
+        );
+      }
+
+      // Apply pagination
+      const totalItems = await queryBuilder.getCount();
+
+      const totalPages = Math.ceil(
+        totalItems / (paginationOptions.limit ?? 10),
+      );
+      const currentPage = paginationOptions.page ?? 1;
+
+      if (totalPages > 0 && currentPage > totalPages) {
+        throw new NotFoundException(
+          `Không tìm thấy dữ liệu ở trang ${currentPage}.`,
+        );
+      }
+
+      const products = await queryBuilder
+        .skip(paginationOptions.skip)
+        .take(paginationOptions.limit)
+        .getMany();
+
+      if (!products || products.length === 0) {
+        this.logger.error('Không tìm thấy danh mục nào.');
+        throw new NotFoundException('Không tìm thấy danh mục nào.');
+      }
+
+      const meta = new PaginationMeta({
+        paginationOptions,
+        totalItems,
+      });
+
+      return new PaginationResult(products, meta);
+    } catch (err) {
+      if (
+        err instanceof BadRequestException ||
+        err instanceof NotFoundException
+      )
+        throw err;
+      this.logger.error(err.message);
+      throw new InternalServerErrorException('Không thể tìm kiếm sản phẩm');
+    }
   }
 }

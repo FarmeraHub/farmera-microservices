@@ -42,16 +42,16 @@ export class RedirectController {
     const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
 
     // Custom URL scheme for the Flutter app
-    const appDeepLink = `${this.appUrlScheme}://product/${productId}`;
+    const appDeepLink = `${this.appUrlScheme}://product/detail/${productId}`;
 
     if (isAndroid) {
       // Android: Use intent URL to attempt opening the app
       res.redirect(
         `intent://${appDeepLink.replace(`${this.appUrlScheme}://`, '')}#Intent;` +
-          `scheme=${this.appUrlScheme};` +
-          `package=com.example.frontend;` +
-          `S.browser_fallback_url=${encodeURIComponent(this.androidAppStoreUrl)};` +
-          `end`,
+        `scheme=${this.appUrlScheme};` +
+        `package=com.example.frontend;` +
+        `S.browser_fallback_url=${encodeURIComponent(this.androidAppStoreUrl)};` +
+        `end`,
       );
     } else if (isIOS) {
       // iOS: Try opening the app, fall back to App Store

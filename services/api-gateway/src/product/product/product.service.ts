@@ -16,6 +16,7 @@ import { SearchProductsDto } from './dto/search-products.dto';
 import { EnumMapper } from 'src/mappers/common/enum.mapper';
 import { ProductStatus } from 'src/common/enums/product/product-status.enum';
 import { ActivateBlockchainDto } from './dto/activate-blockchain.dto';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 
 @Injectable()
 export class ProductService {
@@ -87,6 +88,7 @@ export class ProductService {
           farm_id: farmId,
           options: TypesMapper.toGrpcProductOptions({
             include_categories: getProductByFarmDto.include_categories,
+            include_processes: getProductByFarmDto.include_process
           }),
           pagination: PaginationMapper.toGrpcPaginationRequest({
             limit: getProductByFarmDto.limit,
@@ -371,6 +373,24 @@ export class ProductService {
         isValid: result.is_valid,
         error: result.error,
         verificationDate: TypesMapper.fromGrpcTimestamp(result.verification_date)
+      };
+    } catch (err) {
+      this.logger.error(`[verifyTraceability] ${err.message}`);
+      throw ErrorMapper.fromGrpcError(err);
+    }
+  }
+
+  async getUnassignedProduct(userId: string, pagination: PaginationOptions): Promise<PaginationResult<Product>> {
+    try {
+      const result = await firstValueFrom(
+        this.productGrpcService.getUnassignedProduct({
+          user_id: userId,
+          pagination: PaginationMapper.toGrpcPaginationRequest(pagination)
+        }),
+      );
+      return {
+        data: result.products.map((p) => ProductMapper.fromGrpcProduct(p)),
+        pagination: PaginationMapper.fromGrpcPaginationResponse(result.pagination),
       };
     } catch (err) {
       this.logger.error(`[verifyTraceability] ${err.message}`);

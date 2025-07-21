@@ -36,6 +36,8 @@ import {
 } from '@nestjs/swagger';
 import { Product } from './entities/product.entity';
 import { ActivateBlockchainDto } from './dto/activate-blockchain.dto';
+import { pagination } from '@farmera/grpc-proto';
+import { PaginationOptions } from 'src/pagination/dto/pagination-options.dto';
 
 @ApiTags('Product')
 @Controller('product')
@@ -376,6 +378,14 @@ export class ProductController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async getQRCode(@Param('product_id', ParseIntPipe) productId: number) {
     return await this.productService.getQRCode(productId);
+  }
+
+  @Get('/unassigned')
+  async getUnassignedProduct(
+    @User() user: UserInterface,
+    @Query() pagination?: PaginationOptions,
+  ) {
+    return await this.productService.getUnassignedProduct(user.id, pagination);
   }
 
   @Public()

@@ -32,6 +32,7 @@ export class ProductMapper {
       qr_code: value.qr_code,
       blockchain_activated: value.blockchain_activated,
       blockchain_transaction_hash: value.blockchain_transaction_hash,
+      process: value.process ? ProcessMapper.fromGrpcProcessLite(value.process) : undefined
     };
   }
 }

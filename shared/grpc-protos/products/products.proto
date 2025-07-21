@@ -24,6 +24,7 @@ service ProductsService {
   rpc GetProductsBySubCategory(GetProductsBySubCategoryRequest) returns (GetProductsBySubCategoryResponse);
   rpc UpdateProductStatus(UpdateProductStatusRequest) returns (UpdateProductStatusResponse);
   rpc OpenProductForSale(OpenProductForSaleRequest) returns (OpenProductForSaleResponse);
+  rpc GetUnassignedProduct(GetUnassignedProductRequest) returns (GetUnassignedProductResponse);
   
   // QR Code and Blockchain functionality
   //rpc GenerateQRCode(GenerateQRCodeRequest) returns (GenerateQRCodeResponse);
@@ -117,7 +118,7 @@ message Product {
   optional string qr_code = 18;
   bool blockchain_activated = 19;
   optional string blockchain_transaction_hash = 20;
-  optional Process process = 21;
+  optional ProcessLite process = 21;
 }
 
 message SubcategoryList {
@@ -199,8 +200,6 @@ message SearchProductsRequest {
   optional bool is_category = 9;
   optional farmera.common.ProductStatus status = 10;
   optional farmera.common.ProductOptions options = 11;
-
-
 }
 
 message SearchProductsResponse {
@@ -258,6 +257,16 @@ message OpenProductForSaleRequest {
 
 message OpenProductForSaleResponse {
   string qr_code = 1;
+}
+
+message GetUnassignedProductRequest {
+  string user_id = 1;
+  optional farmera.common.PaginationRequest pagination = 2;
+}
+
+message GetUnassignedProductResponse {
+  repeated Product products = 1;
+  optional farmera.common.PaginationResponse pagination = 2;
 }
 
 // ==================================Admin==================================
@@ -694,6 +703,24 @@ message Process {
   optional farmera.common.Timestamp actual_completion_date = 18;
 }
 
+message ProcessLite {
+  int32 process_id = 1;
+  string process_name = 2;
+  string description = 3;
+  int32 estimated_duration_days = 4;
+  bool is_active = 5;
+  optional int32 step_count = 6;
+  farmera.common.Timestamp created = 7;
+  farmera.common.Timestamp updated = 8;
+  farmera.common.Timestamp assigned_date = 9;
+  farmera.common.AssignmentStatus status = 10;
+  optional int32 current_step_order = 12;
+  double completion_percentage = 13;
+  optional farmera.common.Timestamp start_date = 14;
+  optional farmera.common.Timestamp target_completion_date = 15;
+  optional farmera.common.Timestamp actual_completion_date = 16;
+}
+
 message ProcessStep {
   int32 step_id = 1;
   optional int32 process_id = 2;
@@ -742,10 +769,12 @@ message CreateProcessResponse {
 
 message GetProcessesByFarmRequest {
   string user_id = 1;
+  optional farmera.common.SimpleCursorPaginationRequest pagination = 2;
 }
 
 message GetProcessesByFarmResponse {
   repeated Process processes = 1;
+  farmera.common.SimpleCursorPaginationResponse pagination = 2;
 }
 
 message GetProcessByIdRequest {

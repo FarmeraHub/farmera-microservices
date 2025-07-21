@@ -1,6 +1,7 @@
 import { ProductStatus } from 'src/common/enums/product/product-status.enum';
 import { Subcategory } from 'src/product/category/entities/subcategory.entity';
 import { Farm } from 'src/product/farm/entities/farm.entity';
+import { ProcessLite } from 'src/product/process/dto/process-lite.dto';
 import { Process } from 'src/product/process/entities/process.entity';
 
 export class Product {
@@ -20,7 +21,7 @@ export class Product {
   created: Date;
   updated: Date;
   subcategories?: Subcategory[];
-  process?: Process;
+  process?: Process | ProcessLite;
   qr_code?: string;
   blockchain_activated: boolean;
   blockchain_transaction_hash?: string;

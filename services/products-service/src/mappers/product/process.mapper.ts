@@ -4,6 +4,7 @@ import {
   StepDiaryEntry as GrpcStepDiaryEntry,
   CreateProcessStepInput,
   UpdateProcessStepInput,
+  ProcessLite as GrpcProcessLite,
 } from '@farmera/grpc-proto/dist/products/products';
 import { Process } from '../../process/entities/process.entity';
 import { ProcessStep } from '../../process/entities/process-step.entity';
@@ -38,6 +39,32 @@ export class ProcessMapper {
       start_date: entity.start_date ? TypesMapper.toGrpcTimestamp(entity.start_date) : undefined,
       target_completion_date: entity.target_completion_date ? TypesMapper.toGrpcTimestamp(entity.target_completion_date) : undefined,
       actual_completion_date: entity.actual_completion_date ? TypesMapper.toGrpcTimestamp(entity.actual_completion_date) : undefined,
+    };
+  }
+
+  static toGrpcProcessLite(entity: Process): GrpcProcessLite {
+    return {
+      process_id: entity.process_id,
+      process_name: entity.process_name,
+      description: entity.description,
+      estimated_duration_days: entity.estimated_duration_days,
+      is_active: entity.is_active,
+      step_count: entity.step_count ?? undefined,
+      created: TypesMapper.toGrpcTimestamp(entity.created),
+      updated: TypesMapper.toGrpcTimestamp(entity.updated),
+      assigned_date: TypesMapper.toGrpcTimestamp(entity.assigned_date),
+      status: EnumsMapper.toGrpcAssignmentStatus(entity.assignment_status),
+      current_step_order: entity.current_step_order ?? undefined,
+      completion_percentage: entity.completion_percentage,
+      start_date: entity.start_date
+        ? TypesMapper.toGrpcTimestamp(entity.start_date)
+        : undefined,
+      target_completion_date: entity.target_completion_date
+        ? TypesMapper.toGrpcTimestamp(entity.target_completion_date)
+        : undefined,
+      actual_completion_date: entity.actual_completion_date
+        ? TypesMapper.toGrpcTimestamp(entity.actual_completion_date)
+        : undefined,
     };
   }
 

@@ -21,4 +21,5 @@ export class Process {
   start_date: Date | undefined;
   target_completion_date: Date | undefined;
   actual_completion_date: Date | undefined;
+  step_count: number;
 }

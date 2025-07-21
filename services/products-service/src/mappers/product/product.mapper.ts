@@ -4,6 +4,7 @@ import { EnumsMapper } from '../common/enums.mapper';
 import { TypesMapper } from '../common/types.mapper';
 import { CategoryMapper } from './category.mapper';
 import { FarmMapper } from './farm.mapper';
+import { ProcessMapper } from './process.mapper';
 
 export class ProductMapper {
   static toGrpcProduct(value: Product): GrpcProduct {
@@ -33,6 +34,7 @@ export class ProductMapper {
       qr_code: value.qr_code,
       blockchain_activated: value.blockchain_activated,
       blockchain_transaction_hash: value.blockchain_transaction_hash,
+      process: value.process ? ProcessMapper.toGrpcProcessLite(value.process) : undefined
     };
   }
 }

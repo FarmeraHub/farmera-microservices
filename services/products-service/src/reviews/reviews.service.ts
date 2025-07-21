@@ -9,6 +9,7 @@ import { AzureBlobService } from 'src/services/azure-blob.service';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ErrorMapper } from 'src/mappers/common/error.mapper';
 import { RatingStatsDto } from './dto/rating-stat.dto';
+import { Decoder } from 'src/utils/decoder';
 
 @Injectable()
 export class ReviewsService {
@@ -126,7 +127,7 @@ export class ReviewsService {
         }
 
         if (cursor) {
-            const decoded = this.decodeCursor(cursor);
+            const decoded = Decoder.decodeCursor(cursor);
             if (sortBy === 'created') {
                 if (order === 'DESC') {
                     qb.andWhere('review.created < :decoded', { decoded });
@@ -166,7 +167,7 @@ export class ReviewsService {
         }
 
         if (nextCursor) {
-            nextCursor = this.encodeCursor(nextCursor);
+            nextCursor = Decoder.encodeCursor(nextCursor);
         }
 
         return {
@@ -328,18 +329,6 @@ export class ReviewsService {
         }
         result.reply = reply;
         return await this.replyRepository.save(result);
-    }
-
-    private encodeCursor(payload: string): string {
-        return Buffer.from(payload).toString('base64');
-    }
-
-    private decodeCursor(cursor: string): string {
-        try {
-            return Buffer.from(cursor, 'base64').toString('utf8');
-        } catch (err) {
-            throw new BadRequestException('Invalid cursor');
-        }
     }
 
     async getReviewOverview(productId: number): Promise<RatingStatsDto> {
