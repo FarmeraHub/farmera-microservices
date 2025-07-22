@@ -75,6 +75,6 @@ import { DiaryService } from './diary/diary.service';
     AdminService,
     DiaryService,
   ],
-  exports: [ProductService],
+  exports: [ProductService, FarmService],
 })
 export class ProductModule {}

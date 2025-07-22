@@ -288,9 +288,15 @@ message GetOrderRequest {
 
 message GetSubOrdersByUserRequest{
   string user_id = 1;
+  optional string status = 2;
+  farmera.common.PaginationRequest pagination = 3;
+  
 }
 message GetSubOrdersByFarmRequest {
   string farm_id = 1;
+  optional string status = 2;
+  farmera.common.PaginationRequest pagination = 3;
+
 }
 message GetSubOrderByIDRequest {
   int32 suborder_id = 1;
@@ -298,6 +304,7 @@ message GetSubOrderByIDRequest {
 message FullSubOrderResponse {
   optional Order order = 1;
   SubOrderWithDetail suborder = 2;
+  Payment payment = 3;
 }
 
 message GetSubOrdersByUserResponse {
@@ -313,6 +320,7 @@ message GetSubOrdersByFarmResonse {
 message GetSubOrderByIDResponse {
   optional Order order = 1;
   SubOrderWithDetail suborder = 2;
+  Payment payment = 3;
 }
 message GetOrderResponse {
   OrderWithItems order = 1;

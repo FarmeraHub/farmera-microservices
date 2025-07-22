@@ -56,6 +56,7 @@ export class SubOrderService {
       .leftJoinAndSelect('sub_order.order', 'order')
       .leftJoinAndSelect('sub_order.delivery', 'delivery')
       .leftJoinAndSelect('sub_order.order_details', 'order_detail')
+      .leftJoinAndSelect('order.payment', 'payment')
       .where('order.customer_id = :customerId', { customerId });
 
     if (status) {
@@ -91,6 +92,7 @@ export class SubOrderService {
       .leftJoinAndSelect('sub_order.order', 'order')
       .leftJoinAndSelect('sub_order.delivery', 'delivery')
       .leftJoinAndSelect('sub_order.order_details', 'order_detail')
+      .leftJoinAndSelect('order.payment', 'payment')
       .where('sub_order.farm_id = :farmId', { farmId });
 
     if (status) {
@@ -113,7 +115,7 @@ export class SubOrderService {
   async getSubOrderById(subOrderId: number): Promise<SubOrder> {
     const suborder = await this.subOrderRepository.findOne({
       where: { sub_order_id: subOrderId },
-      relations: ['order', 'delivery', 'order_details'],
+      relations: ['order', 'delivery', 'order_details', 'order.payment'],
     });
     if (!suborder) {
       throw new Error(`SubOrder with ID ${subOrderId} not found`);

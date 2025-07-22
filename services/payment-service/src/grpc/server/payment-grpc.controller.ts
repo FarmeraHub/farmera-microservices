@@ -1,3 +1,4 @@
+import { Subcategory } from './../../product/category/entities/subcategory.entity';
 import { Controller, Logger, Get } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
@@ -317,26 +318,29 @@ export class PaymentGrpcController implements PaymentServiceController {
       }
 
       const grpcSubOrder = SubOrderMapper.toGrpcSubOrder(subOrder);
-      this.logger.log(
-        `GrpcSubOrder: ${JSON.stringify(grpcSubOrder, null, 2)}`,
-      );
+      this.logger.log(`GrpcSubOrder: ${JSON.stringify(grpcSubOrder, null, 2)}`);
       const grpcOrderDetail = subOrder.order_details
-        ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem) 
+        ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem)
         : [];
       if (subOrder.order) {
         const grpcOrder = OrderMapper.toGrpcOrder(subOrder.order);
+        const grpcPayment = subOrder.order.payment
+          ? PaymentMapper.toGrpcPayment(subOrder.order.payment)
+          : undefined;
         return {
           order: grpcOrder,
+          payment: grpcPayment,
           suborder: {
             sub_order: grpcSubOrder,
             order_items: grpcOrderDetail,
-          }
+          },
         };
       }
       return {
+        payment: undefined,
         suborder: {
           sub_order: grpcSubOrder,
-          order_items: grpcOrderDetail
+          order_items: grpcOrderDetail,
         },
       };
     } catch (error) {
@@ -354,12 +358,14 @@ export class PaymentGrpcController implements PaymentServiceController {
       // const page = request.pagination?.page || 1;
       // const limit = request.pagination?.limit || 10;
       // const status = request.status_filter;
+      const page = request.pagination?.page || 1;
+      const limit = request.pagination?.limit || 10;
 
       const result = await this.subOrderService.getSubOrdersByFarmId(
         request.farm_id,
-        undefined,
-        1,
-        100,
+        request.status,
+        page,
+        limit,
       );
 
       const suborders: FullSubOrderResponse[] = result.subOrders.map(
@@ -367,12 +373,15 @@ export class PaymentGrpcController implements PaymentServiceController {
           order: subOrder.order
             ? OrderMapper.toGrpcOrder(subOrder.order)
             : undefined,
+          payment: subOrder.order?.payment
+            ? PaymentMapper.toGrpcPayment(subOrder.order.payment)
+            : undefined,
           suborder: {
             sub_order: SubOrderMapper.toGrpcSubOrder(subOrder),
             order_items: subOrder.order_details
               ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem)
               : [],
-          }
+          },
         }),
       );
 
@@ -393,32 +402,40 @@ export class PaymentGrpcController implements PaymentServiceController {
     }
   }
 
-  async getSubOrdersByUser(request: GetSubOrdersByUserRequest): Promise<GetSubOrdersByUserResponse> {
+  async getSubOrdersByUser(
+    request: GetSubOrdersByUserRequest,
+  ): Promise<GetSubOrdersByUserResponse> {
     try {
       this.logger.log('Received GetSubOrdersByUserRequest', request);
 
-      // const page = request.pagination?.page || 1;
-      // const limit = request.pagination?.limit || 10;
+      const page = request.pagination?.page || 1;
+      const limit = request.pagination?.limit || 10;
       // const status = request.status_filter;
 
       const result = await this.subOrderService.getSubOrdersByCustomerId(
         request.user_id,
-        undefined,
-        1,
-        100,
-      );
+        request.status? request.status : undefined,
+        page,
+        limit,
+        );
 
+      this.logger.log(
+        `SubOrders retrieved: ${JSON.stringify(result, null, 2)}`,
+      );
       const suborders: FullSubOrderResponse[] = result.subOrders.map(
         (subOrder) => ({
           order: subOrder.order
             ? OrderMapper.toGrpcOrder(subOrder.order)
+            : undefined,
+          payment: subOrder.order?.payment
+            ? PaymentMapper.toGrpcPayment(subOrder.order.payment)
             : undefined,
           suborder: {
             sub_order: SubOrderMapper.toGrpcSubOrder(subOrder),
             order_items: subOrder.order_details
               ? subOrder.order_details.map(OrderDetailMapper.toGrpcOrderItem)
               : [],
-          }
+          },
         }),
       );
 
