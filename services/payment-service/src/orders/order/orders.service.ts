@@ -194,7 +194,7 @@ export class OrdersService {
         shipping_amount: shippingAmount, // Tổng tiền ship từ GHN
         final_amount: totalAmount + shippingAmount - discount, // Tổng tiền = tổng sản phẩm + tiền ship - discount
         currency: 'VND',
-        status: OrderStatus.PENDING,
+        status: OrderStatus.PROCESSING,
         discount_amount: discount,
       });
 
@@ -217,7 +217,7 @@ export class OrdersService {
         const createSubOrder = await this.subOrderService.create(
           {
             farm_id: subOrderData.farm_id,
-            status: SubOrderStatus.PENDING,
+            status: SubOrderStatus.PROCESSING, // Trạng thái là PROCESSING khi tạo đơn hàng COD
             total_amount: subOrderData.total,
             discount_amount: 0, // Giả sử không có discount
             shipping_amount: ghnOrderResult.fee.main_service,
@@ -250,7 +250,7 @@ export class OrdersService {
         {
           amount: savedOrder.final_amount,
           method: PaymentMethod.COD, // Giả sử thanh toán COD
-          status: PaymentStatus.PENDING,
+          status: PaymentStatus.PROCESSING,
           currency: savedOrder.currency,
           transaction_id: '',
           paid_at: null,
@@ -285,7 +285,7 @@ export class OrdersService {
         error.stack,
       );
       // Rollback transaction if any error occurs
-      // chưa có logic huỷ đơn hàng của gian hàng nhanh.
+      // chưa có logic huỷ đơn hàng của giao hàng nhanh.
       await queryRunner.rollbackTransaction();
       await this.updateProductQuantities(
         validSubOrders,
@@ -732,5 +732,5 @@ export class OrdersService {
       );
       throw error;
     }
-  }
+  } 
 }

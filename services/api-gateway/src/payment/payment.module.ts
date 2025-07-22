@@ -12,10 +12,12 @@ import { PayosController } from "./payos/payos.controller";
 import { SubOrderController } from "./sub_order/sub_order.controller";
 import { SubOrderService } from "./sub_order/sub_order.service";
 import { ProductModule } from "src/product/product.module";
+import { HttpModule } from "@nestjs/axios";
 
 @Module({
     imports: [
         ConfigModule,
+        HttpModule,
         ClientsModule.registerAsync([
             {
                 name: 'PAYMENT_PACKAGE',
