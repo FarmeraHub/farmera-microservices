@@ -9,6 +9,8 @@ import { ConfigService } from "@nestjs/config";
 import { PayosWebhookDto } from "src/payos/dto/payos-webhook.dto";
 import { OrderStatus } from "src/common/enums/payment/order-status.enum";
 import { PayOSService } from "src/payos/payos.service";
+import { SubOrderStatus } from "src/common/enums/payment/sub-order-status.enum";
+import { DeliveryStatus } from "src/common/enums/payment/delivery.enum";
 @Injectable()
 export class PaymentService {
     private readonly logger = new Logger(PaymentService.name);
@@ -63,7 +65,7 @@ export class PaymentService {
                     },
                     transaction_id: data.data.paymentLinkId,
                 },
-                relations: ['order']
+                relations: ['order','order.subOrders'],
             });
 
             if (!payment) {
@@ -105,6 +107,8 @@ export class PaymentService {
 
             payment.status = PaymentStatus.COMPLETED;
             payment.paid_at = new Date();
+            payment.qr_code = '';
+            payment.checkout_url = '';
 
             const updatedPayment = await queryRunner.manager.save(Payment, payment);
 
@@ -113,6 +117,13 @@ export class PaymentService {
                 await queryRunner.manager.save(Order, payment.order);
                 this.logger.log(`Order ${data.data.orderCode} status updated to PAID`);
             }
+            if (payment.order?.sub_orders) {
+                for (const subOrder of payment.order.sub_orders) {
+                    subOrder.status = SubOrderStatus.PAID;
+                    await queryRunner.manager.save(subOrder);
+                }
+            }
+            
 
             await queryRunner.commitTransaction();
 

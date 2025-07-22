@@ -43,6 +43,8 @@ export class DeliveryService {
     private ghnUrlCalculateDeliveryFee: string;
     private ghnUrlCreateOrder: string;
     private ghnUrlCancelOrder: string;
+    private ghnUrlGetPickShift: string;
+    private ghnUrlUpdateOrder: string;
     constructor(
         @InjectRepository(Delivery)
         private readonly deliveryRepository: Repository<Delivery>,
@@ -57,7 +59,8 @@ export class DeliveryService {
         const GHN_CALCULATE_FEE_URL = this.configService.get<string>('GHN_CALCULATE_FEE_URL');
         const GHN_CREATE_ORDER = this.configService.get<string>('GHN_CREATE_ORDER_URL');
         const GHN_CANCEL_ORDER = this.configService.get<string>('GHN_CANCEL_ORDER_URL');
-        if (!GHN_TOKEN || !GHN_SHOP_ID || !GHN_CALCULATE_FEE_URL || !GHN_CREATE_ORDER || !GHN_CANCEL_ORDER) {
+        const GHN_UPDATE_ORDER = this.configService.get<string>('GHN_UPDATE_ORDER_URL');
+        if (!GHN_TOKEN || !GHN_SHOP_ID || !GHN_CALCULATE_FEE_URL || !GHN_CREATE_ORDER || !GHN_CANCEL_ORDER || !GHN_UPDATE_ORDER) {
             this.logger.error('Missing GHN configuration');
             throw new Error('Missing GHN configuration');
         }
@@ -66,8 +69,10 @@ export class DeliveryService {
         this.ghnUrlCalculateDeliveryFee = GHN_CALCULATE_FEE_URL;
         this.ghnUrlCreateOrder = GHN_CREATE_ORDER;
         this.ghnUrlCancelOrder = GHN_CANCEL_ORDER;
+        this.ghnUrlUpdateOrder = GHN_UPDATE_ORDER;
     }
-    
+      
+
     async calculateFeeByGHN(calculateDto: CalculateShippingFeeDto): Promise<GhnFeeData> {
 
 
