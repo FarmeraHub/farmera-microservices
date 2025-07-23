@@ -18,6 +18,9 @@ service PaymentService {
   rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
   rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse);
   
+  rpc GetSubOrdersByUser(GetSubOrdersByUserRequest) returns (GetSubOrdersByUserResponse);
+  rpc GetSubOrdersByFarm(GetSubOrdersByFarmRequest) returns (GetSubOrdersByFarmResonse);
+  rpc GetSubOrderByID(GetSubOrderByIDRequest) returns (GetSubOrderByIDResponse);
   // PayOS Integration
   rpc CreatePayOSPayment(CreatePayOSPaymentRequest) returns (CreatePayOSPaymentResponse);
   rpc VerifyPayOSReturn(VerifyPayOSReturnRequest) returns (VerifyPayOSReturnResponse);
@@ -283,6 +286,42 @@ message GetOrderRequest {
   bool include_delivery = 5;
 }
 
+message GetSubOrdersByUserRequest{
+  string user_id = 1;
+  optional string status = 2;
+  farmera.common.PaginationRequest pagination = 3;
+  
+}
+message GetSubOrdersByFarmRequest {
+  string farm_id = 1;
+  optional string status = 2;
+  farmera.common.PaginationRequest pagination = 3;
+
+}
+message GetSubOrderByIDRequest {
+  int32 suborder_id = 1;
+}
+message FullSubOrderResponse {
+  optional Order order = 1;
+  SubOrderWithDetail suborder = 2;
+  Payment payment = 3;
+}
+
+message GetSubOrdersByUserResponse {
+  repeated FullSubOrderResponse suborders = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message GetSubOrdersByFarmResonse {
+  repeated FullSubOrderResponse suborders = 1;
+  farmera.common.PaginationResponse pagination = 2;
+}
+
+message GetSubOrderByIDResponse {
+  optional Order order = 1;
+  SubOrderWithDetail suborder = 2;
+  Payment payment = 3;
+}
 message GetOrderResponse {
   OrderWithItems order = 1;
 }

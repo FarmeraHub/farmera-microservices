@@ -9,10 +9,15 @@ import { DeliveryService } from './delivery/delivery.service';
 import { OrderController } from "./order/order.controller";
 import { OrderService } from "./order/order.service";
 import { PayosController } from "./payos/payos.controller";
+import { SubOrderController } from "./sub_order/sub_order.controller";
+import { SubOrderService } from "./sub_order/sub_order.service";
+import { ProductModule } from "src/product/product.module";
+import { HttpModule } from "@nestjs/axios";
 
 @Module({
     imports: [
         ConfigModule,
+        HttpModule,
         ClientsModule.registerAsync([
             {
                 name: 'PAYMENT_PACKAGE',
@@ -34,10 +39,11 @@ import { PayosController } from "./payos/payos.controller";
                 }),
                 inject: [ConfigService],
             }
-        ])
+        ]),
+        ProductModule,
     ],
-    controllers: [PaymentController, DeliveryController, OrderController, PayosController],
-    providers: [PaymentClientService, DeliveryService, OrderService],
+    controllers: [PaymentController, DeliveryController, OrderController, PayosController, SubOrderController],
+    providers: [PaymentClientService, DeliveryService, OrderService, SubOrderService],
     exports: [],
 })
 export class PaymentModule { }

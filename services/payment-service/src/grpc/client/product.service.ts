@@ -53,9 +53,12 @@ export class ProductsGrpcClientService implements OnModuleInit {
                 ProductMapper.fromGrpcProduct(grpcProduct)
             );
 
-            const validProducts: Product[] = mappedProducts.filter(
-                (product): product is Product => product !== undefined
-            );
+            const validProducts: Product[] = mappedProducts
+                .filter((product): product is Product => product !== undefined)
+                .map(product => ({
+                    ...product,
+                    weight: Math.floor(product.weight * 1000), // Convert kg to g
+                }));
 
             return validProducts;
 
