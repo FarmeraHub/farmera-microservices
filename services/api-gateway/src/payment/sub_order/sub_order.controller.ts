@@ -30,6 +30,18 @@ export class SubOrderController {
     required: false,
     description: 'Filter sub-orders by status',
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page (default: 10)',
+  })
   async getSubOrdersByUser(
     @User() user: UserInterface,
     @Query('status') status?: SubOrderStatus,

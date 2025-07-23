@@ -732,5 +732,20 @@ export class OrdersService {
       );
       throw error;
     }
-  } 
+  }
+
+  async updateBySubOrder(
+    order_id: number,
+    status: OrderStatus,
+    transactionalManager: EntityManager,
+  ): Promise<Order> {
+    const order = await transactionalManager.findOne(Order, {
+      where: { order_id: order_id },
+    });
+    if (!order) {
+      throw new Error(`Order with ID ${order_id} not found`);
+    }
+    order.status = status;
+    return transactionalManager.save(order);
+  }
 }
