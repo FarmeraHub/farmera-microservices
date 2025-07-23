@@ -5,12 +5,15 @@ import { EntityManager, Repository } from 'typeorm';
 import { SubOrderDto } from '../dto/sub-order.dto';
 import { Order } from '../entities/order.entity';
 import { CreateSubOrderDto } from '../dto/create-sub-order.dto';
+import { SubOrderStatus } from 'src/common/enums/payment/sub-order-status.enum';
+import { DeliveryService } from 'src/delivery/delivery.service';
 
 @Injectable()
 export class SubOrderService {
   constructor(
     @InjectRepository(SubOrder)
     private readonly subOrderRepository: Repository<SubOrder>,
+    private readonly deliveryService: DeliveryService,
   ) {}
 
   create(
@@ -119,8 +122,35 @@ export class SubOrderService {
     });
     if (!suborder) {
       throw new Error(`SubOrder with ID ${subOrderId} not found`);
-      }
-    console.log(`SubOrder retrieved: ${JSON.stringify(suborder,null, 2)}`);
+    }
+    console.log(`SubOrder retrieved: ${JSON.stringify(suborder, null, 2)}`);
     return suborder;
   }
+  // async confirmSubOrder(
+  //   subOrderId: number,
+  //   pinkShiftId: number,
+  // ): Promise<SubOrder> {
+  //   const subOrder = await this.subOrderRepository.findOne({
+  //     where: { sub_order_id: subOrderId },
+  //     relations: ['order', 'delivery', 'order_details', 'order.payment'],
+  //   });
+  //   if (!subOrder) {
+  //     throw new Error(`SubOrder with ID ${subOrderId} not found`);
+  //   }
+  //   if (subOrder.status.toString() == 'PAID' && subOrder.order.payment.method.toString() == 'PAYOS' || subOrder.status.toString() == 'PROCESSING' ) {
+  //     try {
+  //       const updateDelivery = await this.deliveryService.updatePickShift(
+  //         subOrder.delivery.tracking_number,
+  //         pinkShiftId,
+  //       );
+  //       if (!updateDelivery) {
+  //         throw new Error('Failed to update delivery with pick shift');
+  //       }
+  //     } catch (error) {
+  //       throw new Error(`Failed to confirm sub order: ${error.message}`);
+  //     }
+  //   }
+  //   return this.subOrderRepository.save(subOrder);
+    
+  // }
 }
